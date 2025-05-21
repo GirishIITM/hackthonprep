@@ -2,9 +2,6 @@
 
 SynergySphere is an advanced, intelligent team collaboration platform designed to help teams operate at their best—staying organized, communicating seamlessly, and making informed decisions. Built by Team 336.
 
-https://github.com/user-attachments/assets/a4174d55-99ee-44fc-b614-34932460aacd
-
-
 ## Application Flow
 ![Screenshot From 2025-05-18 17-20-38](https://github.com/user-attachments/assets/610b2a5a-b836-46d2-8ebc-11882fcf4349)
 
