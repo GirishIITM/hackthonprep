@@ -146,7 +146,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👥 Team
 
 - Team 336:
-  - VEDIKA SANTOSH VANGAR
+  - Vedika Santosh Vangar
   - Rudransh Vikram Singh
   - Girish V Bhat
   - Aditya R
