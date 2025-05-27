@@ -8,11 +8,11 @@ import About from './pages/About';
 import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import Login from './pages/Login';
-import Profile from './pages/Profile'; // Import the new Profile component
+import Profile from './pages/Profile';
 import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
 import Projects from './pages/solutions/Projects';
 import Tasks from './pages/solutions/Tasks';
-import ResetPassword from './pages/ResetPassword'; // Add this import
 import { isAuthenticated } from './utils/apiCalls/auth';
 
 function App() {
@@ -48,9 +48,6 @@ function App() {
                 <ResetPassword />
               </>
             } />
-
-
-
 
             {/* Home page - accessible to everyone, no redirection for authenticated users */}
             <Route path='/' element={
