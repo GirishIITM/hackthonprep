@@ -9,11 +9,26 @@ class Task(db.Model):
     status = db.Column(db.String(20), default='To Do')
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     assignee_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
     project = db.relationship('Project', back_populates='tasks')
     assignee = db.relationship('User', back_populates='tasks')
     attachments = db.relationship('TaskAttachment', back_populates='task')
+    
+    def is_overdue(self):
+        """Check if task is overdue"""
+        if not self.due_date:
+            return False
+        
+        current_time = datetime.now(timezone.utc)
+        due_date = self.due_date
+        
+        # Handle timezone-naive due_date
+        if due_date.tzinfo is None:
+            due_date = due_date.replace(tzinfo=timezone.utc)
+        
+        return current_time > due_date
 
 class TaskAttachment(db.Model):
     id = db.Column(db.Integer, primary_key=True)

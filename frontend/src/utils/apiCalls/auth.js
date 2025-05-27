@@ -2,7 +2,24 @@ import { loadingState } from "./apiRequest";
 const API_BASE_URL = "http://localhost:5000";
 
 /**
- * Enhanced API request with loading state tracking
+ * Check if token is expired
+ * @param {string} token - JWT token
+ * @returns {boolean} - True if expired
+ */
+const isTokenExpired = (token) => {
+  if (!token) return true;
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const currentTime = Date.now() / 1000;
+    return payload.exp < currentTime;
+  } catch (error) {
+    return true;
+  }
+};
+
+/**
+ * Enhanced API request with loading state tracking and token refresh
  * @param {string} endpoint - API endpoint
  * @param {string} method - HTTP method
  * @param {object} data - Request payload
@@ -27,8 +44,13 @@ const apiRequest = async (
     },
   };
 
+  // Check and refresh token if needed (except for auth endpoints)
+  if (!endpoint.startsWith("/auth/")) {
+    await ensureValidToken();
+  }
+
   // Add token to headers if available
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("access_token");
   if (token) {
     options.headers.Authorization = `Bearer ${token}`;
   }
@@ -41,13 +63,24 @@ const apiRequest = async (
     const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
     const result = await response.json();
 
-    if (!response.ok) {
-      throw new Error(result.error || "An error occurred");
-    }
-
     // Reset loading state
     if (loadingKey) {
       loadingState.setLoading(loadingKey, false);
+    }
+
+    // Handle token expiration
+    if (response.status === 401 && result.error === "Token has expired") {
+      const refreshSuccess = await handleTokenRefresh();
+      if (refreshSuccess) {
+        // Retry the original request with new token
+        return apiRequest(endpoint, method, data, loadingKey);
+      } else {
+        throw new Error("Session expired. Please login again.");
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(result.error || "An error occurred");
     }
 
     return result;
@@ -64,15 +97,76 @@ const apiRequest = async (
 };
 
 /**
+ * Ensure we have a valid access token
+ */
+const ensureValidToken = async () => {
+  const accessToken = localStorage.getItem("access_token");
+  const refreshToken = localStorage.getItem("refresh_token");
+
+  if (!accessToken || !refreshToken) {
+    return;
+  }
+
+  if (isTokenExpired(accessToken)) {
+    await handleTokenRefresh();
+  }
+};
+
+/**
+ * Handle token refresh
+ * @returns {boolean} - True if refresh successful, false otherwise
+ */
+const handleTokenRefresh = async () => {
+  const refreshToken = localStorage.getItem("refresh_token");
+
+  if (!refreshToken || isTokenExpired(refreshToken)) {
+    clearAuthData();
+    window.location.href = "/login";
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${refreshToken}`,
+      },
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.access_token) {
+      localStorage.setItem("access_token", result.access_token);
+      if (result.refresh_token) {
+        localStorage.setItem("refresh_token", result.refresh_token);
+      }
+      return true;
+    } else {
+      clearAuthData();
+      window.location.href = "/login";
+      return false;
+    }
+  } catch (error) {
+    console.error("Token refresh failed:", error);
+    clearAuthData();
+    window.location.href = "/login";
+    return false;
+  }
+};
+
+/**
  * Clear authentication data from local storage
  * @returns {void}
  */
 const clearAuthData = () => {
-  localStorage.removeItem("token");
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
   localStorage.removeItem("user");
   loadingState.reset();
   loadingState.setLoading("auth-refresh", false);
 };
+
 /**
  * Get the current user from local storage
  * @returns {object|null} - User object or null if not found
@@ -87,7 +181,9 @@ const getCurrentUser = () => {
  * @returns {boolean} - True if authenticated, false otherwise
  */
 const isAuthenticated = () => {
-  return !!localStorage.getItem("token");
+  const accessToken = localStorage.getItem("access_token");
+  const refreshToken = localStorage.getItem("refresh_token");
+  return !!(accessToken && refreshToken);
 };
 
 /**
@@ -191,7 +287,14 @@ const authAPI = {
    * @returns {Promise} - Refresh token response
    */
   refreshToken: () => {
-    return apiRequest("/auth/refresh", "POST", null, "auth-refresh");
+    const refreshToken = localStorage.getItem("refresh_token");
+    return fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${refreshToken}`,
+      },
+    }).then((response) => response.json());
   },
 
   /**
@@ -215,16 +318,45 @@ const authAPI = {
       "auth-update-settings"
     );
   },
+
+  /**
+   * Login with Google OAuth
+   * @param {string} googleToken - Google OAuth token
+   * @returns {Promise} - Google login response
+   */
+  googleLogin: (googleToken) => {
+    return apiRequest(
+      "/auth/google-login",
+      "POST",
+      { token: googleToken },
+      "auth-google-login"
+    );
+  },
+
+  /**
+   * Get Google OAuth client ID
+   * @returns {Promise} - Client ID response
+   */
+  getGoogleClientId: () => {
+    return apiRequest(
+      "/auth/google-client-id",
+      "GET",
+      null,
+      "auth-google-client-id"
+    );
+  },
 };
 
 /**
  * Save authentication data to local storage
- * @param {string} token - Authentication token
+ * @param {string} accessToken - Access token
+ * @param {string} refreshToken - Refresh token
  * @param {object} user - User object
  * @returns {void}
  */
-const saveAuthData = (token, user) => {
-  localStorage.setItem("token", token);
+const saveAuthData = (accessToken, refreshToken, user) => {
+  localStorage.setItem("access_token", accessToken);
+  localStorage.setItem("refresh_token", refreshToken);
   localStorage.setItem("user", JSON.stringify(user));
   loadingState.reset();
   loadingState.setLoading("auth-refresh", false);
@@ -236,12 +368,15 @@ const saveAuthData = (token, user) => {
   loadingState.setLoading("auth-reset-password", false);
   loadingState.setLoading("auth-logout", false);
   loadingState.setLoading("auth-update-settings", false);
-}
+};
+
 // Reset loading state utility
 const resetLoadingState = () => {
   loadingState.reset();
   loadingState.setLoading("auth-refresh", false);
   loadingState.setLoading("auth-login", false);
+  loadingState.setLoading("auth-google-login", false);
+  loadingState.setLoading("auth-google-client-id", false);
   loadingState.setLoading("auth-register", false);
   loadingState.setLoading("auth-verify-otp", false);
   loadingState.setLoading("auth-resend-otp", false);
@@ -256,6 +391,8 @@ export {
   clearAuthData,
   getCurrentUser,
   isAuthenticated,
-  loadingState, resetLoadingState, saveAuthData
+  loadingState,
+  resetLoadingState,
+  saveAuthData
 };
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 import LoadingIndicator from '../components/LoadingIndicator';
 import '../styles/login.css';
 import { authAPI, loadingState, saveAuthData } from '../utils/apiCalls/auth';
@@ -45,9 +46,9 @@ export default function Login() {
     
     try {
       const response = await authAPI.login(formData.email, formData.password);
-      
-      // Save authentication data
-      saveAuthData(response.token, response.user);
+      console.log('Login response:', response); 
+      // Save authentication data with both tokens
+      saveAuthData(response.access_token, response.refresh_token, response.user);
       
       // Redirect to tasks or the page the user was trying to access
       navigate(from, { replace: true });
@@ -56,12 +57,36 @@ export default function Login() {
     }
   };
 
+  const handleGoogleSuccess = (response) => {
+    // Save authentication data with both tokens
+    saveAuthData(response.access_token, response.refresh_token, response.user);
+    
+    // Redirect to tasks or the page the user was trying to access
+    navigate(from, { replace: true });
+  };
+
+  const handleGoogleError = (error) => {
+    setError(error || 'Google login failed. Please try again.');
+  };
+
   return (
     <LoadingIndicator loading={isLoading}>
       <div className="login-container">
         <h1 className="login-title">Login into account</h1>
         {error && <div className="error-message">{error}</div>}
         {location.state?.message && <div className="success-message">{location.state.message}</div>}
+        
+        {/* Google OAuth Button */}
+        <div className="google-auth-section">
+          <GoogleLoginButton
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            disabled={isLoading}
+          />
+          <div className="divider">
+            <span>OR</span>
+          </div>
+        </div>
         
         <form className="login-form" onSubmit={handleSubmit}>
           <div>

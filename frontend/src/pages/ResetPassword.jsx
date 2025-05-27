@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/resetpassword.css';
+import '../styles/resetPassword.css';
 
 export default function ResetPassword() {
   const [formData, setFormData] = useState({

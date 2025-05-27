@@ -17,22 +17,38 @@ class OTPVerification(db.Model):
     def generate_otp():
         return ''.join(random.choices(string.digits, k=6))
     
+    @staticmethod
+    def get_current_utc():
+        """Get current UTC time with timezone info"""
+        return datetime.now(timezone.utc)
+    
     @classmethod
     def create_otp(cls, email):
         # Clean up old OTPs for this email
         cls.query.filter_by(email=email).delete()
         
         otp = cls.generate_otp()
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+        current_time = cls.get_current_utc()
+        expires_at = current_time + timedelta(minutes=10)
         
         verification = cls(
             email=email,
             otp=otp,
-            expires_at=expires_at
+            expires_at=expires_at,
+            created_at=current_time
         )
         db.session.add(verification)
         db.session.commit()
         return otp
+    
+    def is_expired(self):
+        """Check if OTP is expired"""
+        current_time = self.get_current_utc()
+        # Handle both timezone-aware and naive datetime objects
+        expires_at = self.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        return current_time > expires_at
 
 class PasswordResetToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -48,19 +64,35 @@ class PasswordResetToken(db.Model):
     def generate_token():
         return secrets.token_urlsafe(50)
     
+    @staticmethod
+    def get_current_utc():
+        """Get current UTC time with timezone info"""
+        return datetime.now(timezone.utc)
+    
     @classmethod
     def create_token(cls, user_id):
         # Clean up old tokens for this user
         cls.query.filter_by(user_id=user_id).delete()
         
         token = cls.generate_token()
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        current_time = cls.get_current_utc()
+        expires_at = current_time + timedelta(hours=1)
         
         reset_token = cls(
             user_id=user_id,
             token=token,
-            expires_at=expires_at
+            expires_at=expires_at,
+            created_at=current_time
         )
         db.session.add(reset_token)
         db.session.commit()
         return token
+    
+    def is_expired(self):
+        """Check if token is expired"""
+        current_time = self.get_current_utc()
+        # Handle both timezone-aware and naive datetime objects
+        expires_at = self.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        return current_time > expires_at
