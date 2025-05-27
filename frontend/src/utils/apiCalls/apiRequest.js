@@ -19,6 +19,10 @@ export const loadingState = {
     return Object.values(loadingState.states).some(state => state === true);
   },
 
+  reset: () => {
+    loadingState.states = {};
+  },
+
   subscribe: (requestKey, callback) => {
     if (!loadingState.listeners[requestKey]) {
       loadingState.listeners[requestKey] = [];
@@ -43,7 +47,7 @@ export const apiRequest = async (endpoint, method = 'GET', data = null, loadingK
     },
   };
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('access_token');
   if (token) {
     options.headers.Authorization = `Bearer ${token}`;
   }

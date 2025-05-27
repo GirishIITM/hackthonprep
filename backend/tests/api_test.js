@@ -232,6 +232,33 @@ Error details: ${errorDetail}
   fs.appendFileSync('api_test_errors.log', logEntry, { encoding: 'utf8' });
 }
 
+// Google OAuth tests
+async function testGoogleClientId() {
+  console.log('\n🔹 Testing get Google client ID...');
+  const response = await api.get('/auth/google-client-id');
+  console.log('Google client ID retrieved successfully');
+  return response.data;
+}
+
+// Note: Testing actual Google OAuth would require real Google tokens
+// This is just to test the endpoint structure
+async function testGoogleLoginEndpoint() {
+  console.log('\n🔹 Testing Google login endpoint (expects failure with fake token)...');
+  try {
+    const response = await api.post('/auth/google-login', {
+      token: 'fake-google-token'
+    });
+    console.log('Unexpected success with fake token');
+    return response.data;
+  } catch (error) {
+    if (error.response?.status === 401) {
+      console.log('Expected failure with fake Google token - endpoint working correctly');
+      return null;
+    }
+    throw error;
+  }
+}
+
 // Run all tests in sequence
 async function runTests() {
   console.log('🚀 Starting API tests...');
@@ -241,6 +268,8 @@ async function runTests() {
   
   // Collect all test functions in order
   const tests = [
+    { name: 'Get Google Client ID', fn: testGoogleClientId },
+    { name: 'Google Login Endpoint', fn: testGoogleLoginEndpoint },
     { name: 'User Registration', fn: testRegister },
     { name: 'User Login', fn: testLogin },
     { name: 'Token Refresh', fn: testRefreshToken },
