@@ -180,11 +180,16 @@ def login():
             return jsonify({"msg": "Username and password are required"}), 400
         
         username = data["username"].strip()
+        email = data["email"].strip()
         password = data["password"]
         
         user = User.query.filter_by(username=username).first()
+        if not user:
+            user = User.query.filter_by(email=email).first()
+        print(user)
         if not user or not user.check_password(password):
             return jsonify({"msg": "Invalid credentials"}), 401
+        
         
         access_token = create_access_token(identity=str(user.id))
         refresh_token = create_refresh_token(identity=str(user.id))
