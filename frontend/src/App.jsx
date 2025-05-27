@@ -13,6 +13,8 @@ import Profile from './pages/Profile'; // Import the new Profile component
 import Register from './pages/Register';
 import Projects from './pages/solutions/Projects';
 import Tasks from './pages/solutions/Tasks';
+import ResetPassword from './pages/ResetPassword'; // Add this import
+
 
 function App() {
   return (
@@ -37,6 +39,14 @@ function App() {
               <>
                 <Navbar />
                 <About />
+              </>
+            } />
+
+            {/* Add this route for Reset Password */}
+            <Route path="/reset-password" element={
+              <>
+                <Navbar />
+                <ResetPassword />
               </>
             } />
 
