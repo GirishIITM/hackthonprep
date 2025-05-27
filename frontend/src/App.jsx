@@ -12,6 +12,7 @@ import Profile from './pages/Profile'; // Import the new Profile component
 import Register from './pages/Register';
 import Projects from './pages/solutions/Projects';
 import Tasks from './pages/solutions/Tasks';
+import ResetPassword from './pages/ResetPassword'; // Add this import
 import { isAuthenticated } from './utils/apiCalls/auth';
 
 function App() {
@@ -39,6 +40,17 @@ function App() {
                 <About />
               </>
             } />
+
+            {/* Add this route for Reset Password */}
+            <Route path="/reset-password" element={
+              <>
+                <Navbar />
+                <ResetPassword />
+              </>
+            } />
+
+
+
 
             {/* Home page - accessible to everyone, no redirection for authenticated users */}
             <Route path='/' element={
