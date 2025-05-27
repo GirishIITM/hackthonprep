@@ -3,6 +3,8 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import cloudinary
 import os
+
+from sqlalchemy import false
 from config import get_config
 from extensions import db, jwt, bcrypt, mail
 from models import User, TokenBlocklist
@@ -47,7 +49,7 @@ def create_app(config_class=None):
     
     with app.app_context():
         # Check and run migrations before creating tables
-        migration_needed = check_and_migrate()
+        migration_needed = True
         
         if migration_needed:
             # If migration was needed, recreate all tables
