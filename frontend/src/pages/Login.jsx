@@ -45,7 +45,7 @@ export default function Login() {
     setError('');
     
     try {
-      const response = await authAPI.login(formData.email, formData.password);
+      const response = await authAPI.login(formData.email,formData.email, formData.password);
       console.log('Login response:', response); 
       // Save authentication data with both tokens
       saveAuthData(response.access_token, response.refresh_token, response.user);
