@@ -13,6 +13,7 @@ import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import Projects from './pages/solutions/Projects';
 import Tasks from './pages/solutions/Tasks';
+import VerifyOTP from './pages/VerifyOTP';
 import { isAuthenticated } from './utils/apiCalls/auth';
 
 function App() {
@@ -28,6 +29,15 @@ function App() {
                 {isAuthenticated() ? <Navigate to="/solutions/tasks" replace /> : <Register />}
               </>
             } />
+            
+            {/* OTP Verification route */}
+            <Route path='/verify-otp' element={
+              <>
+                <Navbar />
+                {isAuthenticated() ? <Navigate to="/solutions/tasks" replace /> : <VerifyOTP />}
+              </>
+            } />
+            
             <Route path='/login' element={
               <>
                 <Navbar />
