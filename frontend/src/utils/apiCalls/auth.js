@@ -244,11 +244,11 @@ const authAPI = {
    * @param {string} password - User password
    * @returns {Promise} - Login response with token and user data
    */
-  login: (username, password) => {
+  login: (email ,username, password) => {
     return apiRequest(
       "/auth/login",
       "POST",
-      { username, password },
+      { username, email,password },
       "auth-login"
     );
   },
