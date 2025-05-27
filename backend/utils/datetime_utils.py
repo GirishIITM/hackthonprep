@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-import pytz
 
 def get_utc_now():
     """Get current UTC time with timezone info"""
