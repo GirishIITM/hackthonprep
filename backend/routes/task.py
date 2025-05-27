@@ -5,6 +5,7 @@ import cloudinary.uploader
 from models import Task, User, Project, TaskAttachment, Notification
 from extensions import db
 from utils.email import send_email
+from utils.datetime_utils import ensure_utc
 
 task_bp = Blueprint('task', __name__)
 
@@ -23,9 +24,11 @@ def create_task(project_id):
     due_date = None
     if 'due_date' in data:
         try:
-            due_date = datetime.fromisoformat(data['due_date'])
+            # Parse ISO format datetime and ensure it's timezone-aware
+            parsed_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+            due_date = ensure_utc(parsed_date)
         except ValueError:
-            return jsonify({'msg': 'Invalid date format'}), 400
+            return jsonify({'msg': 'Invalid date format. Use ISO format with timezone.'}), 400
     status = data.get('status', 'To Do')
     assignee = None
     if 'assignee_id' in data:
@@ -61,9 +64,11 @@ def update_task(task_id):
     task.description = data.get('description', task.description)
     if 'due_date' in data:
         try:
-            task.due_date = datetime.fromisoformat(data['due_date'])
+            # Parse ISO format datetime and ensure it's timezone-aware
+            parsed_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+            task.due_date = ensure_utc(parsed_date)
         except ValueError:
-            return jsonify({'msg': 'Invalid date format'}), 400
+            return jsonify({'msg': 'Invalid date format. Use ISO format with timezone.'}), 400
     if 'status' in data:
         task.status = data['status']
     if 'assignee_id' in data:

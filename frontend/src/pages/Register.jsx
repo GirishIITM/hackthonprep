@@ -51,17 +51,27 @@ export default function Register() {
 
     try {
       const response = await authAPI.register(
+        formData.name,
         formData.email,
-        formData.password,
-        formData.name
+        formData.password
       );
 
-      // Save auth data directly and redirect to tasks
-      authAPI.saveAuthData(response.token, response.user);
+      console.log('Registration response:', response);
 
-      // Redirect to tasks page
-      navigate('/solutions/tasks');
-
+      if (response.msg && response.msg.includes('OTP sent')) {
+        setSuccess('Registration successful! Redirecting to email verification...');
+        
+        // Redirect to OTP verification page with registration data
+        setTimeout(() => {
+          navigate('/verify-otp', {
+            state: {
+              email: formData.email,
+              username: formData.name,
+              password: formData.password
+            }
+          });
+        }, 1500);
+      }
     } catch (error) {
       setError(error.message || 'Failed to register. Please try again.');
     }

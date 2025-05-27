@@ -67,3 +67,41 @@
   color: var(--color-link-hover);
   text-decoration: underline;
 }
+
+.google-auth-section {
+  margin-bottom: 20px;
+}
+
+.google-login-btn {
+  transition: box-shadow 0.2s, background-color 0.2s;
+}
+
+.google-login-btn:hover:not(:disabled) {
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.google-login-btn:active:not(:disabled) {
+  background-color: #f8f9fa;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #dadce0;
+}
+
+.divider span {
+  padding: 0 16px;
+  color: #5f6368;
+  font-size: 14px;
+  background: white;
+}
