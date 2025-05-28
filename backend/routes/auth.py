@@ -47,7 +47,9 @@ def register():
         if existing_user:
             return jsonify({"msg": "Email already registered"}), 400
         
+        
         otp = OTPVerification.create_otp(email)
+
         
         subject = "Verify Your Email - OTP"
         html_body = get_otp_email_template(username, otp)
@@ -57,6 +59,7 @@ def register():
         if not email_sent:
             return jsonify({"msg": "Failed to send verification email. Please try again."}), 500
         
+        print("Otp is",otp)
         return jsonify({
             "msg": "OTP sent to your email. Please verify to complete registration.",
             "email": email
