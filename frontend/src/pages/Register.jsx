@@ -146,9 +146,16 @@ Send and receive notifications,
               <button type="submit" disabled={isLoading}>
                 Create an account
               </button>
+              
             </form>
-            
+            <div class="contentt mobile-only">
+              <p class="center-text">
+                have an account?
+                <a class="btnn" id="sign-up-btn" href="/login" data-discover="true">login</a>
+              </p>
+            </div>
           </div>
+          
         </LoadingIndicator>
       </div>
     </div>
