@@ -49,7 +49,7 @@ def create_app(config_class=None):
     
     with app.app_context():
         # Check and run migrations before creating tables
-        migration_needed = True
+        migration_needed = False
         
         if migration_needed:
             # If migration was needed, recreate all tables
