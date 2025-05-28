@@ -17,10 +17,9 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check for message passed from register page or previous navigation
-  const from = location.state?.from || "/solutions/tasks"; // Default redirect to tasks
+ 
+  const from = location.state?.from || "/solutions/tasks"; 
 
-  // Check loading state from the API
   useEffect(() => {
     const checkLoadingState = () => {
       setIsLoading(loadingState.isLoading('auth-login'));
@@ -60,7 +59,7 @@ export default function Login() {
 
   return (
     <div className="login-split-page">
-      <div className="login-left">
+      <div className="login-left hide-in-mobile">
         <div className="content">
           <h2>Welcome Back!</h2>
           <p>
@@ -116,7 +115,12 @@ export default function Login() {
             <p className="login-link-text">
               <Link to="/forgot-password">Forgot Password?</Link>
             </p>
-            
+            <div class="contentt mobile-only">
+              <p class="center-text">
+                Don't have an account?
+                <a class="btnn" id="sign-up-btn" href="/register" data-discover="true">Sign up</a>
+              </p>
+            </div>
           </div>
         </LoadingIndicator>
       </div>
