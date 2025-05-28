@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import LoadingIndicator from '../components/LoadingIndicator';
 import '../styles/register.css';
 import { authAPI, loadingState } from '../utils/apiCalls/auth';
+import registerSvg from '../assets/register.svg'; // Adjust the path as necessary
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -56,12 +57,8 @@ export default function Register() {
         formData.password
       );
 
-      console.log('Registration response:', response);
-
       if (response.msg && response.msg.includes('OTP sent')) {
         setSuccess('Registration successful! Redirecting to email verification...');
-        
-        // Redirect to OTP verification page with registration data
         setTimeout(() => {
           navigate('/verify-otp', {
             state: {
@@ -78,71 +75,82 @@ export default function Register() {
   };
 
   return (
-    <div className="page">
-      <LoadingIndicator loading={isLoading}>
-        <div className="register-container">
-          <h1 className="register-title">Create an account</h1>
+    <div className="register-split-page">
+      <div className="register-left">
+        <div className="content">
+  <h2>New here?</h2>
+  <p>
+    Create and manage projects, 
+Collaborate with team members,
+Track tasks and progress,
+Send and receive notifications,
+  </p>
+  <Link to="/login" id="login-btn">
+  <button className="btn transparent">login</button>
+</Link>
 
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
-
-          <form className="register-form" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="register-name">Name:</label>
-              <input
-                type="text"
-                id="register-name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="register-email">Email:</label>
-              <input
-                type="email"
-                id="register-email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="register-password">Password:</label>
-              <input
-                type="password"
-                id="register-password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="register-confirm-password">Confirm Password:</label>
-              <input
-                type="password"
-                id="register-confirm-password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <button type="submit" disabled={isLoading}>
-              Create an account
-            </button>
-          </form>
-          <p className="register-link-text">
-            Already have an account?{" "}
-            <Link to="/login" id="login-link">
-              Login
-            </Link>
-          </p>
-        </div>
-      </LoadingIndicator>
+</div>
+        <img src={registerSvg} alt="Register illustration" className="register-svg-img" />
+      </div>
+      <div className="register-right">
+        <LoadingIndicator loading={isLoading}>
+          <div className="register-container">
+            <h1 className="register-title">Create an account</h1>
+            {error && <div className="error-message">{error}</div>}
+            {success && <div className="success-message">{success}</div>}
+            <form className="register-form" onSubmit={handleSubmit}>
+              <div>
+                <label htmlFor="register-name">Name:</label>
+                <input
+                  type="text"
+                  id="register-name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="register-email">Email:</label>
+                <input
+                  type="email"
+                  id="register-email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="register-password">Password:</label>
+                <input
+                  type="password"
+                  id="register-password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="register-confirm-password">Confirm Password:</label>
+                <input
+                  type="password"
+                  id="register-confirm-password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <button type="submit" disabled={isLoading}>
+                Create an account
+              </button>
+            </form>
+            
+          </div>
+        </LoadingIndicator>
+      </div>
     </div>
   );
 }
