@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { authAPI } from '../utils/apiCalls/auth';
 
-const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
+const GoogleLoginButton = ({ onSuccess, onError, disabled = false, mode = 'login' }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [clientId, setClientId] = useState('');
 
@@ -32,7 +32,10 @@ const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      // Only remove if script exists and is in the document
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, [clientId]);
 
@@ -50,17 +53,22 @@ const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
   const handleGoogleResponse = async (response) => {
     setIsLoading(true);
     try {
-      const result = await authAPI.googleLogin(response.credential);
+      let result;
+      if (mode === 'register') {
+        result = await authAPI.googleRegister(response.credential);
+      } else {
+        result = await authAPI.googleLogin(response.credential);
+      }
       onSuccess(result);
     } catch (error) {
-      console.error('Google login failed:', error);
-      onError(error.message || 'Google login failed');
+      console.error('Google authentication failed:', error);
+      onError(error.message || `Google ${mode} failed`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleAuth = () => {
     if (window.google && !disabled && !isLoading) {
       window.google.accounts.id.prompt();
     }
@@ -70,10 +78,14 @@ const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
     return null;
   }
 
+  const buttonText = mode === 'register' 
+    ? (isLoading ? 'Creating account...' : 'Continue with Google') 
+    : (isLoading ? 'Signing in...' : 'Continue with Google');
+
   return (
     <button
       type="button"
-      onClick={handleGoogleLogin}
+      onClick={handleGoogleAuth}
       disabled={disabled || isLoading}
       className="google-login-btn"
       style={{
@@ -111,7 +123,7 @@ const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
           d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
         />
       </svg>
-      {isLoading ? 'Signing in...' : 'Continue with Google'}
+      {buttonText}
     </button>
   );
 };

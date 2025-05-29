@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 import LoadingIndicator from '../components/LoadingIndicator';
 import '../styles/register.css';
-import { authAPI, loadingState } from '../utils/apiCalls/auth';
+import { authAPI, loadingState, saveAuthData } from '../utils/apiCalls/auth';
 import registerSvg from '../assets/register.svg'; // Adjust the path as necessary
 
 export default function Register() {
@@ -20,7 +21,7 @@ export default function Register() {
   // Check loading state from the API
   useEffect(() => {
     const checkLoadingState = () => {
-      setIsLoading(loadingState.isLoading('auth-register'));
+      setIsLoading(loadingState.isLoading('auth-register') || loadingState.isLoading('auth-google-register'));
     };
 
     // Set initial state
@@ -74,22 +75,30 @@ export default function Register() {
     }
   };
 
+  const handleGoogleSuccess = (response) => {
+    saveAuthData(response.access_token, response.refresh_token, response.user);
+    navigate('/solutions/tasks', { replace: true });
+  };
+
+  const handleGoogleError = (error) => {
+    setError(error || 'Google registration failed. Please try again.');
+  };
+
   return (
     <div className="register-split-page">
       <div className="register-left">
         <div className="content">
-  <h2>New here?</h2>
-  <p>
-    Create and manage projects, 
-Collaborate with team members,
-Track tasks and progress,
-Send and receive notifications,
-  </p>
-  <Link to="/login" id="login-btn">
-  <button className="btn transparent">login</button>
-</Link>
-
-</div>
+          <h2>New here?</h2>
+          <p>
+            Create and manage projects, 
+            Collaborate with team members,
+            Track tasks and progress,
+            Send and receive notifications,
+          </p>
+          <Link to="/login" id="login-btn">
+            <button className="btn transparent">login</button>
+          </Link>
+        </div>
         <img src={registerSvg} alt="Register illustration" className="register-svg-img" />
       </div>
       <div className="register-right">
@@ -98,6 +107,19 @@ Send and receive notifications,
             <h1 className="register-title">Create an account</h1>
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
+            
+            <div className="google-auth-section">
+              <GoogleLoginButton
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                disabled={isLoading}
+                mode="register"
+              />
+              <div className="divider">
+                <span>OR</span>
+              </div>
+            </div>
+
             <form className="register-form" onSubmit={handleSubmit}>
               <div>
                 <label htmlFor="register-name">Name:</label>
@@ -146,16 +168,14 @@ Send and receive notifications,
               <button type="submit" disabled={isLoading}>
                 Create an account
               </button>
-              
             </form>
-            <div class="contentt mobile-only">
-              <p class="center-text">
+            <div className="contentt mobile-only">
+              <p className="center-text">
                 have an account?
-                <a class="btnn" id="sign-up-btn" href="/login" data-discover="true">login</a>
+                <a className="btnn" id="sign-up-btn" href="/login" data-discover="true">login</a>
               </p>
             </div>
           </div>
-          
         </LoadingIndicator>
       </div>
     </div>

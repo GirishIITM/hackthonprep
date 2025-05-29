@@ -24,9 +24,9 @@ def create_app(config_class=None):
     
     CORS(app, 
          origins="*", 
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization"],  
-         supports_credentials=True)  
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+         allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials", "X-Requested-With"],  
+         supports_credentials=False)  
     
     db.init_app(app)
     jwt.init_app(app)

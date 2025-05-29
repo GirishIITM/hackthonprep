@@ -2,6 +2,7 @@ import json
 from google.auth.transport import requests
 from google.oauth2 import id_token
 import os
+from flask import current_app
 
 def verify_google_token(token):
     """
@@ -12,11 +13,10 @@ def verify_google_token(token):
         dict: User information if valid, None if invalid
     """
     try:
-        # Load client secrets
-        with open('client_secrets.json', 'r') as f:
-            client_secrets = json.load(f)
-        
-        client_id = client_secrets['installed']['client_id']
+        client_id = current_app.config['GOOGLE_CLIENT_ID']
+        if not client_id:
+            print("Google Client ID not configured in the application.")
+            return None
         
         # Verify the token
         idinfo = id_token.verify_oauth2_token(
@@ -48,11 +48,13 @@ def verify_google_token(token):
         return None
 
 def get_google_client_id():
-    """Get Google OAuth client ID from secrets file"""
+    """Get Google OAuth client ID from app config"""
     try:
-        with open('client_secrets.json', 'r') as f:
-            client_secrets = json.load(f)
-        return client_secrets['installed']['client_id']
+        client_id = current_app.config.get('GOOGLE_CLIENT_ID')
+        if not client_id:
+            print("Google Client ID not found in app configuration.")
+            return None
+        return client_id
     except Exception as e:
-        print(f"Error reading client secrets: {e}")
+        print(f"Error reading client ID from app config: {e}")
         return None
