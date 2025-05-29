@@ -1,12 +1,7 @@
 import base64
 from email.message import EmailMessage
 from .gmail import get_service, get_gmail_credentials
-import re
-
-def validate_email_address(email):
-    """Validate email format"""
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(pattern, email) is not None
+from .validation import validate_email
 
 def send_email(subject, recipients, text_body, html_body):
     """
@@ -23,7 +18,7 @@ def send_email(subject, recipients, text_body, html_body):
     """
     try:
         # Validate all email addresses first
-        invalid_emails = [email for email in recipients if not validate_email_address(email)]
+        invalid_emails = [email for email in recipients if not validate_email(email)]
         if invalid_emails:
             print(f"Invalid email addresses found: {invalid_emails}")
             return False

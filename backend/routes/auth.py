@@ -1,10 +1,10 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import (
-    create_access_token,
-    create_refresh_token,
     jwt_required,
     get_jwt_identity,
     get_jwt,
+    create_access_token,
+    create_refresh_token
 )
 from datetime import datetime, timezone
 from models import User, TokenBlocklist, OTPVerification, PasswordResetToken
@@ -17,7 +17,8 @@ from utils.email_templates import (
 )
 from utils.google_auth import verify_google_token, get_google_client_id as get_google_client_id_util
 from utils.cloudinary_upload import upload_profile_image, delete_cloudinary_image
-import re
+from utils.validation import validate_email, validate_password, validate_required_fields, sanitize_email, sanitize_string
+from utils.auth_helpers import create_user_tokens, format_user_response, validate_login_data, validate_registration_data
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -25,31 +26,20 @@ auth_bp = Blueprint("auth", __name__)
 def register():
     try:
         data = request.get_json()
-        if not data:
-            return jsonify({"msg": "No data provided"}), 400
-            
-        required_fields = ["username", "email", "password"]
-        for field in required_fields:
-            if field not in data or not data[field].strip():
-                return jsonify({"msg": f"{field.capitalize()} is required"}), 400
+        is_valid, msg = validate_registration_data(data)
+        if not is_valid:
+            return jsonify({"msg": msg}), 400
         
-        username = data["username"].strip()
-        email = data["email"].strip().lower()
-        
-        # Validate email format
-        if not validate_email(email):
-            return jsonify({"msg": "Invalid email format"}), 400
+        username = sanitize_string(data["username"])
+        email = sanitize_email(data["email"])
         
         if User.query.filter_by(username=username).first():
             return jsonify({"msg": "Username already exists"}), 400
         
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
+        if User.query.filter_by(email=email).first():
             return jsonify({"msg": "Email already registered"}), 400
         
-        
         otp = OTPVerification.create_otp(email)
-
         
         subject = "Verify Your Email - OTP"
         html_body = get_otp_email_template(username, otp)
@@ -59,7 +49,7 @@ def register():
         if not email_sent:
             return jsonify({"msg": "Failed to send verification email. Please try again."}), 500
         
-        print("Otp is",otp)
+        print("OTP is", otp)
         return jsonify({
             "msg": "OTP sent to your email. Please verify to complete registration.",
             "email": email
@@ -73,17 +63,13 @@ def register():
 def verify_otp():
     try:
         data = request.get_json()
-        if not data:
-            return jsonify({"msg": "No data provided"}), 400
+        is_valid, msg = validate_required_fields(data, ["email", "otp", "username", "password"])
+        if not is_valid:
+            return jsonify({"msg": msg}), 400
         
-        required_fields = ["email", "otp", "username", "password"]
-        for field in required_fields:
-            if field not in data or not data[field]:
-                return jsonify({"msg": f"{field.capitalize()} is required"}), 400
-        
-        email = data["email"].strip().lower()
-        otp = data["otp"].strip()
-        username = data["username"].strip()
+        email = sanitize_email(data["email"])
+        otp = sanitize_string(data["otp"])
+        username = sanitize_string(data["username"])
         password = data["password"]
         
         verification = OTPVerification.query.filter_by(
@@ -94,7 +80,6 @@ def verify_otp():
         if not verification:
             return jsonify({"msg": "No valid OTP found for this email"}), 400
         
-        # Use the new is_expired method
         if verification.is_expired():
             return jsonify({"msg": "OTP has expired. Please request a new one."}), 400
         
@@ -103,7 +88,6 @@ def verify_otp():
             db.session.commit()
             return jsonify({"msg": "Too many failed attempts. Please request a new OTP."}), 400
         
-        # Verify OTP
         if verification.otp != otp:
             verification.attempts += 1
             db.session.commit()
@@ -147,20 +131,17 @@ def resend_otp():
         if not data or "email" not in data:
             return jsonify({"msg": "Email is required"}), 400
         
-        email = data["email"].strip().lower()
+        email = sanitize_email(data["email"])
         username = data.get("username", "User")
         
         if not validate_email(email):
             return jsonify({"msg": "Invalid email format"}), 400
         
-        # Check if email is already registered
         if User.query.filter_by(email=email).first():
             return jsonify({"msg": "Email already registered"}), 400
         
-        # Generate new OTP
         otp = OTPVerification.create_otp(email)
         
-        # Send OTP email
         subject = "Verify Your Email - New OTP"
         html_body = get_otp_email_template(username, otp)
         text_body = f"Your new OTP for email verification is: {otp}. Valid for 10 minutes."
@@ -179,32 +160,27 @@ def resend_otp():
 def login():
     try:
         data = request.get_json()
-        if not data or not all(k in data for k in ("username", "password")):
-            return jsonify({"msg": "Username and password are required"}), 400
+        is_valid, msg = validate_login_data(data)
+        if not is_valid:
+            return jsonify({"msg": msg}), 400
         
-        username = data["username"].strip()
-        email = data["email"].strip()
+        username = sanitize_string(data["username"])
+        email = data.get("email", username)
         password = data["password"]
         
         user = User.query.filter_by(username=username).first()
         if not user:
             user = User.query.filter_by(email=email).first()
-        print(user)
+        
         if not user or not user.check_password(password):
             return jsonify({"msg": "Invalid credentials"}), 401
         
-        
-        access_token = create_access_token(identity=str(user.id))
-        refresh_token = create_refresh_token(identity=str(user.id))
+        access_token, refresh_token = create_user_tokens(user.id)
         
         return jsonify({
             "access_token": access_token, 
             "refresh_token": refresh_token,
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email
-            }
+            "user": format_user_response(user)
         })
         
     except Exception as e:
@@ -218,7 +194,7 @@ def forgot_password():
         if not data or "email" not in data:
             return jsonify({"msg": "Email is required"}), 400
         
-        email = data["email"].strip().lower()
+        email = sanitize_email(data["email"])
         
         if not validate_email(email):
             return jsonify({"msg": "Invalid email format"}), 400
@@ -250,15 +226,11 @@ def forgot_password():
 def reset_password():
     try:
         data = request.get_json()
-        if not data:
-            return jsonify({"msg": "No data provided"}), 400
+        is_valid, msg = validate_required_fields(data, ["token", "new_password"])
+        if not is_valid:
+            return jsonify({"msg": msg}), 400
         
-        required_fields = ["token", "new_password"]
-        for field in required_fields:
-            if field not in data or not data[field]:
-                return jsonify({"msg": f"{field.replace('_', ' ').title()} is required"}), 400
-        
-        token = data["token"].strip()
+        token = sanitize_string(data["token"])
         new_password = data["new_password"]
         
         # Validate password strength
@@ -266,7 +238,6 @@ def reset_password():
         if not is_valid:
             return jsonify({"msg": msg}), 400
         
-        # Find the reset token
         reset_token = PasswordResetToken.query.filter_by(
             token=token,
             is_used=False
@@ -275,16 +246,13 @@ def reset_password():
         if not reset_token:
             return jsonify({"msg": "Invalid or expired reset token"}), 400
         
-        # Use the new is_expired method
         if reset_token.is_expired():
             return jsonify({"msg": "Reset token has expired. Please request a new one."}), 400
         
-        # Get the user
         user = User.query.get(reset_token.user_id)
         if not user:
             return jsonify({"msg": "User not found"}), 404
         
-        # Update password
         user.set_password(new_password)
         reset_token.is_used = True
         
@@ -303,7 +271,7 @@ def refresh():
     try:
         identity = get_jwt_identity()
         access_token = create_access_token(identity=identity)
-        return jsonify(access_token=access_token)
+        return jsonify({"access_token": access_token}), 200
     except Exception as e:
         print(f"Token refresh error: {e}")
         return jsonify({"msg": "An error occurred while refreshing token"}), 500
@@ -321,6 +289,7 @@ def logout():
         return jsonify({"msg": f"{ttype.capitalize()} token revoked"}), 200
     except Exception as e:
         print(f"Logout error: {e}")
+        db.session.rollback()
         return jsonify({"msg": "An error occurred during logout"}), 500
 
 @auth_bp.route("/upload-profile-image", methods=["POST"])
@@ -565,24 +534,3 @@ def get_google_client_id():
     except Exception as e:
         print(f"Get Google client ID error: {e}")
         return jsonify({"msg": "An error occurred while fetching Google client ID"}), 500
-
-def validate_email(email):
-    """Validate email format"""
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(pattern, email) is not None
-
-def validate_password(password):
-    """Validate password strength"""
-    if len(password) < 8:
-        return False, "Password must be at least 8 characters long"
-    
-    if not re.search(r'[A-Z]', password):
-        return False, "Password must contain at least one uppercase letter"
-    
-    if not re.search(r'[a-z]', password):
-        return False, "Password must contain at least one lowercase letter"
-    
-    if not re.search(r'\d', password):
-        return False, "Password must contain at least one number"
-    
-    return True, "Password is valid"

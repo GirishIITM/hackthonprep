@@ -40,7 +40,7 @@ export default function Login() {
     e.preventDefault();
     setError('');
     try {
-      const response = await authAPI.login(formData.email, formData.email, formData.password);
+      const response = await authAPI.login(formData.email, formData.password);
       saveAuthData(response.access_token, response.refresh_token, response.user);
       navigate(from, { replace: true });
     } catch (error) {
@@ -115,10 +115,10 @@ export default function Login() {
             <p className="login-link-text">
               <Link to="/forgot-password">Forgot Password?</Link>
             </p>
-            <div class="contentt mobile-only">
-              <p class="center-text">
+            <div className="contentt mobile-only">
+              <p className="center-text">
                 Don't have an account?
-                <a class="btnn" id="sign-up-btn" href="/register" data-discover="true">Sign up</a>
+                <Link className="btnn" id="sign-up-btn" to="/register">Sign up</Link>
               </p>
             </div>
           </div>

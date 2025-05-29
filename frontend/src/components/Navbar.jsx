@@ -3,18 +3,25 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import "../styles/navbar.css";
-import { clearAuthData, isAuthenticated } from '../utils/apiCalls/auth';
+import { clearAuthData, authState, isAuthenticated } from '../utils/apiCalls/auth';
 
 function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [authenticated, setAuthenticated] = useState(isAuthenticated());
+  const [authenticated, setAuthenticated] = useState(isAuthenticated);
 
-  // Re-check authentication status when location changes
+  // Re-check authentication status when location changes or auth state changes
   useEffect(() => {
+    const unsubscribe = authState.subscribe((isAuth) => {
+      setAuthenticated(isAuth);
+    });
+    
+    // Initial check
     setAuthenticated(isAuthenticated());
-  }, [location]);
+    
+    return unsubscribe;
+  }, []);
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -24,11 +31,17 @@ function Navbar() {
     setMenuOpen(false);
   };
 
-  const handleLogout = () => {
-    clearAuthData();
-    setAuthenticated(false);
-    navigate('/login');
-    closeMenu();
+  const handleLogout = async () => {
+    try {
+      // Call logout API if needed
+      // await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      clearAuthData();
+      closeMenu();
+      navigate('/login', { replace: true });
+    }
   };
 
   // Helper function to check if link is active
