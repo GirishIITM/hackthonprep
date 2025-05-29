@@ -240,15 +240,16 @@ const authAPI = {
 
   /**
    * Login an existing user
+   * @param {string} email - User email
    * @param {string} username - Username
    * @param {string} password - User password
    * @returns {Promise} - Login response with token and user data
    */
-  login: (email ,username, password) => {
+  login: (email, username, password) => {
     return apiRequest(
       "/auth/login",
       "POST",
-      { username, email,password },
+      { username, email, password },
       "auth-login"
     );
   },

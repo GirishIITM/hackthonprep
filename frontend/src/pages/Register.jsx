@@ -4,6 +4,7 @@ import LoadingIndicator from '../components/LoadingIndicator';
 import '../styles/register.css';
 import { authAPI, loadingState } from '../utils/apiCalls/auth';
 import registerSvg from '../assets/register.svg'; // Adjust the path as necessary
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -74,6 +75,18 @@ export default function Register() {
     }
   };
 
+  const handleGoogleSuccess = (response) => {
+    setSuccess('Account created successfully! Redirecting...');
+    setTimeout(() => {
+      saveAuthData(response.access_token, response.refresh_token, response.user);
+      navigate('/solutions/tasks', { replace: true });
+    }, 1500);
+  };
+
+  const handleGoogleError = (error) => {
+    setError(error || 'Google signup failed. Please try again.');
+  };
+
   return (
     <div className="register-split-page">
       <div className="register-left">
@@ -98,6 +111,19 @@ Send and receive notifications,
             <h1 className="register-title">Create an account</h1>
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
+            
+            <div className="google-auth-section">
+              <GoogleLoginButton
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                disabled={isLoading}
+                mode="signup"
+              />
+              <div className="divider">
+                <span>OR</span>
+              </div>
+            </div>
+            
             <form className="register-form" onSubmit={handleSubmit}>
               <div>
                 <label htmlFor="register-name">Name:</label>

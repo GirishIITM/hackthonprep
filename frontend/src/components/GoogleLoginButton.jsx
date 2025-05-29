@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { authAPI } from '../utils/apiCalls/auth';
 
-const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
+const GoogleLoginButton = ({ onSuccess, onError, disabled = false, mode = "login" }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [clientId, setClientId] = useState('');
 
@@ -23,7 +23,7 @@ const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
   useEffect(() => {
     if (!clientId) return;
 
-    // Load Google OAuth script
+    // Load Google Identity Services script
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
@@ -32,7 +32,9 @@ const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, [clientId]);
 
@@ -43,6 +45,7 @@ const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
         callback: handleGoogleResponse,
         auto_select: false,
         cancel_on_tap_outside: true,
+        use_fedcm_for_prompt: false
       });
     }
   };
@@ -51,18 +54,46 @@ const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
     setIsLoading(true);
     try {
       const result = await authAPI.googleLogin(response.credential);
+      
+      // Check if this was a new user signup
+      if (result.is_new_user && mode === "login") {
+        onError?.("Account created successfully! You can now login with your new Google account.");
+        return;
+      }
+      
+      if (!result.is_new_user && mode === "signup") {
+        onError?.("An account with this email already exists. Please login instead.");
+        return;
+      }
+      
       onSuccess(result);
     } catch (error) {
-      console.error('Google login failed:', error);
-      onError(error.message || 'Google login failed');
+      console.error('Google authentication failed:', error);
+      if (error.message.includes("email already")) {
+        onError?.(error.message);
+      } else {
+        onError?.(error.message || 'Google authentication failed');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleLogin = () => {
-    if (window.google && !disabled && !isLoading) {
-      window.google.accounts.id.prompt();
+  const handleGoogleClick = () => {
+    if (window.google && !disabled && !isLoading && clientId) {
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          // Fallback to popup if prompt doesn't work
+          window.google.accounts.id.renderButton(
+            document.createElement('div'),
+            {
+              theme: 'outline',
+              size: 'large',
+              width: '100%'
+            }
+          );
+        }
+      });
     }
   };
 
@@ -70,10 +101,14 @@ const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
     return null;
   }
 
+  const buttonText = mode === "signup" 
+    ? (isLoading ? 'Creating account...' : 'Sign up with Google')
+    : (isLoading ? 'Signing in...' : 'Continue with Google');
+
   return (
     <button
       type="button"
-      onClick={handleGoogleLogin}
+      onClick={handleGoogleClick}
       disabled={disabled || isLoading}
       className="google-login-btn"
       style={{
@@ -91,6 +126,15 @@ const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
         fontWeight: '500',
         cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
         opacity: disabled || isLoading ? 0.6 : 1,
+        transition: 'box-shadow 0.3s ease',
+      }}
+      onMouseOver={(e) => {
+        if (!disabled && !isLoading) {
+          e.target.style.boxShadow = '0 1px 2px 0 rgba(60,64,67,.30), 0 2px 6px 2px rgba(60,64,67,.15)';
+        }
+      }}
+      onMouseOut={(e) => {
+        e.target.style.boxShadow = 'none';
       }}
     >
       <svg width="18" height="18" viewBox="0 0 24 24">
@@ -111,7 +155,7 @@ const GoogleLoginButton = ({ onSuccess, onError, disabled = false }) => {
           d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
         />
       </svg>
-      {isLoading ? 'Signing in...' : 'Continue with Google'}
+      {buttonText}
     </button>
   );
 };

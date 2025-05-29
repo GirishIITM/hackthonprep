@@ -430,7 +430,7 @@ def get_profile():
 
 @auth_bp.route("/google-login", methods=["POST"])
 def google_login():
-    """Handle Google OAuth login"""
+    """Handle Google OAuth login and signup"""
     try:
         data = request.get_json()
         if not data or "token" not in data:
@@ -447,8 +447,48 @@ def google_login():
         if not google_info.get('email_verified', False):
             return jsonify({"msg": "Google email not verified"}), 401
         
-        # Find or create user
-        user = User.find_or_create_google_user(google_info)
+        # Check if user exists by email (regardless of how they signed up)
+        existing_user = User.query.filter_by(email=google_info['email']).first()
+        
+        if existing_user:
+            # User exists - handle login
+            if existing_user.google_id and existing_user.google_id != google_info['google_id']:
+                return jsonify({"msg": "This email is associated with a different Google account"}), 400
+            
+            # Link Google account if not already linked
+            if not existing_user.google_id:
+                existing_user.google_id = google_info['google_id']
+                # Update profile picture if user doesn't have one
+                if not existing_user.profile_picture and google_info.get('picture'):
+                    existing_user.profile_picture = google_info['picture']
+                db.session.commit()
+            
+            user = existing_user
+        else:
+            # New user - handle signup
+            # Generate unique username from Google info
+            base_username = google_info.get('given_name', google_info['email'].split('@')[0])
+            username = base_username
+            counter = 1
+            while User.query.filter_by(username=username).first():
+                username = f"{base_username}{counter}"
+                counter += 1
+            
+            # Create new user
+            user = User(
+                username=username,
+                email=google_info['email'],
+                google_id=google_info['google_id'],
+                profile_picture=google_info.get('picture')
+            )
+            db.session.add(user)
+            db.session.commit()
+            
+            # Send welcome email
+            subject = "Welcome to Our Platform!"
+            html_body = get_welcome_email_template(user.username)
+            text_body = f"Welcome {user.username}! Your account has been successfully created with Google."
+            send_email(subject, [user.email], text_body, html_body)
         
         # Create JWT tokens
         access_token = create_access_token(identity=str(user.id))
@@ -462,12 +502,14 @@ def google_login():
                 "username": user.username,
                 "email": user.email,
                 "profile_picture": user.profile_picture
-            }
+            },
+            "is_new_user": existing_user is None
         }), 200
         
     except Exception as e:
         print(f"Google login error: {e}")
-        return jsonify({"msg": "An error occurred during Google login"}), 500
+        db.session.rollback()
+        return jsonify({"msg": "An error occurred during Google authentication"}), 500
 
 @auth_bp.route("/google-client-id", methods=["GET"])
 def get_client_id():
@@ -483,23 +525,3 @@ def get_client_id():
         print(f"Error getting client ID: {e}")
         return jsonify({"msg": "An error occurred"}), 500
 
-def validate_email(email):
-    """Validate email format"""
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(pattern, email) is not None
-
-def validate_password(password):
-    """Validate password strength"""
-    if len(password) < 8:
-        return False, "Password must be at least 8 characters long"
-    
-    if not re.search(r'[A-Z]', password):
-        return False, "Password must contain at least one uppercase letter"
-    
-    if not re.search(r'[a-z]', password):
-        return False, "Password must contain at least one lowercase letter"
-    
-    if not re.search(r'\d', password):
-        return False, "Password must contain at least one number"
-    
-    return True, "Password is valid"

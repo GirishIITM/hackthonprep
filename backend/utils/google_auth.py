@@ -12,11 +12,17 @@ def verify_google_token(token):
         dict: User information if valid, None if invalid
     """
     try:
-        # Load client secrets
-        with open('client_secrets.json', 'r') as f:
+        # Load OAuth client secrets (different from Gmail API secrets)
+        oauth_secrets_path = 'oauth_client_secrets.json'
+        if not os.path.exists(oauth_secrets_path):
+            print(f"OAuth client secrets file not found at {oauth_secrets_path}")
+            return None
+            
+        with open(oauth_secrets_path, 'r') as f:
             client_secrets = json.load(f)
         
-        client_id = client_secrets['installed']['client_id']
+        # For OAuth, the structure is different
+        client_id = client_secrets['web']['client_id']
         
         # Verify the token
         idinfo = id_token.verify_oauth2_token(
@@ -48,11 +54,16 @@ def verify_google_token(token):
         return None
 
 def get_google_client_id():
-    """Get Google OAuth client ID from secrets file"""
+    """Get Google OAuth client ID from OAuth secrets file"""
     try:
-        with open('client_secrets.json', 'r') as f:
+        oauth_secrets_path = 'oauth_client_secrets.json'
+        if not os.path.exists(oauth_secrets_path):
+            print(f"OAuth client secrets file not found at {oauth_secrets_path}")
+            return None
+            
+        with open(oauth_secrets_path, 'r') as f:
             client_secrets = json.load(f)
-        return client_secrets['installed']['client_id']
+        return client_secrets['web']['client_id']
     except Exception as e:
-        print(f"Error reading client secrets: {e}")
+        print(f"Error reading OAuth client secrets: {e}")
         return None

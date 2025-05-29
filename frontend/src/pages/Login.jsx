@@ -82,6 +82,7 @@ export default function Login() {
                 onSuccess={handleGoogleSuccess}
                 onError={handleGoogleError}
                 disabled={isLoading}
+                mode="login"
               />
               <div className="divider">
                 <span>OR</span>
