@@ -60,6 +60,7 @@ async function testLogin() {
   console.log('\n🔹 Testing user login...');
   const response = await api.post('/auth/login', {
     username: testUser.username,
+    email: testUser.email,
     password: testUser.password
   });
   accessToken = response.data.access_token;

@@ -156,6 +156,30 @@ const handleTokenRefresh = async () => {
 };
 
 /**
+ * Authentication state management
+ */
+const authState = {
+  listeners: new Set(),
+  isAuthenticated: false,
+
+  subscribe(callback) {
+    this.listeners.add(callback);
+    return () => this.listeners.delete(callback);
+  },
+
+  notify() {
+    this.listeners.forEach((callback) => callback(this.isAuthenticated));
+  },
+
+  setAuthenticated(value) {
+    if (this.isAuthenticated !== value) {
+      this.isAuthenticated = value;
+      this.notify();
+    }
+  },
+};
+
+/**
  * Clear authentication data from local storage
  * @returns {void}
  */
@@ -165,6 +189,7 @@ const clearAuthData = () => {
   localStorage.removeItem("user");
   loadingState.reset();
   loadingState.setLoading("auth-refresh", false);
+  authState.setAuthenticated(false);
 };
 
 /**
@@ -183,7 +208,13 @@ const getCurrentUser = () => {
 const isAuthenticated = () => {
   const accessToken = localStorage.getItem("access_token");
   const refreshToken = localStorage.getItem("refresh_token");
-  return !!(accessToken && refreshToken);
+  const isAuth = !!(
+    accessToken &&
+    refreshToken &&
+    !isTokenExpired(refreshToken)
+  );
+  authState.setAuthenticated(isAuth);
+  return isAuth;
 };
 
 /**
@@ -240,15 +271,15 @@ const authAPI = {
 
   /**
    * Login an existing user
-   * @param {string} username - Username
+   * @param {string} email - User email
    * @param {string} password - User password
    * @returns {Promise} - Login response with token and user data
    */
-  login: (email ,username, password) => {
+  login: (email, password) => {
     return apiRequest(
       "/auth/login",
       "POST",
-      { username, email,password },
+      { username: email, email, password },
       "auth-login"
     );
   },
@@ -372,42 +403,39 @@ const saveAuthData = (accessToken, refreshToken, user) => {
   localStorage.setItem("access_token", accessToken);
   localStorage.setItem("refresh_token", refreshToken);
   localStorage.setItem("user", JSON.stringify(user));
-  loadingState.reset();
-  loadingState.setLoading("auth-refresh", false);
-  loadingState.setLoading("auth-login", false);
-  loadingState.setLoading("auth-register", false);
-  loadingState.setLoading("auth-verify-otp", false);
-  loadingState.setLoading("auth-resend-otp", false);
-  loadingState.setLoading("auth-forgot-password", false);
-  loadingState.setLoading("auth-reset-password", false);
-  loadingState.setLoading("auth-logout", false);
-  loadingState.setLoading("auth-update-settings", false);
+  resetLoadingState();
+  authState.setAuthenticated(true);
 };
 
 // Reset loading state utility
 const resetLoadingState = () => {
+  const loadingKeys = [
+    "auth-refresh",
+    "auth-login",
+    "auth-google-login",
+    "auth-google-register",
+    "auth-google-client-id",
+    "auth-register",
+    "auth-verify-otp",
+    "auth-resend-otp",
+    "auth-forgot-password",
+    "auth-reset-password",
+    "auth-logout",
+    "auth-update-settings",
+  ];
+
   loadingState.reset();
-  loadingState.setLoading("auth-refresh", false);
-  loadingState.setLoading("auth-login", false);
-  loadingState.setLoading("auth-google-login", false);
-  loadingState.setLoading("auth-google-register", false);
-  loadingState.setLoading("auth-google-client-id", false);
-  loadingState.setLoading("auth-register", false);
-  loadingState.setLoading("auth-verify-otp", false);
-  loadingState.setLoading("auth-resend-otp", false);
-  loadingState.setLoading("auth-forgot-password", false);
-  loadingState.setLoading("auth-reset-password", false);
-  loadingState.setLoading("auth-logout", false);
-  loadingState.setLoading("auth-update-settings", false);
+  loadingKeys.forEach((key) => loadingState.setLoading(key, false));
 };
 
 export {
   authAPI,
+  authState,
   clearAuthData,
   getCurrentUser,
   isAuthenticated,
   loadingState,
   resetLoadingState,
-  saveAuthData
+  saveAuthData,
 };
 

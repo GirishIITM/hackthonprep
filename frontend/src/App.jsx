@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
 import Navbar from './components/Navbar';
@@ -14,9 +15,34 @@ import ResetPassword from './pages/ResetPassword';
 import Projects from './pages/solutions/Projects';
 import Tasks from './pages/solutions/Tasks';
 import VerifyOTP from './pages/VerifyOTP';
-import { isAuthenticated } from './utils/apiCalls/auth';
+import { authState, isAuthenticated } from './utils/apiCalls/auth';
 
 function App() {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Subscribe to authentication state changes
+    const unsubscribe = authState.subscribe((isAuth) => {
+      setAuthenticated(isAuth);
+    });
+    
+    // Initial authentication check
+    const checkAuth = () => {
+      const isAuth = isAuthenticated();
+      setAuthenticated(isAuth);
+      setIsLoading(false);
+    };
+    
+    checkAuth();
+    
+    return unsubscribe;
+  }, []);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <BrowserRouter>
       <div className="app-container">
@@ -26,7 +52,7 @@ function App() {
             <Route path='/register' element={
               <>
                 <Navbar />
-                {isAuthenticated() ? <Navigate to="/solutions/tasks" replace /> : <Register />}
+                {authenticated ? <Navigate to="/solutions/tasks" replace /> : <Register />}
               </>
             } />
             
@@ -34,14 +60,14 @@ function App() {
             <Route path='/verify-otp' element={
               <>
                 <Navbar />
-                {isAuthenticated() ? <Navigate to="/solutions/tasks" replace /> : <VerifyOTP />}
+                {authenticated ? <Navigate to="/solutions/tasks" replace /> : <VerifyOTP />}
               </>
             } />
             
             <Route path='/login' element={
               <>
                 <Navbar />
-                {isAuthenticated() ? <Navigate to="/solutions/tasks" replace /> : <Login />}
+                {authenticated ? <Navigate to="/solutions/tasks" replace /> : <Login />}
               </>
             } />
             <Route path='/about' element={
@@ -56,6 +82,14 @@ function App() {
               <>
                 <Navbar />
                 <ResetPassword />
+              </>
+            } />
+
+            {/* Forgot password route */}
+            <Route path="/forgot-password" element={
+              <>
+                <Navbar />
+                <ForgotPassword />
               </>
             } />
 
@@ -91,13 +125,6 @@ function App() {
               </PrivateRoute>
             } />
 
-            {/* Forgot password route */}
-            <Route path="/forgot-password" element={
-              <>
-                <Navbar />
-                <ForgotPassword />
-              </>
-            } />
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

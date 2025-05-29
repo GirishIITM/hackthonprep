@@ -3,17 +3,26 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import "../styles/navSidebar.css";
-import { clearAuthData, getCurrentUser } from "../utils/apiCalls/auth";
+import { clearAuthData, authState, getCurrentUser } from "../utils/apiCalls/auth";
 import Sidebar from './Sidebar';
 
 const NavSidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [user, setUser] = useState(getCurrentUser);
   const navigate = useNavigate();
   const profileRef = useRef(null);
   const searchInputRef = useRef(null);
-  const user = getCurrentUser();
+
+  // Listen for authentication state changes
+  useEffect(() => {
+    const unsubscribe = authState.subscribe(() => {
+      setUser(getCurrentUser());
+    });
+    
+    return unsubscribe;
+  }, []);
 
   // Close profile menu when clicking outside
   useEffect(() => {
@@ -41,10 +50,17 @@ const NavSidebar = ({ children }) => {
     setProfileMenuOpen(!profileMenuOpen);
   };
 
-  const handleLogout = () => {
-    clearAuthData();
-    navigate('/login');
-    setProfileMenuOpen(false);
+  const handleLogout = async () => {
+    try {
+      // Call logout API if needed
+      // await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      clearAuthData();
+      setProfileMenuOpen(false);
+      navigate('/login', { replace: true });
+    }
   };
 
   const handleSearch = (e) => {
