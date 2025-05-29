@@ -34,6 +34,27 @@ class User(db.Model):
         return bcrypt.check_password_hash(self.password_hash, password)
     
     @staticmethod
+    def create_google_user(google_info):
+        """Create a new user from Google OAuth info"""
+        # Ensure username is unique
+        username = google_info.get('given_name', google_info['email'].split('@')[0])
+        base_username = username
+        counter = 1
+        while User.query.filter_by(username=username).first():
+            username = f"{base_username}{counter}"
+            counter += 1
+        
+        user = User(
+            username=username,
+            email=google_info['email'],
+            google_id=google_info['google_id'],
+            profile_picture=google_info.get('picture')
+        )
+        db.session.add(user)
+        db.session.commit()
+        return user
+
+    @staticmethod
     def find_or_create_google_user(google_info):
         """Find existing user by Google ID or email, or create new user"""
         # First try to find by Google ID
@@ -51,21 +72,5 @@ class User(db.Model):
             db.session.commit()
             return user
         
-        # Create new user
-        username = google_info.get('given_name', google_info['email'].split('@')[0])
-        # Ensure username is unique
-        base_username = username
-        counter = 1
-        while User.query.filter_by(username=username).first():
-            username = f"{base_username}{counter}"
-            counter += 1
-        
-        user = User(
-            username=username,
-            email=google_info['email'],
-            google_id=google_info['google_id'],
-            profile_picture=google_info.get('picture')
-        )
-        db.session.add(user)
-        db.session.commit()
-        return user
+        # Create new user using the create_google_user method
+        return User.create_google_user(google_info)

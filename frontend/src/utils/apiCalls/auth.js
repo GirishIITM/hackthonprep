@@ -320,6 +320,20 @@ const authAPI = {
   },
 
   /**
+   * Register with Google OAuth
+   * @param {string} googleToken - Google OAuth token
+   * @returns {Promise} - Google register response
+   */
+  googleRegister: (googleToken) => {
+    return apiRequest(
+      "/auth/google-register",
+      "POST",
+      { token: googleToken },
+      "auth-google-register"
+    );
+  },
+
+  /**
    * Login with Google OAuth
    * @param {string} googleToken - Google OAuth token
    * @returns {Promise} - Google login response
@@ -376,6 +390,7 @@ const resetLoadingState = () => {
   loadingState.setLoading("auth-refresh", false);
   loadingState.setLoading("auth-login", false);
   loadingState.setLoading("auth-google-login", false);
+  loadingState.setLoading("auth-google-register", false);
   loadingState.setLoading("auth-google-client-id", false);
   loadingState.setLoading("auth-register", false);
   loadingState.setLoading("auth-verify-otp", false);

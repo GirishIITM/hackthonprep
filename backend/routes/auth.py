@@ -15,7 +15,7 @@ from utils.email_templates import (
     get_password_reset_email_template,
     get_welcome_email_template
 )
-from utils.google_auth import verify_google_token, get_google_client_id
+from utils.google_auth import verify_google_token, get_google_client_id as get_google_client_id_util
 from utils.cloudinary_upload import upload_profile_image, delete_cloudinary_image
 import re
 
@@ -428,6 +428,64 @@ def get_profile():
         print(f"Get profile error: {e}")
         return jsonify({"msg": "An error occurred while fetching profile"}), 500
 
+@auth_bp.route("/google-register", methods=["POST"])
+def google_register():
+    """Handle Google OAuth registration"""
+    try:
+        data = request.get_json()
+        if not data or "token" not in data:
+            return jsonify({"msg": "Google token is required"}), 400
+        
+        google_token = data["token"]
+        
+        # Verify Google token
+        google_info = verify_google_token(google_token)
+        if not google_info:
+            return jsonify({"msg": "Invalid Google token"}), 401
+        
+        # Check if email is verified
+        if not google_info.get('email_verified', False):
+            return jsonify({"msg": "Google email not verified"}), 401
+        
+        email = google_info.get('email')
+        if not email:
+            return jsonify({"msg": "Email not found in Google token"}), 401
+
+        # Check if user already exists
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return jsonify({
+                "msg": "An account with this email already exists. Please log in instead."
+            }), 409
+            
+        # Create new user with Google info
+        user = User.find_or_create_google_user(google_info)
+        
+        # Create JWT tokens
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
+        
+        # Send welcome email
+        subject = "Welcome to Our Platform!"
+        html_body = get_welcome_email_template(user.username)
+        text_body = f"Welcome {user.username}! Your account has been successfully created."
+        send_email(subject, [user.email], text_body, html_body)
+        
+        return jsonify({
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "profile_picture": user.profile_picture
+            }
+        }), 201
+        
+    except Exception as e:
+        print(f"Google register error: {e}")
+        return jsonify({"msg": "An error occurred during Google registration"}), 500
+
 @auth_bp.route("/google-login", methods=["POST"])
 def google_login():
     """Handle Google OAuth login"""
@@ -447,8 +505,23 @@ def google_login():
         if not google_info.get('email_verified', False):
             return jsonify({"msg": "Google email not verified"}), 401
         
-        # Find or create user
-        user = User.find_or_create_google_user(google_info)
+        email = google_info.get('email')
+        if not email:
+            return jsonify({"msg": "Email not found in Google token"}), 401
+
+        # Find existing user
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({
+                "msg": "No account found with this email. Please register first."
+            }), 404
+            
+        # Update Google info if user exists but doesn't have Google ID
+        if not user.google_id:
+            user.google_id = google_info.get('google_id')
+            if google_info.get('picture'):
+                user.profile_picture = google_info.get('picture')
+            db.session.commit()
         
         # Create JWT tokens
         access_token = create_access_token(identity=str(user.id))
@@ -469,19 +542,29 @@ def google_login():
         print(f"Google login error: {e}")
         return jsonify({"msg": "An error occurred during Google login"}), 500
 
+@auth_bp.route("/google/callback", methods=["GET"])
+def google_callback():
+    """Handle Google OAuth callback (for server-side flow if needed)"""
+    try:
+        # This endpoint can be used for server-side OAuth flow
+        # For now, we're using client-side flow with ID tokens
+        return jsonify({"msg": "OAuth callback received"}), 200
+    except Exception as e:
+        print(f"Google callback error: {e}")
+        return jsonify({"msg": "OAuth callback error"}), 500
+
 @auth_bp.route("/google-client-id", methods=["GET"])
-def get_client_id():
+def get_google_client_id():
     """Get Google OAuth client ID for frontend"""
     try:
-        client_id = get_google_client_id()
+        client_id = get_google_client_id_util()
         if not client_id:
-            return jsonify({"msg": "Google client ID not configured"}), 500
+            return jsonify({"msg": "Google OAuth not configured"}), 500
         
         return jsonify({"client_id": client_id}), 200
-        
     except Exception as e:
-        print(f"Error getting client ID: {e}")
-        return jsonify({"msg": "An error occurred"}), 500
+        print(f"Get Google client ID error: {e}")
+        return jsonify({"msg": "An error occurred while fetching Google client ID"}), 500
 
 def validate_email(email):
     """Validate email format"""
