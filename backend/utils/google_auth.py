@@ -1,4 +1,3 @@
-import json
 from google.auth.transport import requests
 from google.oauth2 import id_token
 import os
@@ -12,17 +11,13 @@ def verify_google_token(token):
         dict: User information if valid, None if invalid
     """
     try:
-        # Load OAuth client secrets (different from Gmail API secrets)
-        oauth_secrets_path = 'oauth_client_secrets.json'
-        if not os.path.exists(oauth_secrets_path):
-            print(f"OAuth client secrets file not found at {oauth_secrets_path}")
+        # Get client ID from environment variable
+        client_id = os.getenv('GOOGLE_CLIENT_ID')
+        # Optionally get client secret if needed for other flows
+        client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+        if not client_id:
+            print("GOOGLE_CLIENT_ID not found in environment variables")
             return None
-            
-        with open(oauth_secrets_path, 'r') as f:
-            client_secrets = json.load(f)
-        
-        # For OAuth, the structure is different
-        client_id = client_secrets['web']['client_id']
         
         # Verify the token
         idinfo = id_token.verify_oauth2_token(
@@ -43,7 +38,9 @@ def verify_google_token(token):
             'given_name': idinfo.get('given_name', ''),
             'family_name': idinfo.get('family_name', ''),
             'picture': idinfo.get('picture', ''),
-            'email_verified': idinfo.get('email_verified', False)
+            'email_verified': idinfo.get('email_verified', False),
+            # Optionally include client_secret if needed elsewhere
+            # 'client_secret': client_secret
         }
         
     except ValueError as e:
@@ -54,16 +51,25 @@ def verify_google_token(token):
         return None
 
 def get_google_client_id():
-    """Get Google OAuth client ID from OAuth secrets file"""
+    """Get Google OAuth client ID from environment variable"""
     try:
-        oauth_secrets_path = 'oauth_client_secrets.json'
-        if not os.path.exists(oauth_secrets_path):
-            print(f"OAuth client secrets file not found at {oauth_secrets_path}")
+        client_id = os.getenv('GOOGLE_CLIENT_ID')
+        if not client_id:
+            print("GOOGLE_CLIENT_ID not found in environment variables")
             return None
-            
-        with open(oauth_secrets_path, 'r') as f:
-            client_secrets = json.load(f)
-        return client_secrets['web']['client_id']
+        return client_id
     except Exception as e:
-        print(f"Error reading OAuth client secrets: {e}")
+        print(f"Error reading Google client ID: {e}")
+        return None
+
+def get_google_client_secret():
+    """Get Google OAuth client secret from environment variable"""
+    try:
+        client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+        if not client_secret:
+            print("GOOGLE_CLIENT_SECRET not found in environment variables")
+            return None
+        return client_secret
+    except Exception as e:
+        print(f"Error reading Google client secret: {e}")
         return None

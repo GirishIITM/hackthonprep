@@ -77,10 +77,8 @@ export default function Register() {
 
   const handleGoogleSuccess = (response) => {
     setSuccess('Account created successfully! Redirecting...');
-    setTimeout(() => {
       saveAuthData(response.access_token, response.refresh_token, response.user);
       navigate('/solutions/tasks', { replace: true });
-    }, 1500);
   };
 
   const handleGoogleError = (error) => {

@@ -166,3 +166,4 @@ cython_debug/
 
 token_creds.json
 client_secrets.json
+.env
