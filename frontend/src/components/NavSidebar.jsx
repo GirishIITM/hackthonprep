@@ -1,42 +1,58 @@
-import { faBars, faSearch, faSignOutAlt, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faBars } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import "../styles/navSidebar.css";
-import { clearAuthData, authState, getCurrentUser } from "../utils/apiCalls/auth";
+import { authState, getCurrentUser, isAuthenticated } from "../utils/apiCalls/auth";
 import Sidebar from './Sidebar';
+import Navbar from './Navbar';
 
 const NavSidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [user, setUser] = useState(getCurrentUser);
-  const navigate = useNavigate();
-  const profileRef = useRef(null);
-  const searchInputRef = useRef(null);
+  const [authenticated, setAuthenticated] = useState(isAuthenticated());
+  const location = useLocation();
 
   // Listen for authentication state changes
   useEffect(() => {
-    const unsubscribe = authState.subscribe(() => {
+    const unsubscribe = authState.subscribe((isAuth) => {
+      setAuthenticated(isAuth);
       setUser(getCurrentUser());
     });
     
     return unsubscribe;
   }, []);
 
-  // Close profile menu when clicking outside
+  // Handle window resize
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setProfileMenuOpen(false);
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile && sidebarOpen) {
+        setSidebarOpen(true); // Keep sidebar open on desktop
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sidebarOpen]);
+
+  // Auto-open sidebar on desktop for authenticated users
+  useEffect(() => {
+    if (authenticated && !isMobile) {
+      setSidebarOpen(true);
+    } else if (!authenticated || isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [authenticated, isMobile]);
+
+  // Close sidebar on route change for mobile
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [location.pathname, isMobile]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -46,98 +62,88 @@ const NavSidebar = ({ children }) => {
     setSidebarOpen(false);
   };
 
-  const toggleProfileMenu = () => {
-    setProfileMenuOpen(!profileMenuOpen);
-  };
+  // Show regular navbar for non-authenticated users OR for home page only
+  if (!authenticated || location.pathname === '/') {
+    return (
+      <div className="app-container">
+        <Navbar />
+        <main className="main-content">
+          {children}
+        </main>
+      </div>
+    );
+  }
 
-  const handleLogout = async () => {
-    try {
-      // Call logout API if needed
-      // await authAPI.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      clearAuthData();
-      setProfileMenuOpen(false);
-      navigate('/login', { replace: true });
-    }
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      // Navigate to search results or handle search functionality
-      console.log(`Searching for: ${searchTerm}`);
-      // navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
-    }
-  };
-
-
+  // Show sidebar layout for authenticated users
   return (
     <div className="nav-container">
-      <nav className="navbar">
-        <div className="navbar-left">
-          <button className="sidebar-toggle" onClick={toggleSidebar} aria-label="Toggle sidebar">
+      {/* Top bar for mobile */}
+      {isMobile && (
+        <div className="mobile-topbar" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '60px',
+          backgroundColor: '#ffffff',
+          borderBottom: '1px solid #e0e0e0',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 16px',
+          zIndex: 997,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+        }}>
+          <button 
+            className="sidebar-toggle" 
+            onClick={toggleSidebar} 
+            aria-label="Toggle sidebar"
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '20px',
+              color: '#333',
+              padding: '8px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(0, 123, 255, 0.08)';
+              e.currentTarget.style.color = '#007bff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = '#333';
+            }}
+          >
             <FontAwesomeIcon icon={faBars} />
           </button>
-          <div className="brand">
-            <Link to="/">SynergySphere</Link>
+          <div className="mobile-brand" style={{
+            marginLeft: '16px',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            color: '#007bff'
+          }}>
+            SynergySphere
           </div>
         </div>
+      )}
 
-        <div className='navbar-right'>
-          <div className="search-container">
-            <form className="search-wrapper" onSubmit={handleSearch}>
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search..."
-                className="search-input"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="search-button"
-                onClick={handleSearch}
-                aria-label="Search"
-              >
-                <FontAwesomeIcon icon={faSearch} />
-              </button>
-            </form>
-          </div>
-
-          <div className="profile-container" ref={profileRef}>
-            <div className="profile-icon" onClick={toggleProfileMenu}>
-              {user?.name?.charAt(0).toUpperCase() || <FontAwesomeIcon icon={faUser} />}
-            </div>
-
-            {profileMenuOpen && (
-              <div className="profile-dropdown">
-                <div className="profile-dropdown-header">
-                  <span className="profile-name">{user?.name || 'User'}</span>
-                  <span className="profile-email">{user?.email || ''}</span>
-                </div>
-                <div className="profile-dropdown-divider"></div>
-                <Link to="/profile" className="profile-dropdown-item" onClick={() => setProfileMenuOpen(false)}>
-                  <span className="dropdown-icon"><FontAwesomeIcon icon={faUser} /></span>
-                  My Profile
-                </Link>
-                <div className="profile-dropdown-divider"></div>
-                <button className="profile-dropdown-item" onClick={handleLogout}>
-                  <span className="dropdown-icon"><FontAwesomeIcon icon={faSignOutAlt} /></span>
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      <div className="main-content">
-        <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
-        <div className="content-area">
-          {children}
+      <div className="main-layout" style={{
+        paddingTop: isMobile ? '60px' : '0'
+      }}>
+        <Sidebar 
+          isOpen={sidebarOpen} 
+          onClose={closeSidebar}
+          isMobile={isMobile}
+        />
+        <div className={`content-wrapper ${sidebarOpen && !isMobile ? 'with-sidebar' : ''}`}>
+          <main className="content-area">
+            {children}
+          </main>
         </div>
       </div>
     </div>

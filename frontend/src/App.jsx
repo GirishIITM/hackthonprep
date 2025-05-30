@@ -6,12 +6,14 @@ import PrivateRoute from './components/PrivateRoute';
 
 import NavSidebar from './components/NavSidebar';
 import About from './pages/About';
+import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
+import Settings from './pages/Settings';
 import Projects from './pages/solutions/Projects';
 import Tasks from './pages/solutions/Tasks';
 import VerifyOTP from './pages/VerifyOTP';
@@ -52,7 +54,7 @@ function App() {
             <Route path='/register' element={
               <>
                 <Navbar />
-                {authenticated ? <Navigate to="/solutions/tasks" replace /> : <Register />}
+                {authenticated ? <Navigate to="/dashboard" replace /> : <Register />}
               </>
             } />
             
@@ -60,19 +62,19 @@ function App() {
             <Route path='/verify-otp' element={
               <>
                 <Navbar />
-                {authenticated ? <Navigate to="/solutions/tasks" replace /> : <VerifyOTP />}
+                {authenticated ? <Navigate to="/dashboard" replace /> : <VerifyOTP />}
               </>
             } />
             
             <Route path='/login' element={
               <>
                 <Navbar />
-                {authenticated ? <Navigate to="/solutions/tasks" replace /> : <Login />}
+                {authenticated ? <Navigate to="/dashboard" replace /> : <Login />}
               </>
             } />
             <Route path='/about' element={
               <>
-                <Navbar />
+                <Navbar showWhenAuthenticated={true} />
                 <About />
               </>
             } />
@@ -99,12 +101,20 @@ function App() {
             {/* Home page - accessible to everyone, no redirection for authenticated users */}
             <Route path='/' element={
               <>
-                <Navbar />
+                <Navbar showWhenAuthenticated={true} />
                 <Home />
               </>
             } />
 
-            {/* Protected routes */}
+            {/* Protected routes with NavSidebar */}
+            <Route path='/dashboard' element={
+              <PrivateRoute>
+                <NavSidebar>
+                  <Dashboard />
+                </NavSidebar>
+              </PrivateRoute>
+            } />
+            
             <Route path='/solutions/tasks' element={
               <PrivateRoute>
                 <NavSidebar>
@@ -112,6 +122,7 @@ function App() {
                 </NavSidebar>
               </PrivateRoute>
             } />
+            
             <Route path='/solutions/projects' element={
               <PrivateRoute>
                 <NavSidebar>
@@ -120,11 +131,20 @@ function App() {
               </PrivateRoute>
             } />
 
-            {/* Profile route - protected */}
+            <Route path='/settings' element={
+              <PrivateRoute>
+                <NavSidebar>
+                  <Settings />
+                </NavSidebar>
+              </PrivateRoute>
+            } />
+
+            {/* Profile route - protected and with NavSidebar */}
             <Route path='/profile' element={
               <PrivateRoute>
-                <Navbar />
-                <Profile />
+                <NavSidebar>
+                  <Profile />
+                </NavSidebar>
               </PrivateRoute>
             } />
 

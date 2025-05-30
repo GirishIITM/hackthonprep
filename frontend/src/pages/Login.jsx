@@ -17,8 +17,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
- 
-  const from = location.state?.from || "/solutions/tasks"; 
+  const from = location.state?.from || "/dashboard"; 
 
   useEffect(() => {
     const checkLoadingState = () => {
