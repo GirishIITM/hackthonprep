@@ -6,8 +6,7 @@ from models import User, TokenBlocklist
 from extensions import db
 from utils.validation import validate_required_fields, sanitize_email, sanitize_string
 from utils.auth_utils import (
-    validate_login_data, validate_registration_data, 
-    check_user_exists, authenticate_user, create_auth_response
+    validate_login_data, authenticate_user, create_auth_response
 )
 from utils.otp_service import OTPService
 from utils.google_oauth_service import GoogleOAuthService
@@ -21,18 +20,30 @@ auth_bp = Blueprint("auth", __name__)
 def register():
     try:
         data = request.get_json()
-        is_valid, msg = validate_registration_data(data)
+        is_valid, msg = validate_required_fields(data, ["full_name", "username", "email", "password"])
         if not is_valid:
             return jsonify({"msg": msg}), 400
         
+        # Basic password length check only
+        if len(data["password"]) < 6:
+            return jsonify({"msg": "Password must be at least 6 characters long"}), 400
+        
+        full_name = sanitize_string(data["full_name"])
         username = sanitize_string(data["username"])
         email = sanitize_email(data["email"])
         
-        user_exists, error_msg = check_user_exists(username, email)
-        if user_exists:
-            return jsonify({"msg": error_msg}), 400
+        # Check if user already exists
+        existing_user = User.query.filter(
+            (User.email == email) | (User.username == username)
+        ).first()
         
-        success, message = OTPService.send_registration_otp(username, email)
+        if existing_user:
+            if existing_user.email == email:
+                return jsonify({"msg": "Email already exists"}), 400
+            else:
+                return jsonify({"msg": "Username already exists"}), 400
+        
+        success, message = OTPService.send_registration_otp(full_name, email)
         status_code = 200 if success else 500
         
         return jsonify({"msg": message, "email": email}), status_code
@@ -45,12 +56,12 @@ def register():
 def verify_otp():
     try:
         data = request.get_json()
-        is_valid, msg = validate_required_fields(data, ["email", "otp", "username", "password"])
+        is_valid, msg = validate_required_fields(data, ["email", "otp", "full_name", "username", "password"])
         if not is_valid:
             return jsonify({"msg": msg}), 400
         
         success, message = OTPService.verify_registration_otp(
-            data["email"], data["otp"], data["username"], data["password"]
+            data["email"], data["otp"], data["full_name"], data["username"], data["password"]
         )
         status_code = 201 if success else 400
         
@@ -327,28 +338,6 @@ def google_callback():
         return jsonify({"msg": "OAuth callback error"}), 500
 
 # User profile endpoints
-@auth_bp.route("/profile", methods=["GET"])
-@jwt_required()
-def get_profile():
-    try:
-        user_id = int(get_jwt_identity())
-        user = User.query.get_or_404(user_id)
-        
-        return jsonify({
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "profile_picture": user.profile_picture,
-                "notify_email": user.notify_email,
-                "notify_in_app": user.notify_in_app
-            }
-        }), 200
-        
-    except Exception as e:
-        print(f"Get profile error: {e}")
-        return jsonify({"msg": "An error occurred while fetching profile"}), 500
-
 @auth_bp.route("/settings", methods=["PUT"])
 @jwt_required()
 def update_settings():
@@ -359,6 +348,26 @@ def update_settings():
         
         if not data:
             return jsonify({"msg": "No data provided"}), 400
+        
+        # Update full name if provided
+        if "full_name" in data:
+            full_name = sanitize_string(data["full_name"])
+            if len(full_name.strip()) >= 1:
+                user.full_name = full_name
+        
+        # Update username if provided
+        if "username" in data:
+            username = sanitize_string(data["username"])
+            if len(username.strip()) >= 1:
+                # Check if username is already taken
+                existing_user = User.query.filter(User.username == username, User.id != user_id).first()
+                if not existing_user:
+                    user.username = username
+        
+        # Update about if provided
+        if "about" in data:
+            about = sanitize_string(data["about"]) if data["about"] else ""
+            user.about = about
         
         if "notify_email" in data:
             user.notify_email = bool(data["notify_email"])
@@ -374,6 +383,11 @@ def update_settings():
         return jsonify({
             "msg": "Settings updated successfully",
             "user": {
+                "id": user.id,
+                "full_name": user.full_name,
+                "name": user.full_name,
+                "username": user.username,
+                "about": user.about,
                 "notify_email": user.notify_email,
                 "notify_in_app": user.notify_in_app,
                 "profile_picture": user.profile_picture
@@ -382,43 +396,5 @@ def update_settings():
         
     except Exception as e:
         print(f"Update settings error: {e}")
+        db.session.rollback()
         return jsonify({"msg": "An error occurred while updating settings"}), 500
-
-@auth_bp.route("/upload-profile-image", methods=["POST"])
-@jwt_required()
-def upload_profile_image_endpoint():
-    try:
-        user_id = int(get_jwt_identity())
-        user = User.query.get_or_404(user_id)
-        
-        if 'image' not in request.files:
-            return jsonify({"msg": "No image file provided"}), 400
-        
-        image_file = request.files['image']
-        if image_file.filename == '':
-            return jsonify({"msg": "No image file selected"}), 400
-        
-        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-        file_extension = image_file.filename.rsplit('.', 1)[1].lower() if '.' in image_file.filename else ''
-        
-        if file_extension not in allowed_extensions:
-            return jsonify({"msg": "Invalid file type. Allowed types: PNG, JPG, JPEG, GIF, WEBP"}), 400
-        
-        if user.profile_picture and 'cloudinary.com' in user.profile_picture:
-            delete_cloudinary_image(user.profile_picture)
-        
-        upload_result = upload_profile_image(image_file, user_id)
-        if not upload_result:
-            return jsonify({"msg": "Failed to upload image"}), 500
-        
-        user.profile_picture = upload_result['secure_url']
-        db.session.commit()
-        
-        return jsonify({
-            "msg": "Profile image uploaded successfully",
-            "profile_picture": user.profile_picture
-        }), 200
-        
-    except Exception as e:
-        print(f"Profile image upload error: {e}")
-        return jsonify({"msg": "An error occurred while uploading image"}), 500

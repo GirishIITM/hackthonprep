@@ -242,16 +242,17 @@ const isAuthenticated = () => {
 const authAPI = {
   /**
    * Register a new user (sends OTP)
+   * @param {string} fullName - User's full name
    * @param {string} username - Username
    * @param {string} email - User email
    * @param {string} password - User password
    * @returns {Promise} - Registration response
    */
-  register: (username, email, password) => {
+  register: (fullName, username, email, password) => {
     return apiRequest(
       "/auth/register",
       "POST",
-      { username, email, password },
+      { full_name: fullName, username, email, password },
       "auth-register"
     );
   },
@@ -260,15 +261,16 @@ const authAPI = {
    * Verify OTP and complete registration
    * @param {string} email - User email
    * @param {string} otp - OTP code
+   * @param {string} fullName - User's full name
    * @param {string} username - Username
    * @param {string} password - User password
    * @returns {Promise} - Verification response
    */
-  verifyOTP: (email, otp, username, password) => {
+  verifyOTP: (email, otp, fullName, username, password) => {
     return apiRequest(
       "/auth/verify-otp",
       "POST",
-      { email, otp, username, password },
+      { email, otp, full_name: fullName, username, password },
       "auth-verify-otp"
     );
   },
@@ -409,6 +411,75 @@ const authAPI = {
       "auth-google-client-id"
     );
   },
+
+  /**
+   * Get current user from backend
+   * @returns {Promise} - User data response
+   */
+  getCurrentUserFromBackend: () => {
+    return apiRequest('/profile', 'GET', null, 'auth-get-profile');
+  },
+};
+
+/**
+ * Profile API functions
+ */
+const profileAPI = {
+  /**
+   * Get current user profile
+   * @returns {Promise} - Profile data response
+   */
+  getProfile: () => {
+    return apiRequest("/profile", "GET", null, "profile-get");
+  },
+
+  /**
+   * Update user profile
+   * @param {object} profileData - Profile data to update
+   * @returns {Promise} - Update response
+   */
+  updateProfile: (profileData) => {
+    return apiRequest("/profile", "PUT", profileData, "profile-update");
+  },
+
+  /**
+   * Upload profile image
+   * @param {File} imageFile - Image file to upload
+   * @returns {Promise} - Upload response
+   */
+  uploadProfileImage: (imageFile) => {
+    const formData = new FormData();
+    formData.append('profile_image', imageFile);
+    
+    return new Promise(async (resolve, reject) => {
+      try {
+        loadingState.setLoading("profile-image-upload", true);
+        
+        await ensureValidToken();
+        const token = localStorage.getItem("access_token");
+        
+        const response = await fetch(`${API_BASE_URL}/profile/upload-image`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        const result = await response.json();
+        loadingState.setLoading("profile-image-upload", false);
+
+        if (!response.ok) {
+          throw new Error(result.error || "Image upload failed");
+        }
+
+        resolve(result);
+      } catch (error) {
+        loadingState.setLoading("profile-image-upload", false);
+        reject(error);
+      }
+    });
+  },
 };
 
 /**
@@ -441,6 +512,7 @@ const resetLoadingState = () => {
     "auth-reset-password",
     "auth-logout",
     "auth-update-settings",
+    "profile-image-upload", 
   ];
 
   loadingState.reset();
@@ -449,6 +521,7 @@ const resetLoadingState = () => {
 
 export {
   authAPI,
+  profileAPI,
   authState,
   clearAuthData,
   getCurrentUser,

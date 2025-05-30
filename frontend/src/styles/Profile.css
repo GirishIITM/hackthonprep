@@ -2,12 +2,13 @@
   max-width: 900px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 2rem 1.5rem;
-  color: var(--color-text, #22223b);
+  color: var(--color-text);
   position: relative;
   z-index: 1;
   animation: fadeInProfile 1.2s cubic-bezier(.77,0,.18,1) both;
   min-height: 100vh;
   overflow-x: hidden;
+  background-color: var(--color-bg);
 }
 
 @keyframes fadeInProfile {
@@ -24,7 +25,7 @@
   left: 50%;
   width: 120vw;
   height: 600px;
-  background: radial-gradient(ellipse at 60% 40%, #4481eb 0%, #04befe 100%);
+  background: radial-gradient(ellipse at 60% 40%, var(--color-gradient-primary-start) 0%, var(--color-gradient-primary-end) 100%);
   opacity: 0.13;
   filter: blur(30px);
   transform: translateX(-50%) scaleY(1.1);
@@ -47,8 +48,8 @@
 }
 
 .profile-avatar {
-  background: linear-gradient(135deg, #4481eb 60%, #04befe 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-gradient-primary-start) 60%, var(--color-gradient-primary-end) 100%);
+  color: var(--color-white);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -56,16 +57,14 @@
   font-weight: 700;
   margin-bottom: 1.5rem;
   box-shadow: 0 8px 32px 0 rgba(68,129,235,0.18), 0 2px 8px 0 rgba(4,190,254,0.10);
-  border: 4px solid #fff;
+  border: 4px solid var(--color-white);
   position: relative;
   animation: floatAvatar 3.5s ease-in-out infinite alternate;
   transition: box-shadow 0.3s;
   width: 110px;
   height: 110px;
-  font-size: 2.8rem; /* Matches initials/text inside */
-  /* Keep existing styles */
+  font-size: 2.8rem;
 }
-
 
 @keyframes floatAvatar {
   0% { transform: translateY(0);}
@@ -73,33 +72,23 @@
 }
 .profile-avatar-wrapper {
   position: relative;
+  width: 110px;
+  height: 110px;
   display: inline-block;
   text-align: center;
 }
 
 .profile-avatar-image {
-  width: 100px;
-  height: 100px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   object-fit: cover;
-  background: linear-gradient(135deg, #4481eb 60%, #04befe 100%);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
   margin-bottom: 1.5rem;
   box-shadow: 0 8px 32px 0 rgba(68,129,235,0.18), 0 2px 8px 0 rgba(4,190,254,0.10);
-  border: 4px solid #fff;
+  border: 4px solid var(--color-white);
   position: relative;
   animation: floatAvatar 3.5s ease-in-out infinite alternate;
   transition: box-shadow 0.3s;
-  width: 110px;
-  height: 110px;
-  font-size: 2.8rem; /* Matches initials/text inside */
-  /* Keep existing styles */
-  border: 2px solid #ccc;
 }
 
 .upload-input {
@@ -119,7 +108,7 @@
   position: absolute;
   bottom: 4px;
   right: 4px;
-  background-color: white;
+  background-color: var(--color-white);
   border-radius: 50%;
   padding: 3px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
@@ -131,12 +120,117 @@
   transform: scale(1.1);
 }
 
+.edit-image-icon.uploading {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.upload-spinner {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  color: var(--color-gradient-primary-start);
+  font-weight: 500;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.upload-error {
+  color: var(--color-error);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  text-align: center;
+  max-width: 300px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
 
 .profile-input {
-  padding: 5px;
+  padding: 8px 12px;
   margin-right: 10px;
   font-size: 1rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-input-bg);
+  color: var(--color-input-text);
+  font-weight: 500;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 200px;
 }
+
+.profile-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.profile-about-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-input-bg);
+  color: var(--color-input-text);
+  font-size: 1.08rem;
+  line-height: 1.7;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.profile-about-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.profile-about-card.editing {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border-left: none;
+}
+
+.edit-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.edit-buttons button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-buttons button:first-child {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.edit-buttons button:first-child:hover {
+  background: var(--color-primary-hover);
+}
+
+.edit-buttons button:last-child {
+  background: var(--color-surface-variant);
+  color: var(--color-text-secondary);
+}
+
+.edit-buttons button:last-child:hover {
+  background: var(--color-border);
+}
+
 .profile-info-item button {
   margin-left: 10px;
   padding: 4px 8px;
@@ -148,11 +242,11 @@
   height: 20px;
 }
 .edit-icon-button{
-  background-color: white;
+  background-color: var(--color-white);
   padding:0;
 }
 .edit-icon-button:hover {
-  background-color: #ffffff;
+  background-color: var(--color-white);
 }
 .profile-avatar::after {
   content: "";
@@ -173,20 +267,20 @@
   margin-bottom: 0.5rem;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: #1e293b;
+  color: var(--color-text);
   animation: fadeInProfile 1.2s 0.2s both;
 }
 
 .profile-email {
   font-size: 1.1rem;
-  color: var(--color-text-secondary, #64748b);
+  color: var(--color-text-secondary);
   margin-bottom: 0.5rem;
   animation: fadeInProfile 1.2s 0.3s both;
 }
 
 .profile-joined {
   font-size: 0.98rem;
-  color: #3b82f6;
+  color: var(--color-primary);
   margin-bottom: 0.5rem;
   font-weight: 500;
   letter-spacing: 0.1px;
@@ -211,10 +305,10 @@
   margin-bottom: 1.2rem;
   position: relative;
   padding-bottom: 0.5rem;
-  color: #2563eb;
+  color: var(--color-primary);
   font-weight: 700;
   letter-spacing: 0.2px;
-  text-shadow: 0 2px 8px rgba(68,129,235,0.08);
+  text-shadow: none;
 }
 
 .profile-section h2::after {
@@ -224,26 +318,26 @@
   left: 50%;
   width: 60px;
   height: 3px;
-  background: linear-gradient(90deg, #4481eb 0%, #04befe 100%);
+  background: linear-gradient(90deg, var(--color-gradient-primary-start) 0%, var(--color-gradient-primary-end) 100%);
   border-radius: 1.5px;
   transform: translateX(-50%);
   opacity: 0.7;
 }
 
 .profile-info-card {
-  background: rgba(255,255,255,0.97);
+  background: var(--color-surface);
   border-radius: 18px;
   padding: 1.7rem 1.2rem;
-  box-shadow: 0 8px 32px 0 rgba(68,129,235,0.10), 0 2px 8px 0 rgba(4,190,254,0.08);
+  box-shadow: 0 8px 32px 0 var(--color-shadow);
   margin-bottom: 1.5rem;
-  border: 1.5px solid #e0e7ef;
+  border: 1.5px solid var(--color-border);
   animation: fadeInProfile 1.2s 0.4s both;
   transition: box-shadow 0.3s, transform 0.3s;
   will-change: transform;
 }
 
 .profile-info-card:hover {
-  box-shadow: 0 12px 36px 0 rgba(68,129,235,0.18), 0 4px 16px 0 rgba(4,190,254,0.13);
+  box-shadow: 0 12px 36px 0 var(--color-shadow);
   transform: translateY(-4px) scale(1.012);
 }
 
@@ -252,7 +346,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.1rem 0;
-  border-bottom: 1px solid #e0e7ef;
+  border-bottom: 1px solid var(--color-border);
   font-size: 1.08rem;
   transition: background 0.2s;
 }
@@ -263,12 +357,12 @@
 
 .profile-info-label {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text);
   letter-spacing: 0.1px;
 }
 
 .profile-info-value {
-  color: #2563eb;
+  color: var(--color-primary);
   font-weight: 500;
   letter-spacing: 0.1px;
   word-break: break-all;
@@ -276,16 +370,16 @@
 
 /* About Card */
 .profile-about-card {
-  background: linear-gradient(120deg, #e0e7ef 60%, #f8fafc 100%);
+  background: var(--color-surface);
   border-radius: 16px;
   padding: 1.3rem 1.1rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 2px 12px 0 rgba(68,129,235,0.07);
-  color: #334155;
+  box-shadow: 0 2px 12px 0 var(--color-shadow);
+  color: var(--color-text);
   font-size: 1.08rem;
   line-height: 1.7;
   animation: fadeInProfile 1.2s 0.5s both;
-  border-left: 5px solid #4481eb;
+  border-left: 5px solid var(--color-primary);
 }
 
 /* Responsive Design */

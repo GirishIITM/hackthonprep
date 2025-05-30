@@ -3,11 +3,13 @@ from datetime import datetime, timezone
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(100), nullable=False)  # Add full name field
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=True)  # Make nullable for Google OAuth users
     google_id = db.Column(db.String(100), unique=True, nullable=True)  # Add = Google ID
     profile_picture = db.Column(db.String(255), nullable=True)  # Add profile picture URL
+    about = db.Column(db.Text, nullable=True)  # Add about field
     notify_email = db.Column(db.Boolean, default=True)
     notify_in_app = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -36,6 +38,9 @@ class User(db.Model):
     @staticmethod
     def create_google_user(google_info):
         """Create a new user from Google OAuth info"""
+        # Extract full name from Google info
+        full_name = google_info.get('name', google_info.get('given_name', 'User'))
+        
         # Ensure username is unique
         username = google_info.get('given_name', google_info['email'].split('@')[0])
         base_username = username
@@ -45,6 +50,7 @@ class User(db.Model):
             counter += 1
         
         user = User(
+            full_name=full_name,
             username=username,
             email=google_info['email'],
             google_id=google_info['google_id'],

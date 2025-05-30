@@ -269,7 +269,6 @@
   overflow-x: auto;
   background-color: var(--color-bg);
   min-height: 100vh;
-  margin-left: 266px;
 }
 
 @media (max-width: 900px) {

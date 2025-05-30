@@ -4,18 +4,31 @@ import GoogleLoginButton from '../components/GoogleLoginButton';
 import LoadingIndicator from '../components/LoadingIndicator';
 import '../styles/register.css';
 import { authAPI, loadingState, saveAuthData } from '../utils/apiCalls/auth';
-import registerSvg from '../assets/register.svg'; // Adjust the path as necessary
+import registerSvg from '../assets/register.svg';
 
 export default function Register() {
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordValidation, setPasswordValidation] = useState({
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+    isValid: false
+  });
+  const [showPasswordHints, setShowPasswordHints] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptWeakPassword, setAcceptWeakPassword] = useState(false);
   const navigate = useNavigate();
 
   // Check loading state from the API
@@ -33,28 +46,101 @@ export default function Register() {
     return () => clearInterval(interval);
   }, []);
 
+  // Validate password in real-time
+  useEffect(() => {
+    const password = formData.password;
+    const validation = {
+      minLength: password.length >= 8,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /\d/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    validation.isValid = Object.values(validation).every(Boolean);
+    setPasswordValidation(validation);
+  }, [formData.password]);
+
+  // Generate username from full name
+  useEffect(() => {
+    if (formData.fullName && !formData.username) {
+      const generatedUsername = formData.fullName
+        .toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/[^a-z0-9]/g, '');
+      setFormData(prev => ({ ...prev, username: generatedUsername }));
+    }
+  }, [formData.fullName, formData.username]);
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Full name validation
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
+    } else if (formData.fullName.trim().length < 2) {
+      newErrors.fullName = 'Full name must be at least 2 characters';
+    }
+
+    // Username validation
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      newErrors.username = 'Username can only contain letters, numbers, and underscores';
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    // Password validation - only require minimum length and weak password acceptance
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    } else if (!passwordValidation.isValid && !acceptWeakPassword) {
+      newErrors.password = 'Please use a strong password or check "Accept weak password"';
+    }
+
+    // Confirm password validation
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear specific error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setSuccess('');
 
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+    if (!validateForm()) {
       return;
     }
 
     try {
       const response = await authAPI.register(
-        formData.name,
-        formData.email,
+        formData.fullName.trim(),
+        formData.username.trim(),
+        formData.email.trim().toLowerCase(),
         formData.password
       );
 
@@ -63,15 +149,27 @@ export default function Register() {
         setTimeout(() => {
           navigate('/verify-otp', {
             state: {
-              email: formData.email,
-              username: formData.name,
+              email: formData.email.trim().toLowerCase(),
+              fullName: formData.fullName.trim(),
+              username: formData.username.trim(),
               password: formData.password
             }
           });
         }, 1500);
       }
     } catch (error) {
-      setError(error.message || 'Failed to register. Please try again.');
+      const errorMessage = error.message || 'Failed to register. Please try again.';
+      
+      // Handle specific backend errors
+      if (errorMessage.includes('Username already exists')) {
+        setErrors({ username: 'This username is already taken' });
+      } else if (errorMessage.includes('Email already exists')) {
+        setErrors({ email: 'An account with this email already exists' });
+      } else if (errorMessage.includes('Invalid email')) {
+        setErrors({ email: 'Please enter a valid email address' });
+      } else {
+        setErrors({ general: errorMessage });
+      }
     }
   };
 
@@ -81,7 +179,7 @@ export default function Register() {
   };
 
   const handleGoogleError = (error) => {
-    setError(error || 'Google registration failed. Please try again.');
+    setErrors({ general: error || 'Google registration failed. Please try again.' });
   };
 
   return (
@@ -105,7 +203,8 @@ export default function Register() {
         <LoadingIndicator loading={isLoading}>
           <div className="register-container">
             <h1 className="register-title">Create an account</h1>
-            {error && <div className="error-message">{error}</div>}
+            
+            {errors.general && <div className="error-message">{errors.general}</div>}
             {success && <div className="success-message">{success}</div>}
             
             <div className="google-auth-section">
@@ -121,18 +220,37 @@ export default function Register() {
             </div>
 
             <form className="register-form" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="register-name">Name:</label>
+              <div className="form-group">
+                <label htmlFor="register-fullName">Full Name:</label>
                 <input
                   type="text"
-                  id="register-name"
-                  name="name"
-                  value={formData.name}
+                  id="register-fullName"
+                  name="fullName"
+                  value={formData.fullName}
                   onChange={handleChange}
+                  className={errors.fullName ? 'error' : ''}
+                  placeholder="Enter your full name"
                   required
                 />
+                {errors.fullName && <span className="field-error">{errors.fullName}</span>}
               </div>
-              <div>
+
+              <div className="form-group">
+                <label htmlFor="register-username">Username:</label>
+                <input
+                  type="text"
+                  id="register-username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className={errors.username ? 'error' : ''}
+                  placeholder="Choose a username"
+                  required
+                />
+                {errors.username && <span className="field-error">{errors.username}</span>}
+              </div>
+
+              <div className="form-group">
                 <label htmlFor="register-email">Email:</label>
                 <input
                   type="email"
@@ -140,31 +258,115 @@ export default function Register() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
+                  className={errors.email ? 'error' : ''}
+                  placeholder="Enter your email"
                   required
                 />
+                {errors.email && <span className="field-error">{errors.email}</span>}
               </div>
-              <div>
+
+              <div className="form-group">
                 <label htmlFor="register-password">Password:</label>
-                <input
-                  type="password"
-                  id="register-password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                />
+                <div className="password-input-container">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="register-password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    onFocus={() => setShowPasswordHints(true)}
+                    className={errors.password ? 'error' : ''}
+                    placeholder="Create a password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle-btn"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {errors.password && <span className="field-error">{errors.password}</span>}
+                
+                {showPasswordHints && (
+                  <div className="password-hints">
+                    <div className="password-strength-title">Password Strength:</div>
+                    <div className={`hint ${passwordValidation.minLength ? 'valid' : 'invalid'}`}>
+                      At least 8 characters
+                    </div>
+                    <div className={`hint ${passwordValidation.hasUppercase ? 'valid' : 'invalid'}`}>
+                      One uppercase letter
+                    </div>
+                    <div className={`hint ${passwordValidation.hasLowercase ? 'valid' : 'invalid'}`}>
+                      One lowercase letter
+                    </div>
+                    <div className={`hint ${passwordValidation.hasNumber ? 'valid' : 'invalid'}`}>
+                      One number
+                    </div>
+                    <div className={`hint ${passwordValidation.hasSpecialChar ? 'valid' : 'invalid'}`}>
+                      One special character (!@#$%^&*)
+                    </div>
+                    
+                    <div className="weak-password-option">
+                      <label className="weak-password-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={acceptWeakPassword}
+                          onChange={(e) => setAcceptWeakPassword(e.target.checked)}
+                        />
+                        <span className="checkmark"></span>
+                        Accept weak password
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div>
+
+              <div className="form-group">
                 <label htmlFor="register-confirm-password">Confirm Password:</label>
-                <input
-                  type="password"
-                  id="register-confirm-password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                />
+                <div className="password-input-container">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    id="register-confirm-password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className={errors.confirmPassword ? 'error' : ''}
+                    placeholder="Confirm your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle-btn"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {errors.confirmPassword && <span className="field-error">{errors.confirmPassword}</span>}
               </div>
+
               <button type="submit" disabled={isLoading}>
                 Create an account
               </button>
@@ -172,7 +374,7 @@ export default function Register() {
             <div className="contentt mobile-only">
               <p className="center-text">
                 have an account?
-                <a className="btnn" id="sign-up-btn" href="/login" data-discover="true">login</a>
+                <Link className="btnn" id="sign-up-btn" to="/login">login</Link>
               </p>
             </div>
           </div>
