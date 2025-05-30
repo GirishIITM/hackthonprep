@@ -6,13 +6,13 @@ from utils.validation import sanitize_email, sanitize_string
 
 class OTPService:
     @staticmethod
-    def send_registration_otp(username, email):
+    def send_registration_otp(full_name, email):
         """Send OTP for registration"""
         try:
             otp = OTPVerification.create_otp(email)
             
             subject = "Verify Your Email - OTP"
-            html_body = get_otp_email_template(username, otp)
+            html_body = get_otp_email_template(full_name, otp)
             text_body = f"Your OTP for email verification is: {otp}. Valid for 10 minutes."
             
             email_sent = send_email(subject, [email], text_body, html_body)

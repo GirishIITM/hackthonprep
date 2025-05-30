@@ -44,7 +44,7 @@ def register():
             else:
                 return jsonify({"msg": "Username already exists"}), 400
         
-        success, message = OTPService.send_registration_otp(full_name, username, email)
+        success, message = OTPService.send_registration_otp(full_name, email)
         status_code = 200 if success else 500
         
         return jsonify({"msg": message, "email": email}), status_code
