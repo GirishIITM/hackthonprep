@@ -12,9 +12,13 @@ def format_user_response(user):
     """Format user data for API responses"""
     return {
         "id": user.id,
+        "name": user.full_name,
         "username": user.username,
         "email": user.email,
-        "profile_picture": user.profile_picture
+        "profile_picture": user.profile_picture,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "notify_email": user.notify_email,
+        "notify_in_app": user.notify_in_app
     }
 
 def validate_login_data(data):

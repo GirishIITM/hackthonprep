@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import '../styles/Profile.css';
-import { getCurrentUser } from '../utils/apiCalls/auth';
+import { profileAPI, saveAuthData } from '../utils/apiCalls';
 import penIcon from '../assets/pen.png';
 
 const Profile = () => {
@@ -9,43 +9,108 @@ const Profile = () => {
   const [editingName, setEditingName] = useState(false);
   const [fullName, setFullName] = useState('');
   const [profileImage, setProfileImage] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const userData = getCurrentUser();
-    if (userData) {
-      setUser(userData);
-      setFullName(userData.name || '');
-      setProfileImage(userData.profileImage || null);
-    }
-    setLoading(false);
+    fetchUserProfile();
   }, []);
 
-  const handleSaveName = () => {
-    const updatedUser = { ...user, name: fullName };
-    setUser(updatedUser);
-    setEditingName(false);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageUrl = reader.result; // base64 string
-        setProfileImage(imageUrl);
-
-        const updatedUser = { ...user, profileImage: imageUrl };
-        setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-      };
-      reader.readAsDataURL(file);
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const userData = await profileAPI.getProfile();
+      setUser(()=>userData);
+      console.log(userData.full_name)
+      setFullName(()=>userData.full_name || '');
+      setProfileImage(()=>userData.profile_picture || null);
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+      setError('Failed to load profile. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleSaveName = async () => {
+    try {
+      const response = await profileAPI.updateProfile({ full_name: fullName });
+      
+      const updatedUser = { ...user, name: fullName };
+      setUser(updatedUser);
+      setEditingName(false);
+      
+      // Update localStorage with new user data
+      const currentAuth = {
+        access_token: localStorage.getItem('access_token'),
+        refresh_token: localStorage.getItem('refresh_token'),
+        user: updatedUser
+      };
+      saveAuthData(currentAuth.access_token, currentAuth.refresh_token, updatedUser);
+    } catch (error) {
+      console.error('Failed to update name:', error);
+      alert('Failed to update name. Please try again.');
+    }
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Please select a valid image file (JPG, PNG, GIF, or WEBP)');
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setUploadError('File size must be less than 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    setUploadError('');
+
+    try {
+      const result = await profileAPI.uploadProfileImage(file);
+      
+      if (result && result.profile_picture) {
+        const newImageUrl = result.profile_picture;
+        setProfileImage(newImageUrl);
+
+        const updatedUser = { ...user, profile_picture: newImageUrl };
+        setUser(updatedUser);
+        
+        // Update localStorage with new user data
+        const currentAuth = {
+          access_token: localStorage.getItem('access_token'),
+          refresh_token: localStorage.getItem('refresh_token'),
+          user: updatedUser
+        };
+        saveAuthData(currentAuth.access_token, currentAuth.refresh_token, updatedUser);
+      }
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      setUploadError(error.message || 'Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   if (loading) {
     return <div className="profile-loading">Loading profile information...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="profile-error">
+        <p>{error}</p>
+        <button onClick={fetchUserProfile}>Retry</button>
+      </div>
+    );
   }
 
   if (!user) {
@@ -67,7 +132,7 @@ const Profile = () => {
         <div className="profile-avatar-wrapper">
           {profileImage ? (
             <img
-              key={profileImage} // forces re-render when image changes
+              key={profileImage}
               src={profileImage}
               alt="Profile"
               className="profile-avatar-image"
@@ -78,23 +143,31 @@ const Profile = () => {
             </div>
           )}
 
-
           <input
             id="profile-pic-upload"
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
             style={{ display: 'none' }}
             onChange={handleImageChange}
+            disabled={uploadingImage}
           />
 
           <img
             src={penIcon}
             alt="Edit Profile"
-            className="edit-image-icon"
-            onClick={() => document.getElementById('profile-pic-upload').click()}
+            className={`edit-image-icon ${uploadingImage ? 'uploading' : ''}`}
+            onClick={() => !uploadingImage && document.getElementById('profile-pic-upload').click()}
+            style={{ opacity: uploadingImage ? 0.5 : 1, cursor: uploadingImage ? 'not-allowed' : 'pointer' }}
           />
 
+          {uploadingImage && (
+            <div className="upload-spinner">Uploading...</div>
+          )}
         </div>
+
+        {uploadError && (
+          <div className="upload-error">{uploadError}</div>
+        )}
 
         <h1>{user.name}</h1>
         <p className="profile-email">{user.email}</p>
@@ -124,11 +197,11 @@ const Profile = () => {
                     className="profile-input"
                   />
                   <button onClick={handleSaveName}>Save</button>
-                  <button onClick={() => { setFullName(user.name); setEditingName(false); }}>Cancel</button>
+                  <button onClick={() => { setFullName(user.full_name); setEditingName(false); }}>Cancel</button>
                 </>
               ) : (
                 <span className="profile-info-value">
-                  {user.name}
+                  {user.full_name}
                   <button
                     className="edit-icon-button"
                     onClick={() => setEditingName(true)}
@@ -140,16 +213,16 @@ const Profile = () => {
               )}
             </div>
             <div className="profile-info-item">
+              <span className="profile-info-label">Username</span>
+              <span className="profile-info-value">{user.username}</span>
+            </div>
+            <div className="profile-info-item">
               <span className="profile-info-label">Email Address</span>
               <span className="profile-info-value">{user.email}</span>
             </div>
             <div className="profile-info-item">
               <span className="profile-info-label">User ID</span>
               <span className="profile-info-value">{user.id}</span>
-            </div>
-            <div className="profile-info-item">
-              <span className="profile-info-label">Role</span>
-              <span className="profile-info-value">{user.role || 'Regular User'}</span>
             </div>
           </div>
         </div>

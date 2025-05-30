@@ -6,8 +6,7 @@ from models import User, TokenBlocklist
 from extensions import db
 from utils.validation import validate_required_fields, sanitize_email, sanitize_string
 from utils.auth_utils import (
-    validate_login_data, validate_registration_data, 
-    check_user_exists, authenticate_user, create_auth_response
+    validate_login_data, authenticate_user, create_auth_response
 )
 from utils.otp_service import OTPService
 from utils.google_oauth_service import GoogleOAuthService
@@ -339,28 +338,6 @@ def google_callback():
         return jsonify({"msg": "OAuth callback error"}), 500
 
 # User profile endpoints
-@auth_bp.route("/profile", methods=["GET"])
-@jwt_required()
-def get_profile():
-    try:
-        user_id = int(get_jwt_identity())
-        user = User.query.get_or_404(user_id)
-        
-        return jsonify({
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "profile_picture": user.profile_picture,
-                "notify_email": user.notify_email,
-                "notify_in_app": user.notify_in_app
-            }
-        }), 200
-        
-    except Exception as e:
-        print(f"Get profile error: {e}")
-        return jsonify({"msg": "An error occurred while fetching profile"}), 500
-
 @auth_bp.route("/settings", methods=["PUT"])
 @jwt_required()
 def update_settings():
@@ -395,42 +372,3 @@ def update_settings():
     except Exception as e:
         print(f"Update settings error: {e}")
         return jsonify({"msg": "An error occurred while updating settings"}), 500
-
-@auth_bp.route("/upload-profile-image", methods=["POST"])
-@jwt_required()
-def upload_profile_image_endpoint():
-    try:
-        user_id = int(get_jwt_identity())
-        user = User.query.get_or_404(user_id)
-        
-        if 'image' not in request.files:
-            return jsonify({"msg": "No image file provided"}), 400
-        
-        image_file = request.files['image']
-        if image_file.filename == '':
-            return jsonify({"msg": "No image file selected"}), 400
-        
-        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-        file_extension = image_file.filename.rsplit('.', 1)[1].lower() if '.' in image_file.filename else ''
-        
-        if file_extension not in allowed_extensions:
-            return jsonify({"msg": "Invalid file type. Allowed types: PNG, JPG, JPEG, GIF, WEBP"}), 400
-        
-        if user.profile_picture and 'cloudinary.com' in user.profile_picture:
-            delete_cloudinary_image(user.profile_picture)
-        
-        upload_result = upload_profile_image(image_file, user_id)
-        if not upload_result:
-            return jsonify({"msg": "Failed to upload image"}), 500
-        
-        user.profile_picture = upload_result['secure_url']
-        db.session.commit()
-        
-        return jsonify({
-            "msg": "Profile image uploaded successfully",
-            "profile_picture": user.profile_picture
-        }), 200
-        
-    except Exception as e:
-        print(f"Profile image upload error: {e}")
-        return jsonify({"msg": "An error occurred while uploading image"}), 500
