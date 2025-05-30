@@ -77,6 +77,9 @@ function App() {
               </>
             } />
 
+            {/* Add Google OAuth callback route */}
+            <Route path="/auth/google/callback" element={<GoogleOAuthCallback />} />
+
             {/* Add this route for Reset Password */}
             <Route path="/reset-password" element={
               <>
@@ -133,5 +136,69 @@ function App() {
     </BrowserRouter>
   );
 }
+
+// Google OAuth callback component for handling popup authentication
+const GoogleOAuthCallback = () => {
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
+    const state = urlParams.get('state');
+
+    if (error) {
+      window.opener?.postMessage({
+        type: 'GOOGLE_AUTH_ERROR',
+        error: error
+      }, window.location.origin);
+      window.close();
+      return;
+    }
+
+    if (code) {
+      // Convert authorization code to credential token via backend
+      fetch(`${window.location.origin}/api/auth/google/exchange`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code, state })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.credential) {
+          window.opener?.postMessage({
+            type: 'GOOGLE_AUTH_SUCCESS',
+            credential: data.credential
+          }, window.location.origin);
+        } else {
+          window.opener?.postMessage({
+            type: 'GOOGLE_AUTH_ERROR',
+            error: 'Failed to exchange authorization code'
+          }, window.location.origin);
+        }
+        window.close();
+      })
+      .catch(error => {
+        window.opener?.postMessage({
+          type: 'GOOGLE_AUTH_ERROR',
+          error: error.message || 'Authentication failed'
+        }, window.location.origin);
+        window.close();
+      });
+    }
+  }, []);
+
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100vh',
+      fontSize: '16px'
+    }}>
+      Processing authentication...
+    </div>
+  );
+};
 
 export default App;

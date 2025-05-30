@@ -1,27 +1,22 @@
-from flask import Blueprint, jsonify, request
-from flask_jwt_extended import (
-    jwt_required,
-    get_jwt_identity,
-    get_jwt,
-    create_access_token,
-    create_refresh_token
-)
+from flask import Blueprint, jsonify, request, render_template_string
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, create_access_token
 from datetime import datetime, timezone
-from models import User, TokenBlocklist, OTPVerification, PasswordResetToken
+
+from models import User, TokenBlocklist
 from extensions import db
-from utils.email import send_email
-from utils.email_templates import (
-    get_otp_email_template, 
-    get_password_reset_email_template,
-    get_welcome_email_template
+from utils.validation import validate_required_fields, sanitize_email, sanitize_string
+from utils.auth_utils import (
+    validate_login_data, validate_registration_data, 
+    check_user_exists, authenticate_user, create_auth_response
 )
-from utils.google_auth import verify_google_token, get_google_client_id as get_google_client_id_util
+from utils.otp_service import OTPService
+from utils.google_oauth_service import GoogleOAuthService
+from utils.password_service import PasswordService
 from utils.cloudinary_upload import upload_profile_image, delete_cloudinary_image
-from utils.validation import validate_email, validate_password, validate_required_fields, sanitize_email, sanitize_string
-from utils.auth_helpers import create_user_tokens, format_user_response, validate_login_data, validate_registration_data
 
 auth_bp = Blueprint("auth", __name__)
 
+# Registration endpoints
 @auth_bp.route("/register", methods=["POST"])
 def register():
     try:
@@ -33,27 +28,14 @@ def register():
         username = sanitize_string(data["username"])
         email = sanitize_email(data["email"])
         
-        if User.query.filter_by(username=username).first():
-            return jsonify({"msg": "Username already exists"}), 400
+        user_exists, error_msg = check_user_exists(username, email)
+        if user_exists:
+            return jsonify({"msg": error_msg}), 400
         
-        if User.query.filter_by(email=email).first():
-            return jsonify({"msg": "Email already registered"}), 400
+        success, message = OTPService.send_registration_otp(username, email)
+        status_code = 200 if success else 500
         
-        otp = OTPVerification.create_otp(email)
-        
-        subject = "Verify Your Email - OTP"
-        html_body = get_otp_email_template(username, otp)
-        text_body = f"Your OTP for email verification is: {otp}. Valid for 10 minutes."
-        
-        email_sent = send_email(subject, [email], text_body, html_body)
-        if not email_sent:
-            return jsonify({"msg": "Failed to send verification email. Please try again."}), 500
-        
-        print("OTP is", otp)
-        return jsonify({
-            "msg": "OTP sent to your email. Please verify to complete registration.",
-            "email": email
-        }), 200
+        return jsonify({"msg": message, "email": email}), status_code
         
     except Exception as e:
         print(f"Registration error: {e}")
@@ -67,61 +49,15 @@ def verify_otp():
         if not is_valid:
             return jsonify({"msg": msg}), 400
         
-        email = sanitize_email(data["email"])
-        otp = sanitize_string(data["otp"])
-        username = sanitize_string(data["username"])
-        password = data["password"]
+        success, message = OTPService.verify_registration_otp(
+            data["email"], data["otp"], data["username"], data["password"]
+        )
+        status_code = 201 if success else 400
         
-        verification = OTPVerification.query.filter_by(
-            email=email, 
-            is_used=False
-        ).order_by(OTPVerification.created_at.desc()).first()
-        
-        if not verification:
-            return jsonify({"msg": "No valid OTP found for this email"}), 400
-        
-        if verification.is_expired():
-            return jsonify({"msg": "OTP has expired. Please request a new one."}), 400
-        
-        if verification.attempts >= 3:
-            verification.is_used = True
-            db.session.commit()
-            return jsonify({"msg": "Too many failed attempts. Please request a new OTP."}), 400
-        
-        if verification.otp != otp:
-            verification.attempts += 1
-            db.session.commit()
-            remaining_attempts = 3 - verification.attempts
-            return jsonify({
-                "msg": f"Invalid OTP. {remaining_attempts} attempts remaining."
-            }), 400
-        
-        # Double-check that user doesn't exist
-        if User.query.filter_by(username=username).first():
-            return jsonify({"msg": "Username already exists"}), 400
-        if User.query.filter_by(email=email).first():
-            return jsonify({"msg": "Email already registered"}), 400
-        
-        # Create user
-        user = User(username=username, email=email)
-        user.set_password(password)
-        
-        verification.is_used = True
-        
-        db.session.add(user)
-        db.session.commit()
-        
-        # Send welcome email
-        subject = "Welcome to Our Platform!"
-        html_body = get_welcome_email_template(username)
-        text_body = f"Welcome {username}! Your account has been successfully created."
-        send_email(subject, [email], text_body, html_body)
-        
-        return jsonify({"msg": "Registration completed successfully"}), 201
+        return jsonify({"msg": message}), status_code
         
     except Exception as e:
         print(f"OTP verification error: {e}")
-        db.session.rollback()
         return jsonify({"msg": "An error occurred during verification"}), 500
 
 @auth_bp.route("/resend-otp", methods=["POST"])
@@ -131,31 +67,17 @@ def resend_otp():
         if not data or "email" not in data:
             return jsonify({"msg": "Email is required"}), 400
         
-        email = sanitize_email(data["email"])
         username = data.get("username", "User")
+        success, message = OTPService.resend_registration_otp(data["email"], username)
+        status_code = 200 if success else 400
         
-        if not validate_email(email):
-            return jsonify({"msg": "Invalid email format"}), 400
-        
-        if User.query.filter_by(email=email).first():
-            return jsonify({"msg": "Email already registered"}), 400
-        
-        otp = OTPVerification.create_otp(email)
-        
-        subject = "Verify Your Email - New OTP"
-        html_body = get_otp_email_template(username, otp)
-        text_body = f"Your new OTP for email verification is: {otp}. Valid for 10 minutes."
-        
-        email_sent = send_email(subject, [email], text_body, html_body)
-        if not email_sent:
-            return jsonify({"msg": "Failed to send verification email. Please try again."}), 500
-        
-        return jsonify({"msg": "New OTP sent to your email"}), 200
+        return jsonify({"msg": message}), status_code
         
     except Exception as e:
         print(f"Resend OTP error: {e}")
         return jsonify({"msg": "An error occurred while resending OTP"}), 500
 
+# Authentication endpoints
 @auth_bp.route("/login", methods=["POST"])
 def login():
     try:
@@ -168,102 +90,15 @@ def login():
         email = data.get("email", username)
         password = data["password"]
         
-        user = User.query.filter_by(username=username).first()
+        user, error_msg = authenticate_user(username, password)
         if not user:
-            user = User.query.filter_by(email=email).first()
+            return jsonify({"msg": error_msg}), 401
         
-        if not user or not user.check_password(password):
-            return jsonify({"msg": "Invalid credentials"}), 401
-        
-        access_token, refresh_token = create_user_tokens(user.id)
-        
-        return jsonify({
-            "access_token": access_token, 
-            "refresh_token": refresh_token,
-            "user": format_user_response(user)
-        })
+        return jsonify(create_auth_response(user)), 200
         
     except Exception as e:
         print(f"Login error: {e}")
         return jsonify({"msg": "An error occurred during login"}), 500
-
-@auth_bp.route("/forgot-password", methods=["POST"])
-def forgot_password():
-    try:
-        data = request.get_json()
-        if not data or "email" not in data:
-            return jsonify({"msg": "Email is required"}), 400
-        
-        email = sanitize_email(data["email"])
-        
-        if not validate_email(email):
-            return jsonify({"msg": "Invalid email format"}), 400
-        
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            # Don't reveal if email exists or not for security
-            return jsonify({"msg": "If the email exists, a password reset link has been sent"}), 200
-        
-        reset_token = PasswordResetToken.create_token(user.id)
-        
-        reset_link = f"http://localhost:3000/reset-password?token={reset_token}"
-        
-        subject = "Password Reset Request"
-        html_body = get_password_reset_email_template(user.username, reset_link)
-        text_body = f"Click this link to reset your password: {reset_link}"
-        
-        email_sent = send_email(subject, [email], text_body, html_body)
-        if not email_sent:
-            return jsonify({"msg": "Failed to send reset email. Please try again."}), 500
-        
-        return jsonify({"msg": "If the email exists, a password reset link has been sent"}), 200
-        
-    except Exception as e:
-        print(f"Forgot password error: {e}")
-        return jsonify({"msg": "An error occurred while processing your request"}), 500
-
-@auth_bp.route("/reset-password", methods=["POST"])
-def reset_password():
-    try:
-        data = request.get_json()
-        is_valid, msg = validate_required_fields(data, ["token", "new_password"])
-        if not is_valid:
-            return jsonify({"msg": msg}), 400
-        
-        token = sanitize_string(data["token"])
-        new_password = data["new_password"]
-        
-        # Validate password strength
-        is_valid, msg = validate_password(new_password)
-        if not is_valid:
-            return jsonify({"msg": msg}), 400
-        
-        reset_token = PasswordResetToken.query.filter_by(
-            token=token,
-            is_used=False
-        ).first()
-        
-        if not reset_token:
-            return jsonify({"msg": "Invalid or expired reset token"}), 400
-        
-        if reset_token.is_expired():
-            return jsonify({"msg": "Reset token has expired. Please request a new one."}), 400
-        
-        user = User.query.get(reset_token.user_id)
-        if not user:
-            return jsonify({"msg": "User not found"}), 404
-        
-        user.set_password(new_password)
-        reset_token.is_used = True
-        
-        db.session.commit()
-        
-        return jsonify({"msg": "Password reset successfully"}), 200
-        
-    except Exception as e:
-        print(f"Reset password error: {e}")
-        db.session.rollback()
-        return jsonify({"msg": "An error occurred while resetting password"}), 500
 
 @auth_bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
@@ -292,92 +127,209 @@ def logout():
         db.session.rollback()
         return jsonify({"msg": "An error occurred during logout"}), 500
 
-@auth_bp.route("/upload-profile-image", methods=["POST"])
-@jwt_required()
-def upload_profile_image_endpoint():
-    """Upload profile image to Cloudinary"""
+# Password reset endpoints
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
     try:
-        user_id = int(get_jwt_identity())
-        user = User.query.get_or_404(user_id)
-        
-        if 'image' not in request.files:
-            return jsonify({"msg": "No image file provided"}), 400
-        
-        image_file = request.files['image']
-        if image_file.filename == '':
-            return jsonify({"msg": "No image file selected"}), 400
-        
-        # Validate file type
-        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-        file_extension = image_file.filename.rsplit('.', 1)[1].lower() if '.' in image_file.filename else ''
-        
-        if file_extension not in allowed_extensions:
-            return jsonify({"msg": "Invalid file type. Allowed types: PNG, JPG, JPEG, GIF, WEBP"}), 400
-        
-        # Delete old profile image if exists
-        if user.profile_picture and 'cloudinary.com' in user.profile_picture:
-            delete_cloudinary_image(user.profile_picture)
-        
-        # Upload new image
-        upload_result = upload_profile_image(image_file, user_id)
-        if not upload_result:
-            return jsonify({"msg": "Failed to upload image"}), 500
-        
-        # Update user profile
-        user.profile_picture = upload_result['secure_url']
-        db.session.commit()
-        
-        return jsonify({
-            "msg": "Profile image uploaded successfully",
-            "profile_picture": user.profile_picture
-        }), 200
-        
-    except Exception as e:
-        print(f"Profile image upload error: {e}")
-        return jsonify({"msg": "An error occurred while uploading image"}), 500
-
-@auth_bp.route("/settings", methods=["PUT"])
-@jwt_required()
-def update_settings():
-    try:
-        user_id = int(get_jwt_identity())
-        user = User.query.get_or_404(user_id)
         data = request.get_json()
+        if not data or "email" not in data:
+            return jsonify({"msg": "Email is required"}), 400
         
-        if not data:
-            return jsonify({"msg": "No data provided"}), 400
-        
-        if "notify_email" in data:
-            user.notify_email = bool(data["notify_email"])
-        if "notify_in_app" in data:
-            user.notify_in_app = bool(data["notify_in_app"])
-        
-        # Handle profile image URL update (if provided directly)
-        if "profile_picture" in data:
-            # Delete old profile image if exists and is from Cloudinary
-            if user.profile_picture and 'cloudinary.com' in user.profile_picture:
-                delete_cloudinary_image(user.profile_picture)
-            
-            user.profile_picture = data["profile_picture"]
-        
-        db.session.commit()
-        return jsonify({
-            "msg": "Settings updated successfully",
-            "user": {
-                "notify_email": user.notify_email,
-                "notify_in_app": user.notify_in_app,
-                "profile_picture": user.profile_picture
-            }
-        })
+        success, message = PasswordService.send_reset_email(data["email"])
+        return jsonify({"msg": message}), 200
         
     except Exception as e:
-        print(f"Update settings error: {e}")
-        return jsonify({"msg": "An error occurred while updating settings"}), 500
+        print(f"Forgot password error: {e}")
+        return jsonify({"msg": "An error occurred while processing your request"}), 500
 
+@auth_bp.route("/reset-password", methods=["POST"])
+def reset_password():
+    try:
+        data = request.get_json()
+        is_valid, msg = validate_required_fields(data, ["token", "new_password"])
+        if not is_valid:
+            return jsonify({"msg": msg}), 400
+        
+        success, message = PasswordService.reset_password_with_token(
+            data["token"], data["new_password"]
+        )
+        status_code = 200 if success else 400
+        
+        return jsonify({"msg": message}), status_code
+        
+    except Exception as e:
+        print(f"Reset password error: {e}")
+        return jsonify({"msg": "An error occurred while resetting password"}), 500
+
+# Google OAuth endpoints
+@auth_bp.route("/google-register", methods=["POST"])
+def google_register():
+    try:
+        data = request.get_json()
+        if not data or "token" not in data:
+            return jsonify({"msg": "Google token is required"}), 400
+        
+        result, error_msg = GoogleOAuthService.authenticate_with_google(
+            data["token"], is_registration=True
+        )
+        
+        if not result:
+            status_code = 409 if "already exists" in error_msg else 401
+            return jsonify({"msg": error_msg}), status_code
+        
+        return jsonify(result), 201
+        
+    except Exception as e:
+        print(f"Google register error: {e}")
+        return jsonify({"msg": "An error occurred during Google registration"}), 500
+
+@auth_bp.route("/google-login", methods=["POST"])
+def google_login():
+    try:
+        data = request.get_json()
+        if not data or "token" not in data:
+            return jsonify({"msg": "Google token is required"}), 400
+        
+        result, error_msg = GoogleOAuthService.authenticate_with_google(
+            data["token"], is_registration=False
+        )
+        
+        if not result:
+            status_code = 404 if "not found" in error_msg else 401
+            return jsonify({"msg": error_msg}), status_code
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"Google login error: {e}")
+        return jsonify({"msg": "An error occurred during Google login"}), 500
+
+@auth_bp.route("/google/client-id", methods=["GET"])
+def get_google_client_id():
+    try:
+        result, error_msg = GoogleOAuthService.get_client_id()
+        
+        if not result:
+            return jsonify({"error": error_msg}), 500
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"Get Google client ID error: {e}")
+        return jsonify({"error": "An error occurred while fetching Google client ID"}), 500
+
+@auth_bp.route("/google/exchange-code", methods=["POST"])
+def google_exchange_code():
+    try:
+        data = request.get_json()
+        if not data or "code" not in data:
+            return jsonify({"error": "Authorization code is required"}), 400
+        
+        result, error_msg = GoogleOAuthService.exchange_authorization_code(
+            data["code"], data.get("state")
+        )
+        
+        if not result:
+            return jsonify({"error": error_msg}), 400
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"Google code exchange error: {e}")
+        return jsonify({"error": "An error occurred during code exchange"}), 500
+
+@auth_bp.route("/google/callback", methods=["GET"])
+def google_callback():
+    """Handle Google OAuth callback with HTML response"""
+    try:
+        callback_html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Authentication</title>
+            <style>
+                body { font-family: Arial, sans-serif; display: flex; justify-content: center; 
+                       align-items: center; height: 100vh; margin: 0; background-color: #f5f5f5; }
+                .container { text-align: center; padding: 20px; background: white; 
+                           border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; 
+                         border-top: 4px solid #4285F4; border-radius: 50%; 
+                         animation: spin 1s linear infinite; margin: 0 auto 20px; }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="spinner"></div>
+                <p>Processing authentication...</p>
+            </div>
+            <script>
+                (function() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const code = urlParams.get('code');
+                    const error = urlParams.get('error');
+                    const state = urlParams.get('state');
+                    
+                    if (error) {
+                        window.postMessage({
+                            type: 'GOOGLE_AUTH_ERROR',
+                            error: error === 'access_denied' ? 'Authentication cancelled' : 'Authentication failed'
+                        }, window.location.origin);
+                        window.close();
+                        return;
+                    }
+                    
+                    if (!code) {
+                        window.postMessage({
+                            type: 'GOOGLE_AUTH_ERROR',
+                            error: 'No authorization code received'
+                        }, window.location.origin);
+                        window.close();
+                        return;
+                    }
+                    
+                    fetch('/auth/google/exchange-code', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code, state }),
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.credential) {
+                            window.postMessage({
+                                type: 'GOOGLE_AUTH_SUCCESS',
+                                credential: result.credential
+                            }, window.location.origin);
+                        } else {
+                            window.postMessage({
+                                type: 'GOOGLE_AUTH_ERROR',
+                                error: result.error || 'Failed to authenticate with Google'
+                            }, window.location.origin);
+                        }
+                        window.close();
+                    })
+                    .catch(error => {
+                        window.postMessage({
+                            type: 'GOOGLE_AUTH_ERROR',
+                            error: 'Failed to process authentication'
+                        }, window.location.origin);
+                        window.close();
+                    });
+                })();
+            </script>
+        </body>
+        </html>
+        """
+        return render_template_string(callback_html)
+        
+    except Exception as e:
+        print(f"Google callback error: {e}")
+        return jsonify({"msg": "OAuth callback error"}), 500
+
+# User profile endpoints
 @auth_bp.route("/profile", methods=["GET"])
 @jwt_required()
 def get_profile():
-    """Get user profile information"""
     try:
         user_id = int(get_jwt_identity())
         user = User.query.get_or_404(user_id)
@@ -397,140 +349,76 @@ def get_profile():
         print(f"Get profile error: {e}")
         return jsonify({"msg": "An error occurred while fetching profile"}), 500
 
-@auth_bp.route("/google-register", methods=["POST"])
-def google_register():
-    """Handle Google OAuth registration"""
+@auth_bp.route("/settings", methods=["PUT"])
+@jwt_required()
+def update_settings():
     try:
+        user_id = int(get_jwt_identity())
+        user = User.query.get_or_404(user_id)
         data = request.get_json()
-        if not data or "token" not in data:
-            return jsonify({"msg": "Google token is required"}), 400
         
-        google_token = data["token"]
+        if not data:
+            return jsonify({"msg": "No data provided"}), 400
         
-        # Verify Google token
-        google_info = verify_google_token(google_token)
-        if not google_info:
-            return jsonify({"msg": "Invalid Google token"}), 401
+        if "notify_email" in data:
+            user.notify_email = bool(data["notify_email"])
+        if "notify_in_app" in data:
+            user.notify_in_app = bool(data["notify_in_app"])
         
-        # Check if email is verified
-        if not google_info.get('email_verified', False):
-            return jsonify({"msg": "Google email not verified"}), 401
+        if "profile_picture" in data:
+            if user.profile_picture and 'cloudinary.com' in user.profile_picture:
+                delete_cloudinary_image(user.profile_picture)
+            user.profile_picture = data["profile_picture"]
         
-        email = google_info.get('email')
-        if not email:
-            return jsonify({"msg": "Email not found in Google token"}), 401
-
-        # Check if user already exists
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            return jsonify({
-                "msg": "An account with this email already exists. Please log in instead."
-            }), 409
-            
-        # Create new user with Google info
-        user = User.find_or_create_google_user(google_info)
-        
-        # Create JWT tokens
-        access_token = create_access_token(identity=str(user.id))
-        refresh_token = create_refresh_token(identity=str(user.id))
-        
-        # Send welcome email
-        subject = "Welcome to Our Platform!"
-        html_body = get_welcome_email_template(user.username)
-        text_body = f"Welcome {user.username}! Your account has been successfully created."
-        send_email(subject, [user.email], text_body, html_body)
-        
+        db.session.commit()
         return jsonify({
-            "access_token": access_token,
-            "refresh_token": refresh_token,
+            "msg": "Settings updated successfully",
             "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "profile_picture": user.profile_picture
-            }
-        }), 201
-        
-    except Exception as e:
-        print(f"Google register error: {e}")
-        return jsonify({"msg": "An error occurred during Google registration"}), 500
-
-@auth_bp.route("/google-login", methods=["POST"])
-def google_login():
-    """Handle Google OAuth login"""
-    try:
-        data = request.get_json()
-        if not data or "token" not in data:
-            return jsonify({"msg": "Google token is required"}), 400
-        
-        google_token = data["token"]
-        
-        # Verify Google token
-        google_info = verify_google_token(google_token)
-        if not google_info:
-            return jsonify({"msg": "Invalid Google token"}), 401
-        
-        # Check if email is verified
-        if not google_info.get('email_verified', False):
-            return jsonify({"msg": "Google email not verified"}), 401
-        
-        email = google_info.get('email')
-        if not email:
-            return jsonify({"msg": "Email not found in Google token"}), 401
-
-        # Find existing user
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            return jsonify({
-                "msg": "No account found with this email. Please register first."
-            }), 404
-            
-        # Update Google info if user exists but doesn't have Google ID
-        if not user.google_id:
-            user.google_id = google_info.get('google_id')
-            if google_info.get('picture'):
-                user.profile_picture = google_info.get('picture')
-            db.session.commit()
-        
-        # Create JWT tokens
-        access_token = create_access_token(identity=str(user.id))
-        refresh_token = create_refresh_token(identity=str(user.id))
-        
-        return jsonify({
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
+                "notify_email": user.notify_email,
+                "notify_in_app": user.notify_in_app,
                 "profile_picture": user.profile_picture
             }
         }), 200
         
     except Exception as e:
-        print(f"Google login error: {e}")
-        return jsonify({"msg": "An error occurred during Google login"}), 500
+        print(f"Update settings error: {e}")
+        return jsonify({"msg": "An error occurred while updating settings"}), 500
 
-@auth_bp.route("/google/callback", methods=["GET"])
-def google_callback():
-    """Handle Google OAuth callback (for server-side flow if needed)"""
+@auth_bp.route("/upload-profile-image", methods=["POST"])
+@jwt_required()
+def upload_profile_image_endpoint():
     try:
-        # This endpoint can be used for server-side OAuth flow
-        # For now, we're using client-side flow with ID tokens
-        return jsonify({"msg": "OAuth callback received"}), 200
-    except Exception as e:
-        print(f"Google callback error: {e}")
-        return jsonify({"msg": "OAuth callback error"}), 500
-
-@auth_bp.route("/google-client-id", methods=["GET"])
-def get_google_client_id():
-    """Get Google OAuth client ID for frontend"""
-    try:
-        client_id = get_google_client_id_util()
-        if not client_id:
-            return jsonify({"msg": "Google OAuth not configured"}), 500
+        user_id = int(get_jwt_identity())
+        user = User.query.get_or_404(user_id)
         
-        return jsonify({"client_id": client_id}), 200
+        if 'image' not in request.files:
+            return jsonify({"msg": "No image file provided"}), 400
+        
+        image_file = request.files['image']
+        if image_file.filename == '':
+            return jsonify({"msg": "No image file selected"}), 400
+        
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        file_extension = image_file.filename.rsplit('.', 1)[1].lower() if '.' in image_file.filename else ''
+        
+        if file_extension not in allowed_extensions:
+            return jsonify({"msg": "Invalid file type. Allowed types: PNG, JPG, JPEG, GIF, WEBP"}), 400
+        
+        if user.profile_picture and 'cloudinary.com' in user.profile_picture:
+            delete_cloudinary_image(user.profile_picture)
+        
+        upload_result = upload_profile_image(image_file, user_id)
+        if not upload_result:
+            return jsonify({"msg": "Failed to upload image"}), 500
+        
+        user.profile_picture = upload_result['secure_url']
+        db.session.commit()
+        
+        return jsonify({
+            "msg": "Profile image uploaded successfully",
+            "profile_picture": user.profile_picture
+        }), 200
+        
     except Exception as e:
-        print(f"Get Google client ID error: {e}")
-        return jsonify({"msg": "An error occurred while fetching Google client ID"}), 500
+        print(f"Profile image upload error: {e}")
+        return jsonify({"msg": "An error occurred while uploading image"}), 500
