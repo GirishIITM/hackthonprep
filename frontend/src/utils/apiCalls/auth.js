@@ -61,7 +61,17 @@ const apiRequest = async (
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-    const result = await response.json();
+    
+    // Handle non-JSON responses (like HTML error pages)
+    let result;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      result = await response.json();
+    } else {
+      // Handle non-JSON responses
+      const text = await response.text();
+      result = { error: `Server returned non-JSON response: ${response.status}` };
+    }
 
     // Reset loading state
     if (loadingKey) {
@@ -80,7 +90,7 @@ const apiRequest = async (
     }
 
     if (!response.ok) {
-      throw new Error(result.error || "An error occurred");
+      throw new Error(result.error || result.msg || "An error occurred");
     }
 
     return result;
@@ -90,6 +100,15 @@ const apiRequest = async (
     // Reset loading state on error too
     if (loadingKey) {
       loadingState.setLoading(loadingKey, false);
+    }
+
+    // Enhanced error handling for network issues
+    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      throw new Error('Unable to connect to server. Please check if the backend server is running on http://localhost:5000');
+    }
+    
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout: The server took too long to respond.');
     }
 
     throw error;
@@ -384,7 +403,7 @@ const authAPI = {
    */
   getGoogleClientId: () => {
     return apiRequest(
-      "/auth/google-client-id",
+      "/auth/google/client-id",
       "GET",
       null,
       "auth-google-client-id"
