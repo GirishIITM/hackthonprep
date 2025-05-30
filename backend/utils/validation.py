@@ -8,22 +8,23 @@ def validate_email(email):
     return re.match(pattern, email.strip()) is not None
 
 def validate_password(password):
-    """Validate password strength"""
+    """Validate password strength (optional - for frontend guidance only)"""
     if not password or not isinstance(password, str):
         return False, "Password is required"
     
-    if len(password) < 8:
-        return False, "Password must be at least 8 characters long"
+    if len(password) < 6:
+        return False, "Password must be at least 6 characters long"
     
-    if not re.search(r'[A-Z]', password):
-        return False, "Password must contain at least one uppercase letter"
+    # Optional strength checks for frontend guidance
+    strength_checks = {
+        'min_length': len(password) >= 8,
+        'has_uppercase': bool(re.search(r'[A-Z]', password)),
+        'has_lowercase': bool(re.search(r'[a-z]', password)),
+        'has_number': bool(re.search(r'\d', password)),
+        'has_special': bool(re.search(r'[!@#$%^&*(),.?":{}|<>]', password))
+    }
     
-    if not re.search(r'[a-z]', password):
-        return False, "Password must contain at least one lowercase letter"
-    
-    if not re.search(r'\d', password):
-        return False, "Password must contain at least one number"
-    
+    # Only require minimum length for backend validation
     return True, "Password is valid"
 
 def validate_required_fields(data, required_fields):
@@ -48,3 +49,40 @@ def sanitize_email(email):
     if not isinstance(email, str):
         return email
     return email.strip().lower()
+
+def validate_username(username):
+    """Validate username format"""
+    if not username or not isinstance(username, str):
+        return False, "Username is required"
+    
+    username = username.strip()
+    
+    if len(username) < 3:
+        return False, "Username must be at least 3 characters long"
+    
+    if len(username) > 30:
+        return False, "Username cannot be longer than 30 characters"
+    
+    if not re.match(r'^[a-zA-Z0-9_]+$', username):
+        return False, "Username can only contain letters, numbers, and underscores"
+    
+    return True, "Username is valid"
+
+def validate_full_name(full_name):
+    """Validate full name format"""
+    if not full_name or not isinstance(full_name, str):
+        return False, "Full name is required"
+    
+    full_name = full_name.strip()
+    
+    if len(full_name) < 2:
+        return False, "Full name must be at least 2 characters long"
+    
+    if len(full_name) > 100:
+        return False, "Full name cannot be longer than 100 characters"
+    
+    # Allow letters, spaces, hyphens, and apostrophes
+    if not re.match(r"^[a-zA-Z\s\-']+$", full_name):
+        return False, "Full name can only contain letters, spaces, hyphens, and apostrophes"
+    
+    return True, "Full name is valid"

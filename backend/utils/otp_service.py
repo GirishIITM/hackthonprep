@@ -27,7 +27,7 @@ class OTPService:
             return False, "An error occurred while sending OTP"
 
     @staticmethod
-    def verify_registration_otp(email, otp, username, password):
+    def verify_registration_otp(email, otp, full_name, username, password):
         """Verify OTP and complete user registration"""
         try:
             email = sanitize_email(email)
@@ -63,7 +63,7 @@ class OTPService:
                 return False, "Email already registered"
             
             # Create user
-            user = User(username=username, email=email)
+            user = User(username=username, email=email,full_name=full_name)
             user.set_password(password)
             
             verification.is_used = True

@@ -242,16 +242,17 @@ const isAuthenticated = () => {
 const authAPI = {
   /**
    * Register a new user (sends OTP)
+   * @param {string} fullName - User's full name
    * @param {string} username - Username
    * @param {string} email - User email
    * @param {string} password - User password
    * @returns {Promise} - Registration response
    */
-  register: (username, email, password) => {
+  register: (fullName, username, email, password) => {
     return apiRequest(
       "/auth/register",
       "POST",
-      { username, email, password },
+      { full_name: fullName, username, email, password },
       "auth-register"
     );
   },
@@ -260,15 +261,16 @@ const authAPI = {
    * Verify OTP and complete registration
    * @param {string} email - User email
    * @param {string} otp - OTP code
+   * @param {string} fullName - User's full name
    * @param {string} username - Username
    * @param {string} password - User password
    * @returns {Promise} - Verification response
    */
-  verifyOTP: (email, otp, username, password) => {
+  verifyOTP: (email, otp, fullName, username, password) => {
     return apiRequest(
       "/auth/verify-otp",
       "POST",
-      { email, otp, username, password },
+      { email, otp, full_name: fullName, username, password },
       "auth-verify-otp"
     );
   },

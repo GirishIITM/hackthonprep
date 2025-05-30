@@ -21,18 +21,30 @@ auth_bp = Blueprint("auth", __name__)
 def register():
     try:
         data = request.get_json()
-        is_valid, msg = validate_registration_data(data)
+        is_valid, msg = validate_required_fields(data, ["full_name", "username", "email", "password"])
         if not is_valid:
             return jsonify({"msg": msg}), 400
         
+        # Basic password length check only
+        if len(data["password"]) < 6:
+            return jsonify({"msg": "Password must be at least 6 characters long"}), 400
+        
+        full_name = sanitize_string(data["full_name"])
         username = sanitize_string(data["username"])
         email = sanitize_email(data["email"])
         
-        user_exists, error_msg = check_user_exists(username, email)
-        if user_exists:
-            return jsonify({"msg": error_msg}), 400
+        # Check if user already exists
+        existing_user = User.query.filter(
+            (User.email == email) | (User.username == username)
+        ).first()
         
-        success, message = OTPService.send_registration_otp(username, email)
+        if existing_user:
+            if existing_user.email == email:
+                return jsonify({"msg": "Email already exists"}), 400
+            else:
+                return jsonify({"msg": "Username already exists"}), 400
+        
+        success, message = OTPService.send_registration_otp(full_name, username, email)
         status_code = 200 if success else 500
         
         return jsonify({"msg": message, "email": email}), status_code
@@ -45,12 +57,12 @@ def register():
 def verify_otp():
     try:
         data = request.get_json()
-        is_valid, msg = validate_required_fields(data, ["email", "otp", "username", "password"])
+        is_valid, msg = validate_required_fields(data, ["email", "otp", "full_name", "username", "password"])
         if not is_valid:
             return jsonify({"msg": msg}), 400
         
         success, message = OTPService.verify_registration_otp(
-            data["email"], data["otp"], data["username"], data["password"]
+            data["email"], data["otp"], data["full_name"], data["username"], data["password"]
         )
         status_code = 201 if success else 400
         

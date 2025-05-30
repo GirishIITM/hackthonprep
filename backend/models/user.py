@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(100), nullable=False)  # Add full name field
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=True)  # Make nullable for Google OAuth users
@@ -36,6 +37,9 @@ class User(db.Model):
     @staticmethod
     def create_google_user(google_info):
         """Create a new user from Google OAuth info"""
+        # Extract full name from Google info
+        full_name = google_info.get('name', google_info.get('given_name', 'User'))
+        
         # Ensure username is unique
         username = google_info.get('given_name', google_info['email'].split('@')[0])
         base_username = username
@@ -45,6 +49,7 @@ class User(db.Model):
             counter += 1
         
         user = User(
+            full_name=full_name,
             username=username,
             email=google_info['email'],
             google_id=google_info['google_id'],
