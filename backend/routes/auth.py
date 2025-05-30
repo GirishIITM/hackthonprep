@@ -349,6 +349,26 @@ def update_settings():
         if not data:
             return jsonify({"msg": "No data provided"}), 400
         
+        # Update full name if provided
+        if "full_name" in data:
+            full_name = sanitize_string(data["full_name"])
+            if len(full_name.strip()) >= 1:
+                user.full_name = full_name
+        
+        # Update username if provided
+        if "username" in data:
+            username = sanitize_string(data["username"])
+            if len(username.strip()) >= 1:
+                # Check if username is already taken
+                existing_user = User.query.filter(User.username == username, User.id != user_id).first()
+                if not existing_user:
+                    user.username = username
+        
+        # Update about if provided
+        if "about" in data:
+            about = sanitize_string(data["about"]) if data["about"] else ""
+            user.about = about
+        
         if "notify_email" in data:
             user.notify_email = bool(data["notify_email"])
         if "notify_in_app" in data:
@@ -363,6 +383,11 @@ def update_settings():
         return jsonify({
             "msg": "Settings updated successfully",
             "user": {
+                "id": user.id,
+                "full_name": user.full_name,
+                "name": user.full_name,
+                "username": user.username,
+                "about": user.about,
                 "notify_email": user.notify_email,
                 "notify_in_app": user.notify_in_app,
                 "profile_picture": user.profile_picture
@@ -371,4 +396,5 @@ def update_settings():
         
     except Exception as e:
         print(f"Update settings error: {e}")
+        db.session.rollback()
         return jsonify({"msg": "An error occurred while updating settings"}), 500

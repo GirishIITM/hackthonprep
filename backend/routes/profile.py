@@ -18,8 +18,10 @@ def get_profile():
         return jsonify({
             "id": user.id,
             "full_name": user.full_name,
+            "name": user.full_name,
             "username": user.username,
             "email": user.email,
+            "about": user.about,
             "profile_picture": user.profile_picture,
             "created_at": user.created_at.isoformat() if user.created_at else None,
             "notify_email": user.notify_email,
@@ -48,6 +50,24 @@ def update_profile():
                 return jsonify({"msg": "Full name cannot be empty"}), 400
             user.full_name = full_name
         
+        # Update username if provided
+        if "username" in data:
+            username = sanitize_string(data["username"])
+            if len(username.strip()) < 1:
+                return jsonify({"msg": "Username cannot be empty"}), 400
+            
+            # Check if username is already taken by another user
+            existing_user = User.query.filter(User.username == username, User.id != user_id).first()
+            if existing_user:
+                return jsonify({"msg": "Username already exists"}), 400
+            
+            user.username = username
+        
+        # Update about if provided
+        if "about" in data:
+            about = sanitize_string(data["about"]) if data["about"] else ""
+            user.about = about
+        
         # Update notification settings if provided
         if "notify_email" in data:
             user.notify_email = bool(data["notify_email"])
@@ -60,12 +80,15 @@ def update_profile():
             "msg": "Profile updated successfully",
             "user": {
                 "id": user.id,
+                "full_name": user.full_name,
                 "name": user.full_name,
                 "username": user.username,
                 "email": user.email,
+                "about": user.about,
                 "profile_picture": user.profile_picture,
                 "notify_email": user.notify_email,
-                "notify_in_app": user.notify_in_app
+                "notify_in_app": user.notify_in_app,
+                "created_at": user.created_at.isoformat() if user.created_at else None
             }
         }), 200
         

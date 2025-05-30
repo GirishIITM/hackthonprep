@@ -44,17 +44,10 @@ const Profile = () => {
     try {
       const response = await profileAPI.updateProfile({ full_name: fullName });
       
-      const updatedUser = { ...user, name: fullName, full_name: fullName };
-      setUser(updatedUser);
+      // Fetch fresh data from backend to ensure consistency
+      await fetchUserProfile();
       setEditingName(false);
       
-      // Update localStorage with new user data
-      const currentAuth = {
-        access_token: localStorage.getItem('access_token'),
-        refresh_token: localStorage.getItem('refresh_token'),
-        user: updatedUser
-      };
-      saveAuthData(currentAuth.access_token, currentAuth.refresh_token, updatedUser);
     } catch (error) {
       console.error('Failed to update name:', error);
       alert('Failed to update name. Please try again.');
@@ -65,17 +58,10 @@ const Profile = () => {
     try {
       const response = await profileAPI.updateProfile({ username: username });
       
-      const updatedUser = { ...user, username: username };
-      setUser(updatedUser);
+      // Fetch fresh data from backend to ensure consistency
+      await fetchUserProfile();
       setEditingUsername(false);
       
-      // Update localStorage with new user data
-      const currentAuth = {
-        access_token: localStorage.getItem('access_token'),
-        refresh_token: localStorage.getItem('refresh_token'),
-        user: updatedUser
-      };
-      saveAuthData(currentAuth.access_token, currentAuth.refresh_token, updatedUser);
     } catch (error) {
       console.error('Failed to update username:', error);
       alert('Failed to update username. Please try again.');
@@ -86,17 +72,10 @@ const Profile = () => {
     try {
       const response = await profileAPI.updateProfile({ about: about });
       
-      const updatedUser = { ...user, about: about };
-      setUser(updatedUser);
+      // Fetch fresh data from backend to ensure consistency
+      await fetchUserProfile();
       setEditingAbout(false);
       
-      // Update localStorage with new user data
-      const currentAuth = {
-        access_token: localStorage.getItem('access_token'),
-        refresh_token: localStorage.getItem('refresh_token'),
-        user: updatedUser
-      };
-      saveAuthData(currentAuth.access_token, currentAuth.refresh_token, updatedUser);
     } catch (error) {
       console.error('Failed to update about:', error);
       alert('Failed to update about. Please try again.');
@@ -126,19 +105,8 @@ const Profile = () => {
       const result = await profileAPI.uploadProfileImage(file);
       
       if (result && result.profile_picture) {
-        const newImageUrl = result.profile_picture;
-        setProfileImage(newImageUrl);
-
-        const updatedUser = { ...user, profile_picture: newImageUrl };
-        setUser(updatedUser);
-        
-        // Update localStorage with new user data
-        const currentAuth = {
-          access_token: localStorage.getItem('access_token'),
-          refresh_token: localStorage.getItem('refresh_token'),
-          user: updatedUser
-        };
-        saveAuthData(currentAuth.access_token, currentAuth.refresh_token, updatedUser);
+        // Fetch fresh data from backend to ensure consistency
+        await fetchUserProfile();
       }
     } catch (error) {
       console.error('Image upload failed:', error);
