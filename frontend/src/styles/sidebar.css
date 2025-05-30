@@ -227,7 +227,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--color-overlay);
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(2px);
 }
 
 /* Custom scrollbar for sidebar */
@@ -291,5 +293,131 @@
 
   .sidebar.open {
     transform: translateX(0);
+  }
+}
+
+/* Profile section styling */
+.profile-section {
+  padding: 1.25rem 0.9375rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.profile-avatar {
+  width: 3.75rem;
+  height: 3.75rem;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.625rem;
+  font-size: 1.5rem;
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 0.25rem 0.75rem rgba(37, 99, 235, 0.2);
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.05);
+}
+
+.profile-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.3125rem;
+  color: var(--color-text);
+}
+
+.profile-email {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  word-break: break-word;
+}
+
+/* Logo section styling */
+.logo-section {
+  padding: 1.25rem 0.9375rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.logo-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.logo-link:hover {
+  background-color: var(--color-primary-light, rgba(37, 99, 235, 0.05));
+}
+
+.logo-icon {
+  font-size: 1.5rem;
+  color: var(--color-primary);
+}
+
+.logo-text {
+  font-size: 1.125rem;
+  font-weight: 700;
+  background: linear-gradient(45deg, var(--color-primary), #0056b3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Menu divider styling */
+.menu-divider {
+  border-top: 1px solid var(--color-border);
+  margin-top: 0.625rem;
+  padding-top: 0.9375rem;
+}
+
+/* Logout button specific styling */
+.logout-menu-item {
+  border-top: 1px solid var(--color-border);
+  margin-top: 0.625rem;
+  padding-top: 0.9375rem;
+  color: var(--color-error) !important;
+}
+
+.logout-menu-item:hover {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  color: #ff8a8a !important;
+}
+
+/* Dark mode toggle styling */
+.theme-toggle {
+  border-top: 1px solid var(--color-border);
+  margin-top: 0.625rem;
+  padding-top: 0.9375rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .profile-section {
+    padding: 1rem 0.75rem;
+  }
+  
+  .logo-section {
+    padding: 1rem 0.75rem;
+  }
+  
+  .profile-avatar {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.25rem;
+  }
+  
+  .logo-text {
+    font-size: 1rem;
   }
 }

@@ -1,12 +1,12 @@
 .settings-container {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 2rem 1rem;
+  color: var(--color-text);
 }
 
 .settings-header {
   margin-bottom: 2rem;
-  text-align: center;
 }
 
 .settings-header h1 {
@@ -21,6 +21,17 @@
   color: var(--color-text-secondary);
 }
 
+.success-message {
+  background-color: rgba(34, 197, 94, 0.1);
+  border: 1px solid var(--color-success);
+  color: var(--color-success);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  text-align: center;
+  font-weight: 500;
+}
+
 .settings-content {
   display: flex;
   flex-direction: column;
@@ -30,7 +41,7 @@
 .settings-section {
   background-color: var(--color-surface);
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 2rem;
   box-shadow: 0 4px 20px var(--color-shadow);
 }
 
@@ -39,7 +50,7 @@
   font-weight: 600;
   margin-bottom: 1.5rem;
   color: var(--color-text);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 2px solid var(--color-primary);
   padding-bottom: 0.5rem;
 }
 
@@ -47,12 +58,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0;
-  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: var(--color-surface-variant);
+  border-radius: 8px;
+  border-left: 4px solid transparent;
+  transition: border-color 0.3s;
+}
+
+.setting-item:hover {
+  border-left-color: var(--color-primary);
 }
 
 .setting-item:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .setting-label {
@@ -64,16 +83,16 @@
 .setting-checkbox {
   width: 20px;
   height: 20px;
-  cursor: pointer;
   accent-color: var(--color-primary);
+  cursor: pointer;
 }
 
 .setting-select {
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-input-border);
   border-radius: 6px;
   background-color: var(--color-input-bg);
-  color: var(--color-text);
+  color: var(--color-input-text);
   cursor: pointer;
   min-width: 150px;
 }
@@ -86,106 +105,72 @@
 
 .theme-options {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .theme-btn {
   padding: 0.5rem 1rem;
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border);
   border-radius: 6px;
   background-color: var(--color-surface);
   color: var(--color-text);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .theme-btn:hover {
-  background-color: var(--color-border);
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light, rgba(37, 99, 235, 0.05));
 }
 
 .theme-btn.active {
+  border-color: var(--color-primary);
   background-color: var(--color-primary);
   color: white;
-  border-color: var(--color-primary);
-}
-
-.account-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.info-item:last-child {
-  border-bottom: none;
-}
-
-.info-label {
-  font-weight: 500;
-  color: var(--color-text-secondary);
-}
-
-.info-value {
-  color: var(--color-text);
-  font-weight: 500;
 }
 
 .settings-actions {
   display: flex;
   gap: 1rem;
-  justify-content: center;
+  justify-content: flex-end;
   margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--color-border);
+  padding: 2rem;
+  background-color: var(--color-surface);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--color-shadow);
 }
 
 .btn {
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
   border: none;
   font-size: 1rem;
 }
 
 .btn-primary {
-  background-color: var(--color-primary);
-  color: white;
+  background-color: var(--color-btn-bg);
+  color: var(--color-btn-text);
 }
 
 .btn-primary:hover {
-  background-color: var(--color-primary-hover);
-  transform: translateY(-2px);
+  background-color: var(--color-btn-bg-hover);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-variant);
   color: var(--color-text);
   border: 1px solid var(--color-border);
 }
 
 .btn-secondary:hover {
   background-color: var(--color-border);
-  transform: translateY(-2px);
-}
-
-.success-message {
-  background-color: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  color: var(--color-success, #059669);
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  text-align: center;
-  font-weight: 500;
+  transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {
@@ -193,31 +178,45 @@
     padding: 1rem;
   }
   
+  .settings-header h1 {
+    font-size: 2rem;
+  }
+  
+  .settings-section {
+    padding: 1.5rem;
+  }
+  
   .setting-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: 1rem;
   }
   
-  .setting-select,
   .theme-options {
     width: 100%;
   }
   
-  .theme-options {
-    justify-content: space-between;
+  .theme-btn {
+    flex: 1;
+    text-align: center;
   }
   
   .settings-actions {
     flex-direction: column;
+    gap: 0.75rem;
   }
   
   .btn {
     width: 100%;
   }
+}
+
+@media (max-width: 480px) {
+  .settings-header h1 {
+    font-size: 1.75rem;
+  }
   
-  .info-item {
+  .theme-options {
     flex-direction: column;
-    gap: 0.25rem;
   }
 }

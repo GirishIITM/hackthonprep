@@ -3,7 +3,7 @@
   min-height: 100vh;
   position: relative; /* Needed for ::before positioning */
   overflow: hidden;
- 
+  background-color: var(--color-bg);
 }
 
 /* Add the animated, gradient, circular background shape */
@@ -28,18 +28,39 @@
 
 /* Make sure .register-left content is above the background shape */
 .register-left {
-  flex: 1.1;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  color: white;
+  padding: 2rem;
   position: relative;
   min-width: 0;
   overflow: hidden;
-  background: transparent;
   z-index: 1;
-  padding: 2rem 0;
 }
+
+.register-left .content {
+  text-align: center;
+  z-index: 2;
+  margin-bottom: 2rem;
+}
+
+.register-left h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.register-left p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
 .content {
   color: #fff;
   transition: transform 0.9s ease-in-out;
@@ -47,6 +68,7 @@
   text-align: center;
   margin-top: 2rem;
 }
+
 .content p {
     font-family: var(--font-family);
     margin: 0;
@@ -54,6 +76,7 @@
     padding: 1.2rem 85px;
     font-weight: var(--font-weight-normal);
 }
+
 .btn.transparent {
   margin: 0;
   padding-top: 5px;
@@ -77,6 +100,7 @@
   color: #4481eb;
   border-color: #4481eb;
 }
+
 /* Remove any conflicting background from .register-left */
 .register-left::before {
   content: none;
@@ -84,10 +108,10 @@
 
 /* Keep the SVG image above the background */
 .register-svg-img {
-  width: 80%;
-  max-width: 490px;
-  min-width: 220px;
+  max-width: 400px;
+  width: 100%;
   height: auto;
+  opacity: 0.8;
   display: block;
   margin: 0 auto;
   animation: floatUpDown 3s ease-in-out infinite alternate;
@@ -105,13 +129,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-surface, #fff);
+  padding: 2rem;
+  background-color: var(--color-surface);
   min-width: 0;
 }
 
 .register-container {
   width: 100%;
-  max-width: 370px;
+  max-width: 450px;
   margin: 0 auto;
   padding: 2.5rem 2.5rem 2rem 2.5rem;
   background: var(--color-surface);
@@ -120,48 +145,69 @@
 }
 
 .register-title {
+  font-size: 2rem;
+  font-weight: 700;
   text-align: center;
-  margin-bottom: 1.5rem;
-  font-size: 1.7rem;
+  margin-bottom: 2rem;
   color: var(--color-text);
 }
 
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.register-form > div {
+  display: flex;
+  flex-direction: column;
+}
+
 .register-form label {
-  display: block;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
   font-weight: 500;
   color: var(--color-text);
 }
 
-.register-form input[type="text"],
-.register-form input[type="email"],
-.register-form input[type="password"] {
-  width: 100%;
-  padding: 0.5rem 0.7rem;
+.register-form input {
+  padding: 0.75rem;
   border: 1px solid var(--color-input-border);
-  border-radius: 5px;
-  font-size: 1rem;
-  background: var(--color-input-bg);
+  border-radius: 6px;
+  background-color: var(--color-input-bg);
   color: var(--color-input-text);
-  margin-bottom: 1.2rem;
-  box-sizing: border-box;
+  font-size: 1rem;
+  transition: border-color 0.3s;
 }
 
-.register-form button[type="submit"] {
-  width: 100%;
-  padding: 0.6rem;
-  background: var(--color-btn-bg);
+.register-form input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.register-form button {
+  padding: 0.875rem;
+  background-color: var(--color-btn-bg);
   color: var(--color-btn-text);
   border: none;
-  border-radius: 5px;
-  font-size: 1.1rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
   margin-top: 0.5rem;
-  transition: background 0.2s;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
-.register-form button[type="submit"]:hover {
-  background: var(--color-btn-bg-hover);
+.register-form button:hover:not(:disabled) {
+  background-color: var(--color-btn-bg-hover);
+  transform: translateY(-1px);
+}
+
+.register-form button:disabled {
+  background-color: var(--color-btn-disabled-bg);
+  color: var(--color-btn-disabled-text);
+  cursor: not-allowed;
+  transform: none;
 }
 
 .register-link-text {
@@ -183,15 +229,14 @@
 
 /* Google OAuth Section */
 .google-auth-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .divider {
   display: flex;
   align-items: center;
-  margin: 1rem 0;
-  color: #6b7280;
-  font-size: 0.875rem;
+  margin: 1.5rem 0;
+  color: var(--color-text-secondary);
 }
 
 .divider::before,
@@ -199,21 +244,13 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: #e5e7eb;
+  background-color: var(--color-border);
 }
 
 .divider span {
   padding: 0 1rem;
-  background: white;
-}
-
-.google-login-btn {
-  transition: all 0.2s ease;
-}
-
-.google-login-btn:hover:not(:disabled) {
-  background-color: #f8f9fa !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 /* Responsive styles */
@@ -222,8 +259,6 @@
     padding: 1.2rem 200px;
   }
 }
-
-
 
 /* Responsive for mobile */
 @media (max-width: 670px) {
@@ -356,5 +391,55 @@
     flex-wrap: wrap;         
     max-width: 90%;   
     font-size: 22px;      
+  }
+
+  .contentt.mobile-only {
+    display: none;
+    text-align: center;
+    margin-top: 2rem;
+  }
+
+  .center-text {
+    color: var(--color-text-secondary);
+  }
+
+  .btnn {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 0.5rem;
+  }
+
+  .btnn:hover {
+    text-decoration: underline;
+  }
+}
+
+@media (max-width: 768px) {
+  .register-split-page {
+    flex-direction: column;
+  }
+  
+  .register-left {
+    display: none;
+  }
+  
+  .register-right {
+    flex: none;
+    min-height: 100vh;
+  }
+  
+  .contentt.mobile-only {
+    display: block;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-container {
+    padding: 1rem;
+  }
+  
+  .register-title {
+    font-size: 1.75rem;
   }
 }

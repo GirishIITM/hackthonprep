@@ -79,62 +79,21 @@ const NavSidebar = ({ children }) => {
     <div className="nav-container">
       {/* Top bar for mobile */}
       {isMobile && (
-        <div className="mobile-topbar" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '60px',
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e0e0e0',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 16px',
-          zIndex: 997,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-        }}>
+        <div className="mobile-topbar">
           <button 
             className="sidebar-toggle" 
             onClick={toggleSidebar} 
             aria-label="Toggle sidebar"
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '20px',
-              color: '#333',
-              padding: '8px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(0, 123, 255, 0.08)';
-              e.currentTarget.style.color = '#007bff';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = '#333';
-            }}
           >
             <FontAwesomeIcon icon={faBars} />
           </button>
-          <div className="mobile-brand" style={{
-            marginLeft: '16px',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#007bff'
-          }}>
+          <div className="mobile-brand">
             SynergySphere
           </div>
         </div>
       )}
 
-      <div className="main-layout" style={{
-        paddingTop: isMobile ? '60px' : '0'
-      }}>
+      <div className={`main-layout ${isMobile ? 'mobile-layout' : ''}`}>
         <Sidebar 
           isOpen={sidebarOpen} 
           onClose={closeSidebar}
