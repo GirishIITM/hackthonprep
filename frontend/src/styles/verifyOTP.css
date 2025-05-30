@@ -1,14 +1,14 @@
 :root {
-  --otp-primary: #6366f1;
-  --otp-primary-hover: #4f46e5;
-  --otp-success: #059669;
-  --otp-error: #dc2626;
-  --otp-text: #111827;
-  --otp-text-secondary: #4b5563;
-  --otp-bg: #f8fafc;
-  --otp-surface: #ffffff;
-  --otp-border: #e2e8f0;
-  --otp-shadow: rgba(0, 0, 0, 0.08);
+  --otp-primary: var(--color-primary);
+  --otp-primary-hover: var(--color-primary-hover);
+  --otp-success: var(--color-success);
+  --otp-error: var(--color-error);
+  --otp-text: var(--color-text);
+  --otp-text-secondary: var(--color-text-secondary);
+  --otp-bg: var(--color-bg);
+  --otp-surface: var(--color-surface);
+  --otp-border: var(--color-border);
+  --otp-shadow: var(--color-shadow);
 }
 
 /* Use the same color scheme as register/login pages */
@@ -28,7 +28,7 @@
   top: -10%;
   right: 47%;
   transform: translateY(-50%);
-  background-image: linear-gradient(-45deg, #4481eb 0%, #04befe 100%);
+  background-image: linear-gradient(-45deg, var(--color-gradient-primary-start) 0%, var(--color-gradient-primary-end) 100%);
   transition: 1.8s ease-in-out;
   border-radius: 50%;
   z-index: 0;
@@ -50,7 +50,7 @@
 }
 
 .content {
-  color: #fff;
+  color: var(--color-white);
   transition: transform 0.9s ease-in-out;
   transition-delay: 0.6s;
   text-align: center;
@@ -70,12 +70,12 @@
   padding-top: 5px;
   padding-bottom: 5px;
   background: none;
-  border: 2px solid #fff;
+  border: 2px solid var(--color-white);
+  color: var(--color-white);
   width: 130px;
   height: 41px;
   font-weight: 600;
   font-size: 1.4rem;
-  color: #fff;
   border-radius: 20px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
@@ -88,9 +88,9 @@
 
 .btn.transparent:hover,
 .btn.transparent:focus {
-  background: #fff;
-  color: #4481eb;
-  border-color: #4481eb;
+  background: var(--color-white);
+  color: var(--color-gradient-primary-start);
+  border-color: var(--color-gradient-primary-start);
 }
 
 .verify-otp-svg-container {
@@ -145,9 +145,9 @@
   justify-content: center;
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #4481eb 0%, #04befe 100%);
+  background: linear-gradient(135deg, var(--color-gradient-primary-start) 0%, var(--color-gradient-primary-end) 100%);
   border-radius: 50%;
-  color: white;
+  color: var(--color-white);
   margin-bottom: 1rem;
 }
 
@@ -167,7 +167,7 @@
 
 .email-highlight {
   font-weight: 600;
-  color: #4481eb;
+  color: var(--color-gradient-primary-start);
   background-color: rgba(68, 129, 235, 0.1);
   padding: 0.25rem 0.5rem;
   border-radius: 6px;

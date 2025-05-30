@@ -1,6 +1,6 @@
 .footer {
-  background-color: #1a1a2e;
-  color: #f5f5f5;
+  background-color: var(--color-dark-bg);
+  color: var(--color-gray-100);
   padding: 3rem 0 1rem;
   font-family: 'Roboto', sans-serif;
 }
@@ -22,13 +22,13 @@
 }
 
 .footer-section.brand h2 {
-  color: #4a69bd;
+  color: var(--color-blue-600);
   font-size: 1.8rem;
   margin-bottom: 0.5rem;
 }
 
 .footer-section h3 {
-  color: #4a69bd;
+  color: var(--color-blue-600);
   font-size: 1.2rem;
   margin-bottom: 1.2rem;
   position: relative;
@@ -42,13 +42,13 @@
   bottom: 0;
   height: 2px;
   width: 50px;
-  background-color: #4a69bd;
+  background-color: var(--color-blue-600);
 }
 
 .tagline {
   font-style: italic;
   margin-bottom: 1.5rem;
-  color: #ccc;
+  color: var(--color-gray-300);
 }
 
 .social-icons {
@@ -64,13 +64,13 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #2d3436;
-  color: #fff;
+  background-color: var(--color-gray-700);
+  color: var(--color-white);
   transition: all 0.3s ease;
 }
 
 .social-icons a:hover {
-  background-color: #4a69bd;
+  background-color: var(--color-blue-600);
   transform: translateY(-5px);
 }
 
@@ -84,7 +84,7 @@
 }
 
 .footer-section.links a {
-  color: #ccc;
+  color: var(--color-gray-300);
   text-decoration: none;
   transition: color 0.3s ease;
   display: inline-block;
@@ -98,12 +98,12 @@
   left: 0;
   width: 0;
   height: 1px;
-  background-color: #4a69bd;
+  background-color: var(--color-blue-600);
   transition: width 0.3s ease;
 }
 
 .footer-section.links a:hover {
-  color: #fff;
+  color: var(--color-white);
 }
 
 .footer-section.links a:hover::after {
@@ -116,20 +116,20 @@
 }
 
 .footer-section.contact a {
-  color: #ccc;
+  color: var(--color-gray-300);
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .footer-section.contact a:hover {
-  color: #4a69bd;
+  color: var(--color-blue-600);
 }
 
 .footer-bottom {
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem 2rem 0;
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--color-dark-border);
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -143,12 +143,12 @@
 }
 
 .footer-bottom-links a {
-  color: #ccc;
+  color: var(--color-gray-300);
   text-decoration: none;
 }
 
 .footer-bottom-links a:hover {
-  color: #4a69bd;
+  color: var(--color-blue-600);
   text-decoration: underline;
 }
 

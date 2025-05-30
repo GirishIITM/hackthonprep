@@ -7,7 +7,11 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingName, setEditingName] = useState(false);
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [editingAbout, setEditingAbout] = useState(false);
   const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
+  const [about, setAbout] = useState('');
   const [profileImage, setProfileImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState('');
@@ -25,6 +29,8 @@ const Profile = () => {
       setUser(()=>userData);
       console.log(userData.full_name)
       setFullName(()=>userData.full_name || '');
+      setUsername(()=>userData.username || '');
+      setAbout(()=>userData.about || '');
       setProfileImage(()=>userData.profile_picture || null);
     } catch (error) {
       console.error('Failed to fetch profile:', error);
@@ -38,7 +44,7 @@ const Profile = () => {
     try {
       const response = await profileAPI.updateProfile({ full_name: fullName });
       
-      const updatedUser = { ...user, name: fullName };
+      const updatedUser = { ...user, name: fullName, full_name: fullName };
       setUser(updatedUser);
       setEditingName(false);
       
@@ -52,6 +58,48 @@ const Profile = () => {
     } catch (error) {
       console.error('Failed to update name:', error);
       alert('Failed to update name. Please try again.');
+    }
+  };
+
+  const handleSaveUsername = async () => {
+    try {
+      const response = await profileAPI.updateProfile({ username: username });
+      
+      const updatedUser = { ...user, username: username };
+      setUser(updatedUser);
+      setEditingUsername(false);
+      
+      // Update localStorage with new user data
+      const currentAuth = {
+        access_token: localStorage.getItem('access_token'),
+        refresh_token: localStorage.getItem('refresh_token'),
+        user: updatedUser
+      };
+      saveAuthData(currentAuth.access_token, currentAuth.refresh_token, updatedUser);
+    } catch (error) {
+      console.error('Failed to update username:', error);
+      alert('Failed to update username. Please try again.');
+    }
+  };
+
+  const handleSaveAbout = async () => {
+    try {
+      const response = await profileAPI.updateProfile({ about: about });
+      
+      const updatedUser = { ...user, about: about };
+      setUser(updatedUser);
+      setEditingAbout(false);
+      
+      // Update localStorage with new user data
+      const currentAuth = {
+        access_token: localStorage.getItem('access_token'),
+        refresh_token: localStorage.getItem('refresh_token'),
+        user: updatedUser
+      };
+      saveAuthData(currentAuth.access_token, currentAuth.refresh_token, updatedUser);
+    } catch (error) {
+      console.error('Failed to update about:', error);
+      alert('Failed to update about. Please try again.');
     }
   };
 
@@ -117,7 +165,7 @@ const Profile = () => {
     return <div className="profile-error">You must be logged in to view this page.</div>;
   }
 
-  const aboutText = `Hey there! This is your space to manage your profile and stay on top of your tasks. Keep growing, stay focused, and make the most of every opportunity.`;
+  const defaultAboutText = `Hey there! This is your space to manage your profile and stay on top of your tasks. Keep growing, stay focused, and make the most of every opportunity.`;
 
   let joinedDate = null;
   if (user.created_at) {
@@ -179,8 +227,33 @@ const Profile = () => {
       <div className="profile-content">
         <div className="profile-section">
           <h2>About</h2>
-          <div className="profile-about-card">
-            {aboutText}
+          <div className={`profile-about-card ${editingAbout ? 'editing' : ''}`}>
+            {editingAbout ? (
+              <>
+                <textarea
+                  value={about}
+                  onChange={(e) => setAbout(e.target.value)}
+                  className="profile-about-textarea"
+                  placeholder="Tell us about yourself..."
+                />
+                <div className="edit-buttons">
+                  <button onClick={handleSaveAbout}>Save</button>
+                  <button onClick={() => { setAbout(user.about || ''); setEditingAbout(false); }}>Cancel</button>
+                </div>
+              </>
+            ) : (
+              <>
+                {user.about || defaultAboutText}
+                <button
+                  className="edit-icon-button"
+                  onClick={() => setEditingAbout(true)}
+                  aria-label="Edit About"
+                  style={{ float: 'right', marginTop: '-8px' }}
+                >
+                  <img src={penIcon} alt="Edit" className="edit-icon" />
+                </button>
+              </>
+            )}
           </div>
         </div>
         <div className="profile-section">
@@ -214,7 +287,29 @@ const Profile = () => {
             </div>
             <div className="profile-info-item">
               <span className="profile-info-label">Username</span>
-              <span className="profile-info-value">{user.username}</span>
+              {editingUsername ? (
+                <>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="profile-input"
+                  />
+                  <button onClick={handleSaveUsername}>Save</button>
+                  <button onClick={() => { setUsername(user.username); setEditingUsername(false); }}>Cancel</button>
+                </>
+              ) : (
+                <span className="profile-info-value">
+                  {user.username}
+                  <button
+                    className="edit-icon-button"
+                    onClick={() => setEditingUsername(true)}
+                    aria-label="Edit Username"
+                  >
+                    <img src={penIcon} alt="Edit" className="edit-icon" />
+                  </button>
+                </span>
+              )}
             </div>
             <div className="profile-info-item">
               <span className="profile-info-label">Email Address</span>

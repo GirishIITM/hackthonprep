@@ -1,5 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 
+* {
+  --font-family: 'Roboto', sans-serif;
+  --font-size: 16px;
+  --font-size-sm: 14px;
+  --font-size-lg: 18px;
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+  --transition: all 0.3s ease;
+  --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+}
+
 :root {
   --color-bg: #f8f9fa;
   --color-surface: #ffffff;
@@ -24,14 +36,37 @@
   --color-success: #22c55e;
   --color-surface-variant: #f3f4f6;
 
-  --font-family: 'Roboto', sans-serif;
-  --font-size: 16px;
-  --font-size-sm: 14px;
-  --font-size-lg: 18px;
-  --font-weight-normal: 400;
-  --font-weight-bold: 700;
-  --transition: all 0.3s ease;
-  --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  /* New variables for gradients and specific colors */
+  --color-gradient-primary-start: #4481eb;
+  --color-gradient-primary-end: #04befe;
+  --color-gradient-secondary-start: #04befe;
+  --color-gradient-secondary-end: #4481eb;
+  --color-white: #ffffff;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-dark-bg: #1a1a2e;
+  --color-dark-surface: #23232a;
+  --color-dark-border: #333;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-indigo-600: #7c3aed;
+  --color-indigo-700: #6d28d9;
+  --color-green-600: #059669;
+  --color-green-700: #047857;
+  --color-yellow-500: #eab308;
+  --color-yellow-600: #ca8a04;
+  --color-orange-500: #f97316;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
 
   /* Additional variables for task component */
   --color-card-bg: var(--color-surface);
@@ -59,6 +94,7 @@
   --color-surface: #23232a;
   --color-primary: #60a5fa;
   --color-primary-hover: #3b82f6;
+  --color-primary-light: rgba(96, 165, 250, 0.1);
   --color-accent: #fbbf24;
   --color-text: #f3f4f6;
   --color-text-secondary: #a1a1aa;
@@ -66,32 +102,50 @@
   --color-link-hover: #3b82f6;
   --color-border: #31313a;
   --color-shadow: rgba(0, 0, 0, 0.45);
-  --color-input-bg: #23232a;
+  --color-input-bg: #31313a;
   --color-input-text: #f3f4f6;
-  --color-input-border: #31313a;
-  --color-btn-bg: #2563eb;
-  --color-btn-bg-hover: #1d4ed8;
+  --color-input-border: #44444a;
+  --color-btn-bg: #3b82f6;
+  --color-btn-bg-hover: #2563eb;
   --color-btn-text: #f3f4f6;
   --color-btn-disabled-bg: #31313a;
   --color-btn-disabled-text: #a1a1aa;
   --color-error: #f87171;
   --color-success: #4ade80;
-  --color-surface-variant: #353535;
+  --color-surface-variant: #31313a;
 
-  /* Dark theme variants */
-  --color-card-bg: var(--color-surface);
-  --color-card-hover: #2a2a33;
-  --color-form-bg: var(--color-surface);
-  --color-status-not-started-bg: #374151;
-  --color-status-not-started-text: #f3f4f6;
-  --color-status-in-progress-bg: #1e40af;
-  --color-status-in-progress-text: #dbeafe;
-  --color-status-completed-bg: #166534;
-  --color-status-completed-text: #dcfce7;
-  --color-status-blocked-bg: #991b1b;
-  --color-status-blocked-text: #fee2e2;
-  --color-badge-bg: #78350f;
-  --color-badge-text: #fef3c7;
+  /* Dark theme variants for new variables */
+  --color-white: #ffffff;
+  --color-gray-100: #31313a;
+  --color-gray-200: #44444a;
+  --color-gray-300: #52525b;
+  --color-gray-400: #71717a;
+  --color-gray-500: #a1a1aa;
+  --color-gray-600: #d4d4d8;
+  --color-gray-700: #e4e4e7;
+  --color-gray-800: #f4f4f5;
+  --color-gray-900: #ffffff;
+  --color-dark-bg: #0f0f0f;
+  --color-dark-surface: #1a1a1a;
+  --color-dark-border: #31313a;
+  --color-blue-600: #60a5fa;
+  --color-blue-700: #3b82f6;
+  --color-blue-800: #2563eb;
+  
+  /* Task component dark theme */
+  --color-card-bg: #31313a;
+  --color-card-hover: #3a3a44;
+  --color-form-bg: #31313a;
+  --color-status-not-started-bg: #44444a;
+  --color-status-not-started-text: #d4d4d8;
+  --color-status-in-progress-bg: rgba(96, 165, 250, 0.2);
+  --color-status-in-progress-text: #93c5fd;
+  --color-status-completed-bg: rgba(74, 222, 128, 0.2);
+  --color-status-completed-text: #86efac;
+  --color-status-blocked-bg: rgba(248, 113, 113, 0.2);
+  --color-status-blocked-text: #fca5a5;
+  --color-badge-bg: rgba(251, 191, 36, 0.2);
+  --color-badge-text: #fcd34d;
 }
 
 body {

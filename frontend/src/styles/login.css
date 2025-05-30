@@ -16,7 +16,7 @@
   top: -10%;
   left: 48%;
   transform: translateY(-50%);
-  background-image: linear-gradient(-45deg, #04befe 0%, #4481eb 100%);
+  background-image: linear-gradient(-45deg, var(--color-gradient-secondary-start) 0%, var(--color-gradient-secondary-end) 100%);
   transition: 1.8s ease-in-out;
   border-radius: 50%;
   z-index: 0;
@@ -44,7 +44,7 @@
 }
 
 .content {
-  color: #fff;
+  color: var(--color-white);
   transition: transform 0.9s ease-in-out;
   transition-delay: 0.6s;
   text-align: center;
@@ -64,12 +64,12 @@
   padding-top: 5px;
   padding-bottom: 5px;
   background: none;
-  border: 2px solid #fff;
+  border: 2px solid var(--color-white);
+  color: var(--color-white);
   width: 130px;
   height: 41px;
   font-weight: 600;
   font-size: 1.4rem;
-  color: #fff;
   border-radius: 20px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
@@ -78,9 +78,9 @@
 
 .btn.transparent:hover,
 .btn.transparent:focus {
-  background: #fff;
-  color: #4481eb;
-  border-color: #4481eb;
+  background: var(--color-white);
+  color: var(--color-gradient-primary-start);
+  border-color: var(--color-gradient-primary-start);
 }
 
 
@@ -208,12 +208,12 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: #e5e7eb;
+  background: var(--color-gray-200);
 }
 
 .divider span {
   padding: 0 1rem;
-  background: white;
+  background: var(--color-white);
 }
 
 .google-auth-section {
@@ -225,7 +225,7 @@
 }
 
 .google-login-btn:hover:not(:disabled) {
-  background-color: #f8f9fa !important;
+  background-color: var(--color-gray-100) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -400,7 +400,7 @@
   }
 
   .login-form input.error {
-    border-color: #dc3545;
+    border-color: var(--color-error);
     box-shadow: 0 0 0 0.1rem rgba(220, 53, 69, 0.25);
   }
 
@@ -413,21 +413,21 @@
   }
 
   .error-message {
-    background-color: #f8d7da;
-    color: #721c24;
+    background-color: rgba(239, 68, 68, 0.08);
+    color: var(--color-red-700);
     padding: 0.75rem;
     border-radius: 5px;
-    border: 1px solid #f5c6cb;
+    border: 1px solid var(--color-red-500);
     margin-bottom: 1rem;
     font-size: 0.9rem;
   }
 
   .success-message {
-    background-color: #d4edda;
-    color: #155724;
+    background-color: rgba(34, 197, 94, 0.08);
+    color: var(--color-green-600);
     padding: 0.75rem;
     border-radius: 5px;
-    border: 1px solid #c3e6cb;
+    border: 1px solid var(--color-success);
     margin-bottom: 1rem;
     font-size: 0.9rem;
   }
@@ -495,7 +495,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: #6c757d;
+    color: var(--color-gray-500);
     padding: 0.25rem;
     display: flex;
     align-items: center;
@@ -505,7 +505,7 @@
   }
 
   .password-toggle-btn:hover {
-    color: #495057;
+    color: var(--color-gray-700);
   }
 
   .password-toggle-btn:focus {
