@@ -34,7 +34,16 @@ def validate_required_fields(data, required_fields):
     
     for field in required_fields:
         if field not in data or not str(data[field]).strip():
+            # Special validation for full_name field
+            if field == 'full_name':
+                return validate_full_name(data.get(field, ''))
             return False, f"{field.replace('_', ' ').title()} is required"
+    
+    # Additional validation for specific fields
+    if 'full_name' in required_fields and 'full_name' in data:
+        is_valid, msg = validate_full_name(data['full_name'])
+        if not is_valid:
+            return False, msg
     
     return True, "All required fields present"
 

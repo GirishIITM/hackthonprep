@@ -49,7 +49,17 @@ def create_app(config_class=None):
     
     with app.app_context():
         # Check and run migrations before creating tables
-        migration_needed = False
+        migration_needed = check_and_migrate()
+        if migration_needed is None:
+            print("No migrations needed, proceeding with table creation")
+        elif migration_needed is False:
+            print("Migration check failed, recreating database")
+            # If migration check fails, we will recreate the database
+            db.drop_all()
+            db.create_all()
+            print("Database recreated with new schema")
+        else:
+            print("Migrations needed, applying changes") 
         
         if migration_needed:
             # If migration was needed, recreate all tables

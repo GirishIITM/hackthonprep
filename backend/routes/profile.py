@@ -80,8 +80,8 @@ def update_profile():
             "msg": "Profile updated successfully",
             "user": {
                 "id": user.id,
-                "full_name": user.full_name,
-                "name": user.full_name,
+                "full_name": getattr(user, 'full_name', user.username),
+                "name": getattr(user, 'full_name', user.username),
                 "username": user.username,
                 "email": user.email,
                 "about": user.about,

@@ -27,6 +27,12 @@ def migrate_database():
         if 'profile_picture' not in columns:
             migrations_needed.append("ALTER TABLE user ADD COLUMN profile_picture VARCHAR(255)")
         
+        if 'full_name' not in columns:
+            migrations_needed.append("ALTER TABLE user ADD COLUMN full_name VARCHAR(100)")
+        
+        if 'about' not in columns:
+            migrations_needed.append("ALTER TABLE user ADD COLUMN about TEXT")
+        
         # Execute migrations
         for migration in migrations_needed:
             print(f"Executing migration: {migration}")
@@ -61,7 +67,7 @@ def check_and_migrate():
             
             if table_schema:
                 schema_sql = table_schema[0]
-                if 'google_id' not in schema_sql or 'profile_picture' not in schema_sql:
+                if 'google_id' not in schema_sql or 'profile_picture' not in schema_sql or 'full_name' not in schema_sql:
                     print("Schema mismatch detected. Running migrations...")
                     migrate_database()
                     return True

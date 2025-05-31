@@ -2,13 +2,18 @@ from models import User, OTPVerification, PasswordResetToken
 from extensions import db
 from utils.email import send_email
 from utils.email_templates import get_otp_email_template, get_welcome_email_template
-from utils.validation import sanitize_email, sanitize_string
+from utils.validation import sanitize_email, sanitize_string, validate_full_name
 
 class OTPService:
     @staticmethod
     def send_registration_otp(full_name, email):
         """Send OTP for registration"""
         try:
+            # Validate full_name
+            is_valid, msg = validate_full_name(full_name)
+            if not is_valid:
+                return False, msg
+            
             otp = OTPVerification.create_otp(email)
             
             subject = "Verify Your Email - OTP"

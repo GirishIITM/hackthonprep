@@ -20,7 +20,18 @@ auth_bp = Blueprint("auth", __name__)
 def register():
     try:
         data = request.get_json()
-        is_valid, msg = validate_required_fields(data, ["full_name", "username", "email", "password"])
+        if not data:
+            return jsonify({"msg": "No data provided"}), 400
+        
+        # Validate required fields individually to give better error messages
+        required_fields = ["full_name", "username", "email", "password"]
+        for field in required_fields:
+            if field not in data or not str(data[field]).strip():
+                return jsonify({"msg": f"{field.replace('_', ' ').title()} is required"}), 400
+        
+        # Validate full_name specifically
+        from utils.validation import validate_full_name
+        is_valid, msg = validate_full_name(data["full_name"])
         if not is_valid:
             return jsonify({"msg": msg}), 400
         
@@ -88,7 +99,6 @@ def resend_otp():
         print(f"Resend OTP error: {e}")
         return jsonify({"msg": "An error occurred while resending OTP"}), 500
 
-# Authentication endpoints
 @auth_bp.route("/login", methods=["POST"])
 def login():
     try:
@@ -384,8 +394,8 @@ def update_settings():
             "msg": "Settings updated successfully",
             "user": {
                 "id": user.id,
-                "full_name": user.full_name,
-                "name": user.full_name,
+                "full_name": getattr(user, 'full_name', user.username),
+                "name": getattr(user, 'full_name', user.username),
                 "username": user.username,
                 "about": user.about,
                 "notify_email": user.notify_email,

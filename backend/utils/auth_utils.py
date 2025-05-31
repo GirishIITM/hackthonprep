@@ -12,7 +12,7 @@ def format_user_response(user):
     """Format user data for API responses"""
     return {
         "id": user.id,
-        "name": user.full_name,
+        "name": getattr(user, 'full_name', user.username),
         "username": user.username,
         "email": user.email,
         "profile_picture": user.profile_picture,
