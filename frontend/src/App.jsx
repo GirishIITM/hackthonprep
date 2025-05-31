@@ -82,19 +82,19 @@ function App() {
             {/* Add Google OAuth callback route */}
             <Route path="/auth/google/callback" element={<GoogleOAuthCallback />} />
 
-            {/* Add this route for Reset Password */}
-            <Route path="/reset-password" element={
-              <>
-                <Navbar />
-                <ResetPassword />
-              </>
-            } />
-
             {/* Forgot password route */}
             <Route path="/forgot-password" element={
               <>
                 <Navbar />
-                <ForgotPassword />
+                {authenticated ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
+              </>
+            } />
+
+            {/* Reset password route - accessible to everyone regardless of auth status */}
+            <Route path="/reset-password" element={
+              <>
+                <Navbar />
+                <ResetPassword />
               </>
             } />
 

@@ -41,6 +41,7 @@ const handleTokenRefresh = async () => {
   const refreshToken = localStorage.getItem("refresh_token");
 
   if (!refreshToken || isTokenExpired(refreshToken)) {
+    console.log("Refresh token is missing or expired");
     clearAuthData();
     window.location.href = "/login";
     return false;
@@ -59,11 +60,14 @@ const handleTokenRefresh = async () => {
 
     if (response.ok && result.access_token) {
       localStorage.setItem("access_token", result.access_token);
+      // Update refresh token if provided (token rotation)
       if (result.refresh_token) {
         localStorage.setItem("refresh_token", result.refresh_token);
       }
+      console.log("Token refreshed successfully");
       return true;
     } else {
+      console.log("Token refresh failed:", result.msg || "Unknown error");
       clearAuthData();
       window.location.href = "/login";
       return false;
@@ -217,6 +221,20 @@ const authAPI = {
       "POST",
       { email },
       "auth-forgot-password"
+    );
+  },
+
+  /**
+   * Verify password reset token
+   * @param {string} token - Reset token
+   * @returns {Promise} - Token verification response
+   */
+  verifyResetToken: (token) => {
+    return apiRequest(
+      "/auth/verify-reset-token",
+      "POST",
+      { token },
+      "auth-verify-reset-token"
     );
   },
 

@@ -9,6 +9,9 @@ class Config:
     USE_POSTGRESQL = os.getenv('USE_POSTGRESQL', 'false').lower() == 'true'
     SKIP_MIGRATION = os.getenv('SKIP_MIGRATION', 'false').lower() == 'true'
     
+    # Frontend URL configuration
+    FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://voluble-tapioca-bc2df4.netlify.app')
+    
     def __init__(self):
         self.SQLALCHEMY_DATABASE_URI = self._get_database_uri()
     
@@ -33,8 +36,8 @@ class Config:
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=15)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)
     
     GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
     GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')

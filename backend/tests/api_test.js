@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 
 // Base URL for the API
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net';
 
 // Store tokens and IDs
 let accessToken = '';
@@ -96,6 +96,10 @@ async function testRefreshToken() {
   setAuthHeader(refreshToken);
   const response = await api.post('/auth/refresh');
   accessToken = response.data.access_token;
+  // Update refresh token if provided (token rotation)
+  if (response.data.refresh_token) {
+    refreshToken = response.data.refresh_token;
+  }
   setAuthHeader(accessToken);
   console.log('Token refreshed successfully');
   return response.data;

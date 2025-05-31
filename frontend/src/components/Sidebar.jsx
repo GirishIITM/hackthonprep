@@ -18,7 +18,10 @@ import {
   faSun,
   faProjectDiagram,
   faCog,
-  faHome
+  faHome,
+  faChartBar,
+  faCalendar,
+  faInbox
 } from '@fortawesome/free-solid-svg-icons';
 import { clearAuthData, getCurrentUser } from "../utils/apiCalls/auth";
 import "../styles/sidebar.css";
@@ -78,15 +81,20 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
           position: isMobile ? 'fixed' : 'sticky',
           top: 0,
           height: '100vh',
-          zIndex: 1000, // Increased z-index to be above overlay
-          transition: 'all 0.3s ease',
+          zIndex: 1000,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           border: 'none',
+          borderRadius: isMobile ? '0' : '0 12px 12px 0',
           boxShadow: darkMode 
-            ? '2px 0 15px rgba(0, 0, 0, 0.4)' 
-            : '2px 0 15px rgba(0, 0, 0, 0.08)',
+            ? '0 4px 20px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.2)' 
+            : '0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05)',
+          backdropFilter: 'blur(10px)',
           [`.${sidebarClasses.container}`]: {
             backgroundColor: darkMode ? '#1a1a1a' : '#ffffff',
-            color: darkMode ? '#ffffff' : '#333333'
+            color: darkMode ? '#ffffff' : '#333333',
+            background: darkMode 
+              ? 'linear-gradient(145deg, #1a1a1a, #1e1e1e)' 
+              : 'linear-gradient(145deg, #ffffff, #f8fafc)'
           }
         }}
       >
@@ -94,7 +102,10 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
         <div style={{
           padding: '20px 15px',
           borderBottom: `1px solid ${darkMode ? '#2a2a2a' : '#f0f0f0'}`,
-          textAlign: 'center'
+          textAlign: 'center',
+          background: darkMode 
+            ? 'linear-gradient(135deg, rgba(0, 123, 255, 0.05), rgba(0, 123, 255, 0.1))' 
+            : 'linear-gradient(135deg, rgba(0, 123, 255, 0.02), rgba(0, 123, 255, 0.05))'
         }}>
           <Link 
             to="/" 
@@ -108,16 +119,15 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
               gap: '10px',
               padding: '8px',
               borderRadius: '8px',
-              transition: 'all 0.2s ease',
-              ':hover': {
-                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 123, 255, 0.05)'
-              }
+              transition: 'all 0.3s ease'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 123, 255, 0.05)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
             <FontAwesomeIcon 
@@ -140,36 +150,8 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
 
         {/* Profile Section */}
         {isOpen && (
-          <div style={{
-            padding: '20px 15px',
-            borderBottom: `1px solid ${darkMode ? '#2a2a2a' : '#f0f0f0'}`,
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              backgroundColor: '#007bff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 10px',
-              fontSize: '24px',
-              color: 'white',
-              fontWeight: 'bold',
-              boxShadow: darkMode 
-                ? '0 4px 12px rgba(0, 123, 255, 0.3)' 
-                : '0 4px 12px rgba(0, 123, 255, 0.2)',
-              transition: 'transform 0.2s ease',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-            >
+          <div className="profile-section">
+            <div className="profile-avatar">
               {user?.name?.charAt(0).toUpperCase() || <FontAwesomeIcon icon={faUser} />}
             </div>
             <div style={{
@@ -190,121 +172,55 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
           </div>
         )}
 
+        {/* Enhanced Menu */}
         <Menu
           rootStyles={{
             [`.${menuClasses.button}`]: {
               backgroundColor: 'transparent',
               color: darkMode ? '#e0e0e0' : '#444444',
-              borderRadius: '8px',
+              borderRadius: '10px',
               margin: '2px 8px',
               padding: '12px 16px',
-              transition: 'all 0.2s ease',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               border: 'none',
-              borderLeft: 'none',
+              position: 'relative',
+              overflow: 'hidden',
               '&:hover': {
-                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 123, 255, 0.08)',
+                background: darkMode 
+                  ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(0, 123, 255, 0.1))' 
+                  : 'linear-gradient(135deg, rgba(0, 123, 255, 0.08), rgba(0, 123, 255, 0.1))',
                 color: darkMode ? '#ffffff' : '#007bff',
-                transform: 'translateX(4px)'
+                transform: 'translateX(6px) translateY(-1px)',
+                boxShadow: darkMode 
+                  ? '0 4px 12px rgba(0, 123, 255, 0.2)' 
+                  : '0 4px 12px rgba(0, 123, 255, 0.15)'
               }
             },
             [`.${menuClasses.active} > .${menuClasses.button}`]: {
-              backgroundColor: darkMode ? 'rgba(0, 123, 255, 0.2)' : 'rgba(0, 123, 255, 0.12)',
-              color: darkMode ? '#64b5f6' : '#0056b3',
-              borderLeft: `3px solid ${darkMode ? '#64b5f6' : '#007bff'}`,
-              fontWeight: '600',
+              background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+              color: '#ffffff',
+              borderLeft: `4px solid #64b5f6`,
+              fontWeight: '700',
+              transform: 'translateX(4px)',
+              boxShadow: '0 6px 20px rgba(0, 123, 255, 0.3), 0 2px 8px rgba(0, 123, 255, 0.2)',
               '&:hover': {
-                backgroundColor: darkMode ? 'rgba(0, 123, 255, 0.25)' : 'rgba(0, 123, 255, 0.15)',
-                transform: 'translateX(2px)'
+                background: 'linear-gradient(135deg, #0056b3 0%, #007bff 100%)',
+                transform: 'translateX(4px) translateY(-1px)'
               }
             },
             [`.${menuClasses.icon}`]: {
               minWidth: '20px',
               marginRight: '12px',
-              fontSize: '16px'
+              fontSize: '16px',
+              transition: 'transform 0.3s ease'
             },
-            // Submenu container styling
             [`.${menuClasses.subMenuContent}`]: {
               backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
               borderRadius: '0 0 12px 12px',
               margin: '0 8px 8px 8px',
               padding: '8px 0',
-              overflow: 'hidden',
               border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
-              borderTop: 'none',
-              position: 'relative',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                left: '20px',
-                top: '0',
-                bottom: '0',
-                width: '2px',
-                backgroundColor: darkMode ? 'rgba(100, 181, 246, 0.3)' : 'rgba(0, 123, 255, 0.2)',
-                borderRadius: '1px'
-              }
-            },
-            // Submenu items styling
-            [`.${menuClasses.subMenuContent} .${menuClasses.button}`]: {
-              borderLeft: 'none !important',
-              margin: '2px 12px 2px 32px', // Increased left margin for tree indentation
-              padding: '10px 16px',
-              fontSize: '14px',
-              backgroundColor: 'transparent',
-              borderRadius: '6px',
-              position: 'relative',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                left: '-20px',
-                top: '50%',
-                width: '12px',
-                height: '2px',
-                backgroundColor: darkMode ? 'rgba(100, 181, 246, 0.4)' : 'rgba(0, 123, 255, 0.3)',
-                borderRadius: '1px',
-                transform: 'translateY(-50%)'
-              },
-              '&:hover': {
-                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 123, 255, 0.05)',
-                color: darkMode ? '#ffffff' : '#007bff',
-                transform: 'translateX(4px)',
-                boxShadow: darkMode 
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
-                  : '0 2px 8px rgba(0, 123, 255, 0.1)'
-              }
-            },
-            // Active submenu item styling
-            [`.${menuClasses.subMenuContent} .${menuClasses.active} > .${menuClasses.button}`]: {
-              backgroundColor: darkMode ? 'rgba(0, 123, 255, 0.15)' : 'rgba(0, 123, 255, 0.08)',
-              color: darkMode ? '#64b5f6' : '#0056b3',
-              fontWeight: '600',
-              borderLeft: `2px solid ${darkMode ? '#64b5f6' : '#007bff'}`,
-              marginLeft: '30px',
-              '&::before': {
-                backgroundColor: darkMode ? '#64b5f6' : '#007bff',
-                width: '16px',
-                height: '3px'
-              },
-              '&:hover': {
-                backgroundColor: darkMode ? 'rgba(0, 123, 255, 0.2)' : 'rgba(0, 123, 255, 0.12)',
-                transform: 'translateX(2px)'
-              }
-            },
-            // Submenu icon styling
-            [`.${menuClasses.subMenuContent} .${menuClasses.icon}`]: {
-              minWidth: '16px',
-              marginRight: '10px',
-              fontSize: '14px',
-              opacity: 0.8
-            },
-            // Parent menu item with submenu styling
-            [`.${menuClasses.button}[aria-expanded="true"]`]: {
-              backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 123, 255, 0.05)',
-              borderBottomLeftRadius: '0',
-              borderBottomRightRadius: '0',
-              marginBottom: '0',
-              '&:hover': {
-                transform: 'none'
-              }
+              borderTop: 'none'
             }
           }}
         >
@@ -335,11 +251,6 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
           <SubMenu
             icon={<FontAwesomeIcon icon={faUser} />}
             label="Account"
-            style={{
-              '& > .pro-menu-item': {
-                marginBottom: '0'
-              }
-            }}
           >
             <MenuItem
               icon={<FontAwesomeIcon icon={faUser} />}

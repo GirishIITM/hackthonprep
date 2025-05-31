@@ -1,21 +1,20 @@
 from flask import Blueprint, jsonify, request, render_template_string
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, create_access_token
-from datetime import datetime, timezone
 
-from models import User, TokenBlocklist
+from models import User
 from extensions import db
 from utils.validation import validate_required_fields, sanitize_email, sanitize_string
 from utils.auth_utils import (
     validate_login_data, authenticate_user, create_auth_response
 )
-from utils.otp_service import OTPService
+from utils.redis_otp_service import RedisOTPService
+from utils.redis_token_service import RedisTokenService
 from utils.google_oauth_service import GoogleOAuthService
 from utils.password_service import PasswordService
-from utils.cloudinary_upload import upload_profile_image, delete_cloudinary_image
+from utils.cloudinary_upload import delete_cloudinary_image
 
 auth_bp = Blueprint("auth", __name__)
 
-# Registration endpoints
 @auth_bp.route("/register", methods=["POST"])
 def register():
     try:
@@ -23,19 +22,16 @@ def register():
         if not data:
             return jsonify({"msg": "No data provided"}), 400
         
-        # Validate required fields individually to give better error messages
         required_fields = ["full_name", "username", "email", "password"]
         for field in required_fields:
             if field not in data or not str(data[field]).strip():
                 return jsonify({"msg": f"{field.replace('_', ' ').title()} is required"}), 400
         
-        # Validate full_name specifically
         from utils.validation import validate_full_name
         is_valid, msg = validate_full_name(data["full_name"])
         if not is_valid:
             return jsonify({"msg": msg}), 400
         
-        # Basic password length check only
         if len(data["password"]) < 6:
             return jsonify({"msg": "Password must be at least 6 characters long"}), 400
         
@@ -43,7 +39,6 @@ def register():
         username = sanitize_string(data["username"])
         email = sanitize_email(data["email"])
         
-        # Check if user already exists
         existing_user = User.query.filter(
             (User.email == email) | (User.username == username)
         ).first()
@@ -54,7 +49,7 @@ def register():
             else:
                 return jsonify({"msg": "Username already exists"}), 400
         
-        success, message = OTPService.send_registration_otp(full_name, email)
+        success, message = RedisOTPService.send_registration_otp(full_name, email)
         status_code = 200 if success else 500
         
         return jsonify({"msg": message, "email": email}), status_code
@@ -71,7 +66,7 @@ def verify_otp():
         if not is_valid:
             return jsonify({"msg": msg}), 400
         
-        success, message = OTPService.verify_registration_otp(
+        success, message = RedisOTPService.verify_registration_otp(
             data["email"], data["otp"], data["full_name"], data["username"], data["password"]
         )
         status_code = 201 if success else 400
@@ -90,7 +85,7 @@ def resend_otp():
             return jsonify({"msg": "Email is required"}), 400
         
         username = data.get("username", "User")
-        success, message = OTPService.resend_registration_otp(data["email"], username)
+        success, message = RedisOTPService.resend_registration_otp(data["email"], username)
         status_code = 200 if success else 400
         
         return jsonify({"msg": message}), status_code
@@ -126,8 +121,14 @@ def login():
 def refresh():
     try:
         identity = get_jwt_identity()
-        access_token = create_access_token(identity=identity)
-        return jsonify({"access_token": access_token}), 200
+        
+        from utils.auth_utils import create_refreshed_tokens
+        access_token, refresh_token = create_refreshed_tokens(identity)
+        
+        return jsonify({
+            "access_token": access_token,
+            "refresh_token": refresh_token
+        }), 200
     except Exception as e:
         print(f"Token refresh error: {e}")
         return jsonify({"msg": "An error occurred while refreshing token"}), 500
@@ -139,16 +140,16 @@ def logout():
         jwt_data = get_jwt()
         jti = jwt_data["jti"]
         ttype = jwt_data["type"]
-        now = datetime.now(timezone.utc)
-        db.session.add(TokenBlocklist(jti=jti, type=ttype, created_at=now))
-        db.session.commit()
+        
+        success = RedisTokenService.blacklist_token(jti, ttype)
+        if not success:
+            return jsonify({"msg": "Failed to logout properly"}), 500
+            
         return jsonify({"msg": f"{ttype.capitalize()} token revoked"}), 200
     except Exception as e:
         print(f"Logout error: {e}")
-        db.session.rollback()
         return jsonify({"msg": "An error occurred during logout"}), 500
 
-# Password reset endpoints
 @auth_bp.route("/forgot-password", methods=["POST"])
 def forgot_password():
     try:
@@ -157,11 +158,28 @@ def forgot_password():
             return jsonify({"msg": "Email is required"}), 400
         
         success, message = PasswordService.send_reset_email(data["email"])
-        return jsonify({"msg": message}), 200
+        return jsonify({"message": message}), 200
         
     except Exception as e:
         print(f"Forgot password error: {e}")
         return jsonify({"msg": "An error occurred while processing your request"}), 500
+
+@auth_bp.route("/verify-reset-token", methods=["POST"])
+def verify_reset_token():
+    """Verify if a password reset token is valid"""
+    try:
+        data = request.get_json()
+        if not data or "token" not in data:
+            return jsonify({"msg": "Token is required"}), 400
+        
+        success, message = PasswordService.verify_reset_token(data["token"])
+        status_code = 200 if success else 400
+        
+        return jsonify({"msg": message, "valid": success}), status_code
+        
+    except Exception as e:
+        print(f"Verify reset token error: {e}")
+        return jsonify({"msg": "An error occurred while verifying token"}), 500
 
 @auth_bp.route("/reset-password", methods=["POST"])
 def reset_password():
@@ -176,13 +194,12 @@ def reset_password():
         )
         status_code = 200 if success else 400
         
-        return jsonify({"msg": message}), status_code
+        return jsonify({"message": message}), status_code
         
     except Exception as e:
         print(f"Reset password error: {e}")
         return jsonify({"msg": "An error occurred while resetting password"}), 500
 
-# Google OAuth endpoints
 @auth_bp.route("/google-register", methods=["POST"])
 def google_register():
     try:
@@ -347,47 +364,94 @@ def google_callback():
         print(f"Google callback error: {e}")
         return jsonify({"msg": "OAuth callback error"}), 500
 
-# User profile endpoints
+@auth_bp.route("/settings", methods=["GET"])
+@jwt_required()
+def get_settings():
+    try:
+        user_id = int(get_jwt_identity())
+        user = User.query.get_or_404(user_id)
+        
+        return jsonify({
+            "user": {
+                "id": user.id,
+                "full_name": getattr(user, 'full_name', user.username),
+                "name": getattr(user, 'full_name', user.username),
+                "username": user.username,
+                "email": user.email,
+                "about": getattr(user, 'about', ''),
+                "notify_email": getattr(user, 'notify_email', True),
+                "notify_in_app": getattr(user, 'notify_in_app', True),
+                "profile_picture": user.profile_picture,
+                "created_at": user.created_at.isoformat() if user.created_at else None
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"Get settings error: {e}")
+        return jsonify({"msg": "An error occurred while fetching settings"}), 500
+
 @auth_bp.route("/settings", methods=["PUT"])
 @jwt_required()
 def update_settings():
     try:
         user_id = int(get_jwt_identity())
         user = User.query.get_or_404(user_id)
-        data = request.get_json()
         
-        if not data:
-            return jsonify({"msg": "No data provided"}), 400
-        
-        # Update full name if provided
-        if "full_name" in data:
-            full_name = sanitize_string(data["full_name"])
-            if len(full_name.strip()) >= 1:
-                user.full_name = full_name
-        
-        # Update username if provided
-        if "username" in data:
-            username = sanitize_string(data["username"])
-            if len(username.strip()) >= 1:
-                # Check if username is already taken
-                existing_user = User.query.filter(User.username == username, User.id != user_id).first()
-                if not existing_user:
-                    user.username = username
-        
-        # Update about if provided
-        if "about" in data:
-            about = sanitize_string(data["about"]) if data["about"] else ""
-            user.about = about
-        
-        if "notify_email" in data:
-            user.notify_email = bool(data["notify_email"])
-        if "notify_in_app" in data:
-            user.notify_in_app = bool(data["notify_in_app"])
-        
-        if "profile_picture" in data:
+        # Handle both JSON and FormData
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            # Handle file upload
+            if 'profile_image' not in request.files:
+                return jsonify({"msg": "No profile image file provided"}), 400
+            
+            file = request.files['profile_image']
+            if file.filename == '':
+                return jsonify({"msg": "No file selected"}), 400
+            
+            # Import cloudinary upload function
+            from utils.cloudinary_upload import upload_profile_image, delete_cloudinary_image
+            
+            # Delete old profile picture if it exists
             if user.profile_picture and 'cloudinary.com' in user.profile_picture:
                 delete_cloudinary_image(user.profile_picture)
-            user.profile_picture = data["profile_picture"]
+            
+            # Upload new image
+            upload_result = upload_profile_image(file, user_id)
+            if not upload_result:
+                return jsonify({"msg": "Failed to upload image"}), 500
+            
+            user.profile_picture = upload_result['secure_url']
+        
+        else:
+            # Handle JSON data
+            data = request.get_json()
+            if not data:
+                return jsonify({"msg": "No data provided"}), 400
+            
+            if "full_name" in data:
+                full_name = sanitize_string(data["full_name"])
+                if len(full_name.strip()) >= 1:
+                    user.full_name = full_name
+            
+            if "username" in data:
+                username = sanitize_string(data["username"])
+                if len(username.strip()) >= 1:
+                    existing_user = User.query.filter(User.username == username, User.id != user_id).first()
+                    if not existing_user:
+                        user.username = username
+            
+            if "about" in data:
+                about = sanitize_string(data["about"]) if data["about"] else ""
+                user.about = about
+            
+            if "notify_email" in data:
+                user.notify_email = bool(data["notify_email"])
+            if "notify_in_app" in data:
+                user.notify_in_app = bool(data["notify_in_app"])
+            
+            if "profile_picture" in data:
+                if user.profile_picture and 'cloudinary.com' in user.profile_picture:
+                    delete_cloudinary_image(user.profile_picture)
+                user.profile_picture = data["profile_picture"]
         
         db.session.commit()
         return jsonify({
@@ -397,10 +461,12 @@ def update_settings():
                 "full_name": getattr(user, 'full_name', user.username),
                 "name": getattr(user, 'full_name', user.username),
                 "username": user.username,
-                "about": user.about,
-                "notify_email": user.notify_email,
-                "notify_in_app": user.notify_in_app,
-                "profile_picture": user.profile_picture
+                "email": user.email,
+                "about": getattr(user, 'about', ''),
+                "notify_email": getattr(user, 'notify_email', True),
+                "notify_in_app": getattr(user, 'notify_in_app', True),
+                "profile_picture": user.profile_picture,
+                "created_at": user.created_at.isoformat() if user.created_at else None
             }
         }), 200
         
