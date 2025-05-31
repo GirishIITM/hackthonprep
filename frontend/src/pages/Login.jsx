@@ -4,8 +4,8 @@ import GoogleLoginButton from '../components/GoogleLoginButton';
 import LoadingIndicator from '../components/LoadingIndicator';
 import '../styles/login.css';
 
-import { authAPI, loadingState, saveAuthData } from '../utils/apiCalls/auth';
 import registerSvg from '../assets/log.svg';
+import { loadingState, authAPI, saveAuthData } from '../utils/apiCalls';
 
 export default function Login() {
   const [formData, setFormData] = useState({

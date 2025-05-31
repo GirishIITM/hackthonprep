@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LoadingIndicator from '../components/LoadingIndicator';
 import '../styles/login.css';
-import { authAPI, loadingState } from '../utils/apiCalls/auth';
+import { authAPI, loadingState } from '../utils/apiCalls';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');

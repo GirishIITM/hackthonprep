@@ -1,5 +1,4 @@
-import { loadingState } from "./apiRequest";
-const API_BASE_URL = "http://localhost:5000";
+import { apiRequest, loadingState, API_BASE_URL } from "/src/utils/apiCalls/apiRequest.js";
 
 /**
  * Check if token is expired
@@ -15,103 +14,6 @@ const isTokenExpired = (token) => {
     return payload.exp < currentTime;
   } catch (error) {
     return true;
-  }
-};
-
-/**
- * Enhanced API request with loading state tracking and token refresh
- * @param {string} endpoint - API endpoint
- * @param {string} method - HTTP method
- * @param {object} data - Request payload
- * @param {string} loadingKey - Optional key to track loading state
- * @returns {Promise} - Response promise
- */
-const apiRequest = async (
-  endpoint,
-  method = "GET",
-  data = null,
-  loadingKey = null
-) => {
-  // Set loading state if loadingKey is provided
-  if (loadingKey) {
-    loadingState.setLoading(loadingKey, true);
-  }
-
-  const options = {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  };
-
-  // Check and refresh token if needed (except for auth endpoints)
-  if (!endpoint.startsWith("/auth/")) {
-    await ensureValidToken();
-  }
-
-  // Add token to headers if available
-  const token = localStorage.getItem("access_token");
-  if (token) {
-    options.headers.Authorization = `Bearer ${token}`;
-  }
-
-  if (data) {
-    options.body = JSON.stringify(data);
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-    
-    // Handle non-JSON responses (like HTML error pages)
-    let result;
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      result = await response.json();
-    } else {
-      // Handle non-JSON responses
-      const text = await response.text();
-      result = { error: `Server returned non-JSON response: ${response.status}` };
-    }
-
-    // Reset loading state
-    if (loadingKey) {
-      loadingState.setLoading(loadingKey, false);
-    }
-
-    // Handle token expiration
-    if (response.status === 401 && result.error === "Token has expired") {
-      const refreshSuccess = await handleTokenRefresh();
-      if (refreshSuccess) {
-        // Retry the original request with new token
-        return apiRequest(endpoint, method, data, loadingKey);
-      } else {
-        throw new Error("Session expired. Please login again.");
-      }
-    }
-
-    if (!response.ok) {
-      throw new Error(result.error || result.msg || "An error occurred");
-    }
-
-    return result;
-  } catch (error) {
-    console.error("API request error:", error);
-
-    // Reset loading state on error too
-    if (loadingKey) {
-      loadingState.setLoading(loadingKey, false);
-    }
-
-    // Enhanced error handling for network issues
-    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-      throw new Error('Unable to connect to server. Please check if the backend server is running on http://localhost:5000');
-    }
-    
-    if (error.name === 'AbortError') {
-      throw new Error('Request timeout: The server took too long to respond.');
-    }
-
-    throw error;
   }
 };
 
@@ -207,7 +109,6 @@ const clearAuthData = () => {
   localStorage.removeItem("refresh_token");
   localStorage.removeItem("user");
   loadingState.reset();
-  loadingState.setLoading("auth-refresh", false);
   authState.setAuthenticated(false);
 };
 
@@ -335,21 +236,6 @@ const authAPI = {
   },
 
   /**
-   * Refresh access token
-   * @returns {Promise} - Refresh token response
-   */
-  refreshToken: () => {
-    const refreshToken = localStorage.getItem("refresh_token");
-    return fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${refreshToken}`,
-      },
-    }).then((response) => response.json());
-  },
-
-  /**
    * Logout the current user
    * @returns {Promise} - Logout response
    */
@@ -417,68 +303,7 @@ const authAPI = {
    * @returns {Promise} - User data response
    */
   getCurrentUserFromBackend: () => {
-    return apiRequest('/profile', 'GET', null, 'auth-get-profile');
-  },
-};
-
-/**
- * Profile API functions
- */
-const profileAPI = {
-  /**
-   * Get current user profile
-   * @returns {Promise} - Profile data response
-   */
-  getProfile: () => {
-    return apiRequest("/profile", "GET", null, "profile-get");
-  },
-
-  /**
-   * Update user profile
-   * @param {object} profileData - Profile data to update
-   * @returns {Promise} - Update response
-   */
-  updateProfile: (profileData) => {
-    return apiRequest("/profile", "PUT", profileData, "profile-update");
-  },
-
-  /**
-   * Upload profile image
-   * @param {File} imageFile - Image file to upload
-   * @returns {Promise} - Upload response
-   */
-  uploadProfileImage: (imageFile) => {
-    const formData = new FormData();
-    formData.append('profile_image', imageFile);
-    
-    return new Promise(async (resolve, reject) => {
-      try {
-        loadingState.setLoading("profile-image-upload", true);
-        
-        await ensureValidToken();
-        const token = localStorage.getItem("access_token");
-        
-        const response = await fetch(`${API_BASE_URL}/profile/upload-image`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        });
-
-        const result = await response.json();
-        loadingState.setLoading("profile-image-upload", false);
-
-        if (!response.ok) {
-          throw new Error(result.error || "Image upload failed");
-        }
-
-        resolve(result);
-      } catch (error) {
-        loadingState.setLoading("profile-image-upload", false);
-        reject(error);
-      }
-    });
+    return apiRequest('/auth/profile/', 'GET', null, 'auth-get-profile');
   },
 };
 
@@ -493,41 +318,17 @@ const saveAuthData = (accessToken, refreshToken, user) => {
   localStorage.setItem("access_token", accessToken);
   localStorage.setItem("refresh_token", refreshToken);
   localStorage.setItem("user", JSON.stringify(user));
-  resetLoadingState();
   authState.setAuthenticated(true);
-};
-
-// Reset loading state utility
-const resetLoadingState = () => {
-  const loadingKeys = [
-    "auth-refresh",
-    "auth-login",
-    "auth-google-login",
-    "auth-google-register",
-    "auth-google-client-id",
-    "auth-register",
-    "auth-verify-otp",
-    "auth-resend-otp",
-    "auth-forgot-password",
-    "auth-reset-password",
-    "auth-logout",
-    "auth-update-settings",
-    "profile-image-upload", 
-  ];
-
-  loadingState.reset();
-  loadingKeys.forEach((key) => loadingState.setLoading(key, false));
 };
 
 export {
   authAPI,
-  profileAPI,
   authState,
   clearAuthData,
   getCurrentUser,
   isAuthenticated,
-  loadingState,
-  resetLoadingState,
   saveAuthData,
+  ensureValidToken,
+  handleTokenRefresh,
 };
 

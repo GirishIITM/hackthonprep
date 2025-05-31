@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import OtpInput from 'react-otp-input';
 import LoadingIndicator from '../components/LoadingIndicator';
+import { authAPI, loadingState } from '../utils/apiCalls';
 import '../styles/verifyOTP.css';
-import { authAPI, loadingState } from '../utils/apiCalls/auth';
 
 export default function VerifyOTP() {
   const [otp, setOtp] = useState('');

@@ -43,32 +43,27 @@ def update_profile():
         if not data:
             return jsonify({"msg": "No data provided"}), 400
         
-        # Update full name if provided
         if "full_name" in data:
             full_name = sanitize_string(data["full_name"])
             if len(full_name.strip()) < 1:
                 return jsonify({"msg": "Full name cannot be empty"}), 400
             user.full_name = full_name
         
-        # Update username if provided
         if "username" in data:
             username = sanitize_string(data["username"])
             if len(username.strip()) < 1:
                 return jsonify({"msg": "Username cannot be empty"}), 400
             
-            # Check if username is already taken by another user
             existing_user = User.query.filter(User.username == username, User.id != user_id).first()
             if existing_user:
                 return jsonify({"msg": "Username already exists"}), 400
             
             user.username = username
         
-        # Update about if provided
         if "about" in data:
             about = sanitize_string(data["about"]) if data["about"] else ""
             user.about = about
         
-        # Update notification settings if provided
         if "notify_email" in data:
             user.notify_email = bool(data["notify_email"])
         if "notify_in_app" in data:
@@ -111,21 +106,17 @@ def upload_profile_image_endpoint():
         if image_file.filename == '':
             return jsonify({"error": "No image file selected"}), 400
         
-        # Validate file using the utility function
         is_valid, error_message = validate_image_file(image_file)
         if not is_valid:
             return jsonify({"error": error_message}), 400
         
-        # Delete old image if it exists
         if user.profile_picture and 'cloudinary.com' in user.profile_picture:
             delete_cloudinary_image(user.profile_picture)
         
-        # Upload new image
         upload_result = upload_profile_image(image_file, user_id)
         if not upload_result:
             return jsonify({"error": "Failed to upload image"}), 500
         
-        # Update user's profile picture
         user.profile_picture = upload_result['secure_url']
         db.session.commit()
         
