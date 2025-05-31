@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 import LoadingIndicator from '../components/LoadingIndicator';
 import '../styles/register.css';
-import { authAPI, loadingState, saveAuthData } from '../utils/apiCalls/auth';
+import { authAPI, loadingState, saveAuthData } from '../utils/apiCalls';
 import registerSvg from '../assets/register.svg';
 
 export default function Register() {

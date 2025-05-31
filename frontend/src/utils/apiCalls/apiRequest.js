@@ -1,4 +1,5 @@
-const API_BASE_URL = 'http://localhost:5000';
+// export const API_BASE_URL = "http://localhost:5000";
+export const API_BASE_URL = "https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net";
 
 export const loadingState = {
   states: {},
@@ -35,6 +36,14 @@ export const loadingState = {
   }
 };
 
+/**
+ * Enhanced API request with loading state tracking and token refresh
+ * @param {string} endpoint - API endpoint
+ * @param {string} method - HTTP method
+ * @param {object} data - Request payload
+ * @param {string} loadingKey - Optional key to track loading state
+ * @returns {Promise} - Response promise
+ */
 export const apiRequest = async (endpoint, method = 'GET', data = null, loadingKey = null) => {
   if (loadingKey) {
     loadingState.setLoading(loadingKey, true);
@@ -42,38 +51,69 @@ export const apiRequest = async (endpoint, method = 'GET', data = null, loadingK
 
   const options = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: {},
   };
 
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    options.headers.Authorization = `Bearer ${token}`;
+  if (data instanceof FormData) {
+    options.body = data;
+  } else if (data) {
+    options.headers['Content-Type'] = 'application/json';
+    options.body = JSON.stringify(data);
+  } else {
+    options.headers['Content-Type'] = 'application/json';
   }
 
-  if (data) {
-    options.body = JSON.stringify(data);
+  const token = localStorage.getItem('access_token');
+  if (token && !endpoint.startsWith('/auth/login') && !endpoint.startsWith('/auth/register')) {
+    options.headers.Authorization = `Bearer ${token}`;
   }
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || 'An error occurred');
+    
+    let result;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      result = await response.json();
+    } else {
+      const text = await response.text();
+      result = { error: `Server returned non-JSON response: ${response.status}` };
     }
 
     if (loadingKey) {
       loadingState.setLoading(loadingKey, false);
+    }
+
+    if (response.status === 401 && result.error === "Token has expired") {
+      const { handleTokenRefresh } = await import('./auth.js');
+      const refreshSuccess = await handleTokenRefresh();
+      if (refreshSuccess) {
+        return apiRequest(endpoint, method, data, loadingKey);
+      } else {
+        throw new Error("Session expired. Please login again.");
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(result.error || result.msg || 'An error occurred');
     }
 
     return result;
   } catch (error) {
     console.error('API request error:', error);
+    
     if (loadingKey) {
       loadingState.setLoading(loadingKey, false);
     }
+
+    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      throw new Error('Unable to connect to server. Please check if the backend server is running on http://localhost:5000');
+    }
+    
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout: The server took too long to respond.');
+    }
+
     throw error;
   }
 };

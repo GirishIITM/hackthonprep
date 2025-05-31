@@ -1,4 +1,4 @@
-import { apiRequest } from './apiRequest.js';
+import { apiRequest } from '/src/utils/apiCalls/apiRequest.js';
 
 export const taskAPI = {
   getAllTasks: () => {
