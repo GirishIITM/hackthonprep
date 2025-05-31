@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import "../styles/navSidebar.css";
 import { authState, getCurrentUser, isAuthenticated } from "../utils/apiCalls/auth";
-import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import Sidebar from './Sidebar';
 
 const NavSidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -94,11 +94,13 @@ const NavSidebar = ({ children }) => {
       )}
 
       <div className={`main-layout ${isMobile ? 'mobile-layout' : ''}`}>
-        <Sidebar 
-          isOpen={sidebarOpen} 
-          onClose={closeSidebar}
-          isMobile={isMobile}
-        />
+        <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+          <Sidebar 
+            isOpen={sidebarOpen} 
+            onClose={closeSidebar}
+            isMobile={isMobile}
+          />
+        </div>
         <div className={`content-wrapper ${sidebarOpen && !isMobile ? 'with-sidebar' : ''}`}>
           <main className="content-area">
             {children}

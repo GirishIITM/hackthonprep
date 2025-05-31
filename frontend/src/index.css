@@ -87,6 +87,23 @@
   --border-radius-lg: 12px;
   --box-shadow-card: 0 2px 5px var(--color-shadow);
   --box-shadow-card-hover: 0 4px 10px var(--color-shadow);
+
+  /* Sidebar variables */
+  --color-sidebar-bg: rgba(255, 255, 255, 0.05);
+  --color-sidebar-collapsed-bg: rgba(29, 29, 29, 0.95);
+  --color-sidebar-btn-bg: rgba(255, 255, 255, 0.05);
+  --color-sidebar-btn-text: #adadad;
+  --color-sidebar-btn-text-hover: #d8d8d8;
+  --color-badge-red-bg: #d63030;
+  --color-badge-red-text: #ffffff;
+  --color-badge-gray-bg: #777777;
+  --color-badge-gray-text: #ffffff;
+  --color-badge-yellow-bg: #ffd331;
+  --color-badge-yellow-text: #000000;
+  --color-badge-blue-bg: var(--color-blue-600);
+  --color-badge-blue-text: #ffffff;
+  --color-badge-green-bg: var(--color-green-600);
+  --color-badge-green-text: #ffffff;
 }
 
 .theme-dark {
@@ -146,6 +163,23 @@
   --color-status-blocked-text: #fca5a5;
   --color-badge-bg: rgba(251, 191, 36, 0.2);
   --color-badge-text: #fcd34d;
+
+  /* Sidebar dark theme */
+  --color-sidebar-bg: rgba(255, 255, 255, 0.1);
+  --color-sidebar-collapsed-bg: rgba(49, 49, 58, 0.95);
+  --color-sidebar-btn-bg: rgba(255, 255, 255, 0.1);
+  --color-sidebar-btn-text: #d4d4d8;
+  --color-sidebar-btn-text-hover: #f4f4f5;
+  --color-badge-red-bg: #ef4444;
+  --color-badge-red-text: #ffffff;
+  --color-badge-gray-bg: #71717a;
+  --color-badge-gray-text: #ffffff;
+  --color-badge-yellow-bg: #eab308;
+  --color-badge-yellow-text: #1a1a1a;
+  --color-badge-blue-bg: var(--color-blue-600);
+  --color-badge-blue-text: #ffffff;
+  --color-badge-green-bg: var(--color-green-600);
+  --color-badge-green-text: #ffffff;
 }
 
 body {

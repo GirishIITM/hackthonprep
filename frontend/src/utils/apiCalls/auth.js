@@ -29,7 +29,7 @@ const ensureValidToken = async () => {
   }
 
   if (isTokenExpired(accessToken)) {
-    await handleTokenRefresh();
+    handleTokenRefresh();
   }
 };
 
