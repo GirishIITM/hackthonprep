@@ -1,5 +1,3 @@
-import { faBars } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import "../styles/navSidebar.css";
@@ -8,7 +6,7 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 
 const NavSidebar = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [user, setUser] = useState(getCurrentUser);
   const [authenticated, setAuthenticated] = useState(isAuthenticated());
@@ -29,38 +27,24 @@ const NavSidebar = ({ children }) => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
-      if (!mobile && sidebarOpen) {
-        setSidebarOpen(true); // Keep sidebar open on desktop
+      
+      // On mobile, set sidebar to collapsed by default
+      if (mobile) {
+        setSidebarCollapsed(true);
+      } else {
+        setSidebarCollapsed(false);
       }
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [sidebarOpen]);
-
-  // Auto-open sidebar on desktop for authenticated users
-  useEffect(() => {
-    if (authenticated && !isMobile) {
-      setSidebarOpen(true);
-    } else if (!authenticated || isMobile) {
-      setSidebarOpen(false);
-    }
-  }, [authenticated, isMobile]);
-
-  // Close sidebar on route change for mobile
-  useEffect(() => {
+    
+    // Set initial state
     if (isMobile) {
-      setSidebarOpen(false);
+      setSidebarCollapsed(true);
     }
-  }, [location.pathname, isMobile]);
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  const closeSidebar = () => {
-    setSidebarOpen(false);
-  };
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isMobile]);
 
   // Show regular navbar for non-authenticated users OR for home page only
   if (!authenticated || location.pathname === '/') {
@@ -77,31 +61,13 @@ const NavSidebar = ({ children }) => {
   // Show sidebar layout for authenticated users
   return (
     <div className="nav-container">
-      {/* Top bar for mobile */}
-      {isMobile && (
-        <div className="mobile-topbar">
-          <button 
-            className="sidebar-toggle" 
-            onClick={toggleSidebar} 
-            aria-label="Toggle sidebar"
-          >
-            <FontAwesomeIcon icon={faBars} />
-          </button>
-          <div className="mobile-brand">
-            SynergySphere
-          </div>
-        </div>
-      )}
-
-      <div className={`main-layout ${isMobile ? 'mobile-layout' : ''}`}>
-        <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-          <Sidebar 
-            isOpen={sidebarOpen} 
-            onClose={closeSidebar}
-            isMobile={isMobile}
-          />
-        </div>
-        <div className={`content-wrapper ${sidebarOpen && !isMobile ? 'with-sidebar' : ''}`}>
+      <div className="main-layout">
+        <Sidebar 
+          collapsed={sidebarCollapsed}
+          onCollapsedChange={setSidebarCollapsed}
+          isMobile={isMobile}
+        />
+        <div className={`content-wrapper ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${!sidebarCollapsed && isMobile ? 'sidebar-expanded' : ''}`}>
           <main className="content-area">
             {children}
           </main>

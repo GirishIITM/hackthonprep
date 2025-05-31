@@ -9,177 +9,183 @@
   --font-weight-bold: 700;
   --transition: all 0.3s ease;
   --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-
+  --border-radius: 8px;
+  --border-radius-sm: 4px;
+  --box-shadow-card: 0 2px 8px rgba(15, 23, 42, 0.08);
+  --box-shadow-card-hover: 0 4px 16px rgba(15, 23, 42, 0.16);
 }
 
 :root {
-  --color-bg: #f8f9fa;
+  --color-bg: #f8fafc;
   --color-surface: #ffffff;
   --color-primary: #2563eb;
   --color-primary-hover: #1d4ed8;
+  --color-primary-light: #e0eaff;
   --color-accent: #f59e42;
-  --color-text: #1a1a1a;
-  --color-text-secondary: #555555;
+  --color-accent-hover: #e8941c;
+  --color-accent-light: #fff3e0;
+  --color-text: #1e293b;
+  --color-text-secondary: #64748b;
   --color-link: #2563eb;
   --color-link-hover: #1d4ed8;
-  --color-border: #e5e7eb;
-  --color-shadow: rgba(30, 41, 59, 0.07);
-  --color-input-bg: #f3f4f6;
-  --color-input-text: #1a1a1a;
-  --color-input-border: #e5e7eb;
+  --color-border: #e2e8f0;
+  --color-shadow: rgba(15, 23, 42, 0.08);
+  --color-input-bg: #f8fafc;
+  --color-input-text: #1e293b;
+  --color-input-border: #cbd5e1;
   --color-btn-bg: #2563eb;
   --color-btn-bg-hover: #1d4ed8;
   --color-btn-text: #ffffff;
   --color-btn-disabled-bg: #cbd5e1;
   --color-btn-disabled-text: #9ca3af;
   --color-error: #ef4444;
-  --color-success: #22c55e;
-  --color-surface-variant: #f3f4f6;
+  --color-success: #10b981;
+  --color-surface-variant: #f1f5f9;
 
-  /* New variables for gradients and specific colors */
-  --color-gradient-primary-start: #4481eb;
-  --color-gradient-primary-end: #04befe;
-  --color-gradient-secondary-start: #04befe;
-  --color-gradient-secondary-end: #4481eb;
+  /* Gradients */
+  --color-gradient-primary-start: #3b82f6;
+  --color-gradient-primary-end: #06b6d4;
+  --color-gradient-secondary-start: #8b5cf6;
+  --color-gradient-secondary-end: #ec4899;
   --color-white: #ffffff;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
-  --color-dark-bg: #1a1a2e;
-  --color-dark-surface: #23232a;
-  --color-dark-border: #333;
-  --color-blue-600: #2563eb;
-  --color-blue-700: #1d4ed8;
-  --color-blue-800: #1e40af;
-  --color-indigo-600: #7c3aed;
-  --color-indigo-700: #6d28d9;
-  --color-green-600: #059669;
-  --color-green-700: #047857;
-  --color-yellow-500: #eab308;
-  --color-yellow-600: #ca8a04;
-  --color-orange-500: #f97316;
-  --color-red-500: #ef4444;
-  --color-red-600: #dc2626;
-  --color-red-700: #b91c1c;
 
-  /* Additional variables for task component */
+  /* Grays */
+  --color-gray-50: #f8fafc;
+  --color-gray-100: #f1f5f9;
+  --color-gray-200: #e2e8f0;
+  --color-gray-300: #cbd5e1;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #64748b;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+  --color-gray-800: #1e293b;
+  --color-gray-900: #0f172a;
+
+  /* Card/Sidebar */
   --color-card-bg: var(--color-surface);
-  --color-card-hover: #f8fafc;
+  --color-card-hover: #f1f5f9;
   --color-form-bg: var(--color-surface);
-  --color-status-not-started-bg: #f3f4f6;
-  --color-status-not-started-text: #374151;
+
+  /* Status */
+  --color-status-not-started-bg: #f1f5f9;
+  --color-status-not-started-text: #475569;
   --color-status-in-progress-bg: #dbeafe;
   --color-status-in-progress-text: #1e40af;
-  --color-status-completed-bg: #dcfce7;
-  --color-status-completed-text: #166534;
+  --color-status-completed-bg: #d1fae5;
+  --color-status-completed-text: #065f46;
   --color-status-blocked-bg: #fee2e2;
   --color-status-blocked-text: #991b1b;
+
+  /* Badge */
   --color-badge-bg: #fef3c7;
   --color-badge-text: #92400e;
-  --border-radius-sm: 4px;
-  --border-radius: 8px;
-  --border-radius-lg: 12px;
-  --box-shadow-card: 0 2px 5px var(--color-shadow);
-  --box-shadow-card-hover: 0 4px 10px var(--color-shadow);
 
-  /* Sidebar variables */
-  --color-sidebar-bg: rgba(255, 255, 255, 0.05);
-  --color-sidebar-collapsed-bg: rgba(29, 29, 29, 0.95);
-  --color-sidebar-btn-bg: rgba(255, 255, 255, 0.05);
-  --color-sidebar-btn-text: #adadad;
-  --color-sidebar-btn-text-hover: #d8d8d8;
-  --color-badge-red-bg: #d63030;
+  /* Sidebar */
+  --color-sidebar-bg: var(--color-surface);
+  --color-sidebar-text: var(--color-text);
+  --color-sidebar-text-hover: var(--color-primary);
+  --color-sidebar-item-hover: rgba(37, 99, 235, 0.1);
+  --color-sidebar-item-active: var(--color-primary);
+  --color-sidebar-text-active: var(--color-white);
+  --color-sidebar-bg-active: var(--color-primary-light);
+
+  /* Enhanced badge colors */
+  --color-badge-red-bg: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   --color-badge-red-text: #ffffff;
-  --color-badge-gray-bg: #777777;
+  --color-badge-gray-bg: linear-gradient(135deg, #64748b 0%, #475569 100%);
   --color-badge-gray-text: #ffffff;
-  --color-badge-yellow-bg: #ffd331;
-  --color-badge-yellow-text: #000000;
-  --color-badge-blue-bg: var(--color-blue-600);
+  --color-badge-yellow-bg: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+  --color-badge-yellow-text: #ffffff;
+  --color-badge-blue-bg: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
   --color-badge-blue-text: #ffffff;
-  --color-badge-green-bg: var(--color-green-600);
+  --color-badge-green-bg: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --color-badge-green-text: #ffffff;
 }
 
 .theme-dark {
-  --color-bg: #18181b;
-  --color-surface: #23232a;
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
   --color-primary: #60a5fa;
   --color-primary-hover: #3b82f6;
-  --color-primary-light: rgba(96, 165, 250, 0.1);
+  --color-primary-light: #24314a;
   --color-accent: #fbbf24;
-  --color-text: #f3f4f6;
-  --color-text-secondary: #a1a1aa;
+  --color-accent-hover: #f59e0b;
+  --color-accent-light: #4b3a04;
+  --color-text: #f1f5f9;
+  --color-text-secondary: #94a3b8;
   --color-link: #60a5fa;
   --color-link-hover: #3b82f6;
-  --color-border: #31313a;
-  --color-shadow: rgba(0, 0, 0, 0.45);
-  --color-input-bg: #31313a;
-  --color-input-text: #f3f4f6;
-  --color-input-border: #44444a;
+  --color-border: #334155;
+  --color-shadow: rgba(0, 0, 0, 0.3);
+  --color-input-bg: #334155;
+  --color-input-text: #f1f5f9;
+  --color-input-border: #475569;
   --color-btn-bg: #3b82f6;
   --color-btn-bg-hover: #2563eb;
-  --color-btn-text: #f3f4f6;
-  --color-btn-disabled-bg: #31313a;
-  --color-btn-disabled-text: #a1a1aa;
+  --color-btn-text: #f1f5f9;
+  --color-btn-disabled-bg: #374151;
+  --color-btn-disabled-text: #9ca3af;
   --color-error: #f87171;
-  --color-success: #4ade80;
-  --color-surface-variant: #31313a;
+  --color-success: #34d399;
+  --color-surface-variant: #334155;
 
-  /* Dark theme variants for new variables */
-  --color-white: #ffffff;
-  --color-gray-100: #31313a;
-  --color-gray-200: #44444a;
-  --color-gray-300: #52525b;
-  --color-gray-400: #71717a;
-  --color-gray-500: #a1a1aa;
-  --color-gray-600: #d4d4d8;
-  --color-gray-700: #e4e4e7;
-  --color-gray-800: #f4f4f5;
+  /* Gradients */
+  --color-gradient-primary-start: #60a5fa;
+  --color-gradient-primary-end: #06b6d4;
+  --color-gradient-secondary-start: #a78bfa;
+  --color-gradient-secondary-end: #f472b6;
+
+  /* Grays */
+  --color-gray-50: #1e293b;
+  --color-gray-100: #334155;
+  --color-gray-200: #475569;
+  --color-gray-300: #64748b;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #cbd5e1;
+  --color-gray-600: #e2e8f0;
+  --color-gray-700: #f1f5f9;
+  --color-gray-800: #f8fafc;
   --color-gray-900: #ffffff;
-  --color-dark-bg: #0f0f0f;
-  --color-dark-surface: #1a1a1a;
-  --color-dark-border: #31313a;
-  --color-blue-600: #60a5fa;
-  --color-blue-700: #3b82f6;
-  --color-blue-800: #2563eb;
-  
-  /* Task component dark theme */
-  --color-card-bg: #31313a;
-  --color-card-hover: #3a3a44;
-  --color-form-bg: #31313a;
-  --color-status-not-started-bg: #44444a;
-  --color-status-not-started-text: #d4d4d8;
+
+  /* Card/Sidebar */
+  --color-card-bg: #24314a;
+  --color-card-hover: #334155;
+  --color-form-bg: #24314a;
+
+  /* Status */
+  --color-status-not-started-bg: #334155;
+  --color-status-not-started-text: #cbd5e1;
   --color-status-in-progress-bg: rgba(96, 165, 250, 0.2);
   --color-status-in-progress-text: #93c5fd;
-  --color-status-completed-bg: rgba(74, 222, 128, 0.2);
-  --color-status-completed-text: #86efac;
+  --color-status-completed-bg: rgba(52, 211, 153, 0.2);
+  --color-status-completed-text: #6ee7b7;
   --color-status-blocked-bg: rgba(248, 113, 113, 0.2);
   --color-status-blocked-text: #fca5a5;
+
+  /* Badge */
   --color-badge-bg: rgba(251, 191, 36, 0.2);
   --color-badge-text: #fcd34d;
 
-  /* Sidebar dark theme */
-  --color-sidebar-bg: rgba(255, 255, 255, 0.1);
-  --color-sidebar-collapsed-bg: rgba(49, 49, 58, 0.95);
-  --color-sidebar-btn-bg: rgba(255, 255, 255, 0.1);
-  --color-sidebar-btn-text: #d4d4d8;
-  --color-sidebar-btn-text-hover: #f4f4f5;
-  --color-badge-red-bg: #ef4444;
-  --color-badge-red-text: #ffffff;
-  --color-badge-gray-bg: #71717a;
-  --color-badge-gray-text: #ffffff;
-  --color-badge-yellow-bg: #eab308;
-  --color-badge-yellow-text: #1a1a1a;
-  --color-badge-blue-bg: var(--color-blue-600);
-  --color-badge-blue-text: #ffffff;
-  --color-badge-green-bg: var(--color-green-600);
-  --color-badge-green-text: #ffffff;
+  /* Sidebar */
+  --color-sidebar-bg: #1e293b;
+  --color-sidebar-text: #f1f5f9;
+  --color-sidebar-text-hover: #60a5fa;
+  --color-sidebar-item-hover: rgba(96, 165, 250, 0.1);
+  --color-sidebar-item-active: #60a5fa;
+  --color-sidebar-text-active: #ffffff;
+  --color-sidebar-bg-active: rgb(96, 165, 250);
+
+  /* Enhanced badge colors */
+  --color-badge-red-bg: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  --color-badge-red-text: #0f172a;
+  --color-badge-gray-bg: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  --color-badge-gray-text: #0f172a;
+  --color-badge-yellow-bg: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  --color-badge-yellow-text: #0f172a;
+  --color-badge-blue-bg: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  --color-badge-blue-text: #0f172a;
+  --color-badge-green-bg: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  --color-badge-green-text: #0f172a;
 }
 
 body {
@@ -192,12 +198,7 @@ body {
   transition: background-color var(--transition), color var(--transition);
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, h2, h3, h4, h5, h6 {
   margin: 0;
   font-family: var(--font-family);
   font-weight: var(--font-weight-bold);
@@ -213,15 +214,19 @@ a {
   color: var(--color-link);
   text-decoration: none;
   font-family: var(--font-family);
-  transition: color var(--transition);
+  transition: color var(--transition), background-color var(--transition);
+  border-radius: 3px;
+  padding: 0 2px;
 }
 
-a:hover {
+a:hover,
+a:focus {
   color: var(--color-link-hover);
+  background-color: var(--color-primary-light);
+  outline: none;
 }
 
 a:focus {
-  outline: none;
   box-shadow: 0 0 0 2px var(--color-link-hover);
 }
 
@@ -229,14 +234,17 @@ button {
   font-family: inherit;
   font-size: inherit;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   border: none;
   cursor: pointer;
-  transition: background-color var(--transition), color var(--transition);
+  transition: background-color var(--transition), color var(--transition), box-shadow var(--transition);
 }
 
-button:hover {
+button:hover:not(:disabled),
+button:focus:not(:disabled) {
   background-color: var(--color-btn-bg-hover);
+  color: var(--color-btn-text);
+  box-shadow: 0 2px 8px var(--color-shadow);
 }
 
 button:disabled {
@@ -250,8 +258,10 @@ button.primary {
   color: var(--color-btn-text);
 }
 
-button.primary:hover {
+button.primary:hover:not(:disabled),
+button.primary:focus:not(:disabled) {
   background-color: var(--color-btn-bg-hover);
+  color: var(--color-btn-text);
 }
 
 button.primary:disabled {
@@ -297,7 +307,7 @@ button.primary:disabled {
   color: var(--color-input-text);
   border: 1px solid var(--color-input-border);
   border-radius: var(--border-radius-sm);
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 
 .form-input:focus,
@@ -305,14 +315,14 @@ button.primary:disabled {
 .form-textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
 .btn {
   padding: 0.625rem 1.25rem;
   border-radius: var(--border-radius-sm);
   font-weight: 500;
-  transition: background-color var(--transition), transform var(--transition);
+  transition: background-color var(--transition), transform var(--transition), color var(--transition);
 }
 
 .btn:active {
@@ -324,8 +334,10 @@ button.primary:disabled {
   color: var(--color-btn-text);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled),
+.btn-primary:focus:not(:disabled) {
   background-color: var(--color-btn-bg-hover);
+  color: var(--color-btn-text);
 }
 
 .btn-secondary {
@@ -333,8 +345,10 @@ button.primary:disabled {
   color: var(--color-text);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled),
+.btn-secondary:focus:not(:disabled) {
   background-color: var(--color-border);
+  color: var(--color-primary);
 }
 
 .empty-state {
@@ -357,11 +371,13 @@ button.primary:disabled {
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow-card);
   padding: 1.25rem;
-  transition: box-shadow var(--transition), transform var(--transition);
+  transition: box-shadow var(--transition), transform var(--transition), background-color var(--transition);
 }
 
-.task-card:hover {
+.task-card:hover,
+.task-card:focus-within {
   box-shadow: var(--box-shadow-card-hover);
+  background-color: var(--color-card-hover);
   transform: translateY(-2px);
 }
 
@@ -395,22 +411,27 @@ button.primary:disabled {
   font-size: var(--font-size-sm);
   border-radius: var(--border-radius-sm);
   transition: background-color var(--transition), color var(--transition);
+  cursor: pointer;
 }
 
 .edit-btn {
   color: var(--color-primary);
 }
 
-.edit-btn:hover {
-  background-color: rgba(37, 99, 235, 0.1);
+.edit-btn:hover,
+.edit-btn:focus {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-hover);
 }
 
 .delete-btn {
   color: var(--color-error);
 }
 
-.delete-btn:hover {
-  background-color: rgba(239, 68, 68, 0.1);
+.delete-btn:hover,
+.delete-btn:focus {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #b91c1c;
 }
 
 .status-badge {

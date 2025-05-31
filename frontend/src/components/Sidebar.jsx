@@ -3,7 +3,6 @@ import {
   FaAngleDoubleLeft,
   FaAngleDoubleRight,
   FaCog,
-  FaHome,
   FaMoon,
   FaPlus,
   FaProjectDiagram,
@@ -19,13 +18,11 @@ import {
   Sidebar as ProSidebar,
   SubMenu
 } from 'react-pro-sidebar';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import "../styles/sidebar.css";
 import { authAPI } from '../utils/apiCalls/auth';
 
-const Sidebar = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const [toggled, setToggled] = useState(false);
+const Sidebar = ({ collapsed, onCollapsedChange, isMobile }) => {
   const [isDarkMode, setIsDarkMode] = useState(
     localStorage.getItem('theme') === 'dark' || 
     document.documentElement.classList.contains('theme-dark')
@@ -33,11 +30,9 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   const handleCollapsedChange = () => {
-    setCollapsed(!collapsed);
-  };
-
-  const handleToggleSidebar = (value) => {
-    setToggled(value);
+    if (onCollapsedChange) {
+      onCollapsedChange(!collapsed);
+    }
   };
 
   const toggleTheme = () => {
@@ -53,7 +48,6 @@ const Sidebar = () => {
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
-      // Force logout even if API call fails
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       navigate('/');
@@ -63,12 +57,9 @@ const Sidebar = () => {
   return (
     <ProSidebar
       collapsed={collapsed}
-      toggled={toggled}
-      onToggle={handleToggleSidebar}
-      breakPoint="md"
+      breakPoint="never"
       className='pro-sidebar'
     >
-      {/* Custom Header */}
       <div className="sidebar-header">
         <Menu iconShape="circle">
           {collapsed ? (
@@ -86,8 +77,10 @@ const Sidebar = () => {
                   padding: '9px',
                   textTransform: 'uppercase',
                   fontWeight: 'bold',
-                  fontSize: 15,
-                  letterSpacing: '1px'
+                  fontSize: '15px',
+                  letterSpacing: '1px',
+                  color: 'var(--color-text)',
+                  display: 'block'
                 }}
               >
                 SynergySphere
@@ -97,65 +90,43 @@ const Sidebar = () => {
         </Menu>
       </div>
 
-      {/* Main Content */}
       <Menu iconShape="circle">
-        {/* Dashboard */}
-        <MenuItem icon={<FaTachometerAlt />}>
+        <MenuItem icon={<FaTachometerAlt />} component={<NavLink to="/dashboard" />}>
           Dashboard
-          <NavLink to="/dashboard" />
         </MenuItem>
 
-        {/* Home */}
-        <MenuItem icon={<FaHome />}>
-          Home
-          <NavLink to="/" />
-        </MenuItem>
-
-        {/* Projects Section */}
         <SubMenu
-          title={'Projects'}
+          label='Solutions' 
           icon={<FaProjectDiagram />}
-          suffix={<span className="badge blue">New</span>}
         >
-          <MenuItem>
+          <MenuItem component={<NavLink to="/solutions/projects" />}>
             View All Projects
-            <NavLink to="/solutions/projects" />
           </MenuItem>
-          <MenuItem icon={<FaPlus />}>
+          <MenuItem icon={<FaPlus />} component={<NavLink to="/solutions/projects/create" />}>
             Create Project
-            <NavLink to="/solutions/projects" />
           </MenuItem>
         </SubMenu>
 
-        {/* Tasks Section */}
         <SubMenu
-          title={'Tasks'}
+          label={'Tasks'}
           icon={<FaTasks />}
-          suffix={<span className="badge green">Hot</span>}
         >
-          <MenuItem>
+          <MenuItem component={<NavLink to="/solutions/tasks" />}>
             View All Tasks
-            <NavLink to="/solutions/tasks" />
           </MenuItem>
-          <MenuItem icon={<FaPlus />}>
+          <MenuItem icon={<FaPlus />} component={<NavLink to="/solutions/tasks/create" />}>
             Create Task
-            <NavLink to="/solutions/tasks" />
           </MenuItem>
         </SubMenu>
 
-        {/* Profile */}
-        <MenuItem icon={<FaUser />}>
+        <MenuItem icon={<FaUser />} component={<NavLink to="/profile" />}>
           Profile
-          <NavLink to="/profile" />
         </MenuItem>
 
-        {/* Settings */}
-        <MenuItem icon={<FaCog />}>
+        <MenuItem icon={<FaCog />} component={<NavLink to="/settings" />}>
           Settings
-          <NavLink to="/settings" />
         </MenuItem>
 
-        {/* Theme Toggle */}
         <MenuItem 
           icon={isDarkMode ? <FaSun /> : <FaMoon />}
           onClick={toggleTheme}
@@ -164,7 +135,6 @@ const Sidebar = () => {
           {isDarkMode ? 'Light Mode' : 'Dark Mode'}
         </MenuItem>
 
-        {/* Logout */}
         <MenuItem 
           icon={<FaSignOutAlt />}
           onClick={handleLogout}
@@ -173,18 +143,6 @@ const Sidebar = () => {
           Logout
         </MenuItem>
       </Menu>
-
-      {/* Custom Footer */}
-      <div className="sidebar-footer" style={{ textAlign: 'center', padding: '16px' }}>
-        <Link
-          className="sidebar-btn"
-          style={{ cursor: 'pointer' }}
-          to="/profile"
-        >
-          <FaUser />
-          <span>My Account</span>
-        </Link>
-      </div>
     </ProSidebar>
   );
 };

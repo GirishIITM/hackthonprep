@@ -14,7 +14,9 @@ import Profile from './pages/Profile';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
+import ProjectCreate from './pages/solutions/ProjectCreate';
 import Projects from './pages/solutions/Projects';
+import TaskCreate from './pages/solutions/TaskCreate';
 import Tasks from './pages/solutions/Tasks';
 import VerifyOTP from './pages/VerifyOTP';
 import { authState, isAuthenticated } from './utils/apiCalls/auth';
@@ -73,10 +75,9 @@ function App() {
               </>
             } />
             <Route path='/about' element={
-              <>
-                <Navbar showWhenAuthenticated={true} />
+              <NavSidebar>
                 <About />
-              </>
+              </NavSidebar>
             } />
 
             {/* Add Google OAuth callback route */}
@@ -127,6 +128,22 @@ function App() {
               <PrivateRoute>
                 <NavSidebar>
                   <Projects />
+                </NavSidebar>
+              </PrivateRoute>
+            } />
+
+            <Route path='/solutions/projects/create' element={
+              <PrivateRoute>
+                <NavSidebar>
+                  <ProjectCreate />
+                </NavSidebar>
+              </PrivateRoute>
+            } />
+
+            <Route path='/solutions/tasks/create' element={
+              <PrivateRoute>
+                <NavSidebar>
+                  <TaskCreate />
                 </NavSidebar>
               </PrivateRoute>
             } />
