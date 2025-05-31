@@ -12,6 +12,21 @@ def migrate_database():
         return
     
     try:
+        # Check if we're using PostgreSQL
+        database_url = os.getenv('DATABASE_URL', '')
+        if 'postgresql' in database_url:
+            print("PostgreSQL detected - using SQLAlchemy migrations")
+            # For PostgreSQL, use SQLAlchemy migrations instead of direct SQL
+            try:
+                from models import User
+                db.create_all()
+                print("PostgreSQL schema updated successfully")
+                return
+            except Exception as e:
+                print(f"PostgreSQL migration error: {e}")
+                return
+        
+        # SQLite migration logic
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
@@ -60,7 +75,14 @@ def check_and_migrate():
         # Try to import User model to trigger any schema issues
         from models import User
         
-        # Try a simple query to see if the schema is correct
+        # Check if using PostgreSQL
+        database_url = os.getenv('DATABASE_URL', '')
+        if 'postgresql' in database_url:
+            # For PostgreSQL, just ensure tables exist
+            db.create_all()
+            return False
+        
+        # SQLite migration check
         with db.engine.connect() as conn:
             result = conn.execute(db.text("SELECT sql FROM sqlite_master WHERE type='table' AND name='user'"))
             table_schema = result.fetchone()

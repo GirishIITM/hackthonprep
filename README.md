@@ -58,13 +58,13 @@ SynergySphere isn’t just another project management tool—it’s the intellig
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/javascript/javascript-original.svg" alt="JavaScript" width="50" height="50"/>
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" alt="Python" width="50" height="50"/>
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/flask/flask-original.svg" alt="Flask" width="50" height="50"/>
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original-wordmark.svg" alt="MySQL" width="50" height="50"/>
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original-wordmark.svg" alt="PostgreSQL" width="50" height="50"/>
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" alt="Docker" width="50" height="50"/>
 </p>- Frontend: React, Vite, React Router, CSS Modules
 - Backend: Flask, Flask-SQLAlchemy, Flask-Bcrypt, PyJWT
-- Database: Sqlite
+- Database: PostgreSQL (Production), SQLite (Development fallback)
 - Authentication: JWT-based authentication
-- Other: Python-dotenv, ESLint
+- Other: Python-dotenv, ESLint, psycopg2-binary
 
 ---
 
@@ -106,14 +106,17 @@ SynergySphere_336/
 
 - Node.js & npm
 - Python 3.x & pip
-- Sqlite 
+- PostgreSQL Server (for production)
 
 ### Backend Setup
 
+```bash
 cd backend
 pip install -r requirements.txt
-# Set up your .env file with DB credentials and secret keys
+# Set up your .env file with PostgreSQL credentials and secret keys
 python app.py
+```
+
 ### Frontend Setup
 
 cd frontend

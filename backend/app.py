@@ -6,11 +6,11 @@ import os
 
 from sqlalchemy import false
 from config import get_config
-from extensions import db, jwt, bcrypt, mail
+from extensions import db, jwt, bcrypt, mail, init_redis
 from models import User, TokenBlocklist
 from routes import register_blueprints
 from utils.gmail import initialize_gmail_credentials
-from utils.db_migrate import check_and_migrate
+from utils.postgresql_migrator import migrate_sqlite_to_postgresql, check_postgresql_connection
 
 load_dotenv()
 
@@ -19,8 +19,11 @@ def create_app(config_class=None):
     app = Flask(__name__)
     
     if config_class is None:
-        config_class = get_config()
-    app.config.from_object(config_class)
+        config_instance = get_config()
+    else:
+        config_instance = config_class() if isinstance(config_class, type) else config_class
+    
+    app.config.from_object(config_instance)
     
     CORS(app, 
          origins="*", 
@@ -31,6 +34,7 @@ def create_app(config_class=None):
     db.init_app(app)
     jwt.init_app(app)
     bcrypt.init_app(app)
+    init_redis(app)  # Initialize Redis
     
     cloudinary.config(
         cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
@@ -48,29 +52,54 @@ def create_app(config_class=None):
         return token is not None
     
     with app.app_context():
-        # Check and run migrations before creating tables
-        migration_needed = check_and_migrate()
-        if migration_needed is None:
-            print("No migrations needed, proceeding with table creation")
-        elif migration_needed is False:
-            print("Migration check failed, recreating database")
-            # If migration check fails, we will recreate the database
-            db.drop_all()
-            db.create_all()
-            print("Database recreated with new schema")
-        else:
-            print("Migrations needed, applying changes") 
+        # Handle database setup based on flags
+        use_postgresql = getattr(config_instance, 'USE_POSTGRESQL', False)
+        skip_migration = getattr(config_instance, 'SKIP_MIGRATION', False)
         
-        if migration_needed:
-            # If migration was needed, recreate all tables
-            db.drop_all()
-            db.create_all()
-            print("Database recreated with new schema")
-        else:
-            # Normal table creation for new databases
-            db.create_all()
-        
-        initialize_gmail_credentials()
+        try:
+            if skip_migration:
+                # Direct database usage without migration checks
+                if use_postgresql:
+                    print("Using PostgreSQL database (direct mode)")
+                else:
+                    print("Using SQLite database (direct mode)")
+                db.create_all()
+                print("Database tables created/verified")
+            else:
+                # Legacy migration-aware mode
+                database_url = app.config.get('SQLALCHEMY_DATABASE_URI')
+                
+                if use_postgresql and 'postgresql' in database_url:
+                    print("Using PostgreSQL database...")
+                    
+                    # Always create tables first
+                    db.create_all()
+                    print("PostgreSQL tables created/verified")
+                    
+                    # Check connection and migrate if possible
+                    if check_postgresql_connection():
+                        print("PostgreSQL connection verified")
+                        # Try to migrate data from SQLite if it exists (non-blocking)
+                        migrate_sqlite_to_postgresql()
+                    else:
+                        print("PostgreSQL connection issues - falling back to SQLite")
+                        # Fallback to SQLite if PostgreSQL fails
+                        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+                        db.create_all()
+                
+                else:
+                    print("Using SQLite database...")
+                    db.create_all()
+            
+            # Initialize Gmail credentials (non-blocking)
+            try:
+                initialize_gmail_credentials()
+            except Exception as e:
+                print(f"Gmail initialization warning: {e}")
+                
+        except Exception as e:
+            print(f"Database setup warning: {e}")
+            print("App will continue with limited functionality")
     
     return app
 
