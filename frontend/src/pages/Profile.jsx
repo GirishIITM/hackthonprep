@@ -44,8 +44,7 @@ const Profile = () => {
     try {
       const response = await profileAPI.updateProfile({ full_name: fullName });
       
-      // Fetch fresh data from backend to ensure consistency
-      await fetchUserProfile();
+      setUser(prevUser => ({ ...prevUser, full_name: fullName }));
       setEditingName(false);
       
     } catch (error) {
@@ -58,8 +57,7 @@ const Profile = () => {
     try {
       const response = await profileAPI.updateProfile({ username: username });
       
-      // Fetch fresh data from backend to ensure consistency
-      await fetchUserProfile();
+      setUser(prevUser => ({ ...prevUser, username: username }));
       setEditingUsername(false);
       
     } catch (error) {
@@ -72,8 +70,7 @@ const Profile = () => {
     try {
       const response = await profileAPI.updateProfile({ about: about });
       
-      // Fetch fresh data from backend to ensure consistency
-      await fetchUserProfile();
+      setUser(prevUser => ({ ...prevUser, about: about }));
       setEditingAbout(false);
       
     } catch (error) {
@@ -105,8 +102,8 @@ const Profile = () => {
       const result = await profileAPI.uploadProfileImage(file);
       
       if (result && result.profile_picture) {
-        // Fetch fresh data from backend to ensure consistency
-        await fetchUserProfile();
+        setUser(prevUser => ({ ...prevUser, profile_picture: result.profile_picture }));
+        setProfileImage(result.profile_picture);
       }
     } catch (error) {
       console.error('Image upload failed:', error);
