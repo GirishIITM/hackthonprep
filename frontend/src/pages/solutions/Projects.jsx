@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { loadingState, projectAPI, getCurrentUser } from '../../utils/apiCalls';
+import LoadingIndicator from '../../components/LoadingIndicator';
+import { Button } from '../../components/ui/button';
+import { getCurrentUser, loadingState, projectAPI } from '../../utils/apiCalls';
 import './Projects.css';
 
 const Projects = () => {
@@ -97,107 +99,64 @@ const Projects = () => {
     setIsEditing(false);
   };
 
-  if (loading) {
-    return <div className="loading-message">Loading projects...</div>;
-  }
-
   return (
     <div className="projects-page">
-      <div className="projects-header">
-        <h1 className="projects-title">Project Management</h1>
-        <p className="projects-subtitle">Create and manage your projects</p>
-      </div>
+      <LoadingIndicator loading={loading || loadingState.isLoading('projects-create') || loadingState.isLoading('projects-update') || loadingState.isLoading('projects-delete')}>
+        {error && (
+          <div className="error-alert">
+            {error}
+          </div>
+        )}
 
-      {error && (
-        <div className="error-alert">
-          {error}
-        </div>
-      )}
-
-      <div className="projects-grid">
-        {/* Project Form */}
-        <div className="project-form">
-          <h2 className="form-title">{isEditing ? 'Edit Project' : 'Create New Project'}</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">Project Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="form-input"
-                required
-              />
-            </div>
-
-            <div className="button-group">
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
-                {isEditing ? 'Update Project' : 'Create Project'}
-              </button>
-              {isEditing && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="btn btn-secondary"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        {/* Project List */}
-        <div>
-          <h2 className="form-title">Projects</h2>
-          {projects.length === 0 ? (
-            <div className="empty-state">
-              No projects found. Create a new project to get started.
-            </div>
-          ) : (
-            <div className="project-list">
-              {projects.map(project => (
-                <div key={project.id} className="project-item">
-                  <div className="project-header">
-                    <div>
-                      <h3 className="project-name">{project.name}</h3>
-                      <p className="project-creator">
-                        Created by: {project.created_by === currentUser.id ? 'You' : `User #${project.created_by}`}
-                      </p>
-                      <div className="project-badges">
-                        <span className="project-badge tasks-badge">
-                          {project.tasks?.length || 0} Tasks
-                        </span>
-                        <span className="project-badge members-badge">
-                          {project.member_count || 0} Members
-                        </span>
+        <div className="projects-grid">
+          <div>
+            {projects.length === 0 ? (
+              <div className="empty-state">
+                No projects found. Create a new project to get started.
+              </div>
+            ) : (
+              <div className="project-list">
+                {projects.map(project => (
+                  <div key={project.id} className="project-item">
+                    <div className="project-header">
+                      <div>
+                        <h3 className="project-name">{project.name}</h3>
+                        <p className="project-creator">
+                          Created by: {project.created_by === currentUser.id ? 'You' : `User #${project.created_by}`}
+                        </p>
+                        <div className="project-badges">
+                          <span className="project-badge tasks-badge">
+                            {project.tasks?.length || 0} Tasks
+                          </span>
+                          <span className="project-badge members-badge">
+                            {project.member_count || 0} Members
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleEdit(project)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={() => handleDelete(project.id)}
+                          variant="destructive"
+                          size="sm"
+                        >
+                          Delete
+                        </Button>
                       </div>
                     </div>
-                    <div className="project-actions">
-                      <button
-                        onClick={() => handleEdit(project)}
-                        className="action-btn edit-btn"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(project.id)}
-                        className="action-btn delete-btn"
-                      >
-                        Delete
-                      </button>
-                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </LoadingIndicator>
     </div>
   );
 };

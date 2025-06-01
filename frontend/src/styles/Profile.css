@@ -196,40 +196,7 @@
   border-left: none;
 }
 
-.edit-buttons {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-top: 12px;
-}
-
-.edit-buttons button {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.edit-buttons button:first-child {
-  background: var(--color-primary);
-  color: var(--color-white);
-}
-
-.edit-buttons button:first-child:hover {
-  background: var(--color-primary-hover);
-}
-
-.edit-buttons button:last-child {
-  background: var(--color-surface-variant);
-  color: var(--color-text-secondary);
-}
-
-.edit-buttons button:last-child:hover {
-  background: var(--color-border);
-}
+/* Remove .edit-buttons styles as they will be handled by shadcn Button component */
 
 .profile-info-item button {
   margin-left: 10px;

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import '../styles/Profile.css';
-import { profileAPI, saveAuthData } from '../utils/apiCalls';
 import penIcon from '../assets/pen.png';
+import LoadingIndicator from '../components/LoadingIndicator';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import '../styles/Profile.css';
+import { profileAPI } from '../utils/apiCalls';
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -121,7 +124,7 @@ const Profile = () => {
     return (
       <div className="profile-error">
         <p>{error}</p>
-        <button onClick={fetchUserProfile}>Retry</button>
+        <Button onClick={fetchUserProfile} variant="outline">Retry</Button>
       </div>
     );
   }
@@ -141,152 +144,154 @@ const Profile = () => {
 
   return (
     <div className="profile-page">
-      <div className="profile-header">
-        <div className="profile-avatar-wrapper">
-          {profileImage ? (
-            <img
-              key={profileImage}
-              src={profileImage}
-              alt="Profile"
-              className="profile-avatar-image"
-            />
-          ) : (
-            <div className="profile-avatar">
-              {user.name?.charAt(0).toUpperCase() || 'U'}
-            </div>
-          )}
-
-          <input
-            id="profile-pic-upload"
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-            style={{ display: 'none' }}
-            onChange={handleImageChange}
-            disabled={uploadingImage}
-          />
-
-          <img
-            src={penIcon}
-            alt="Edit Profile"
-            className={`edit-image-icon ${uploadingImage ? 'uploading' : ''}`}
-            onClick={() => !uploadingImage && document.getElementById('profile-pic-upload').click()}
-            style={{ opacity: uploadingImage ? 0.5 : 1, cursor: uploadingImage ? 'not-allowed' : 'pointer' }}
-          />
-
-          {uploadingImage && (
-            <div className="upload-spinner">Uploading...</div>
-          )}
-        </div>
-
-        {uploadError && (
-          <div className="upload-error">{uploadError}</div>
-        )}
-
-        <h1>{user.name}</h1>
-        <p className="profile-email">{user.email}</p>
-        {joinedDate && (
-          <div className="profile-joined">Joined: {joinedDate}</div>
-        )}
-      </div>
-
-      <div className="profile-content">
-        <div className="profile-section">
-          <h2>About</h2>
-          <div className={`profile-about-card ${editingAbout ? 'editing' : ''}`}>
-            {editingAbout ? (
-              <>
-                <textarea
-                  value={about}
-                  onChange={(e) => setAbout(e.target.value)}
-                  className="profile-about-textarea"
-                  placeholder="Tell us about yourself..."
-                />
-                <div className="edit-buttons">
-                  <button onClick={handleSaveAbout}>Save</button>
-                  <button onClick={() => { setAbout(user.about || ''); setEditingAbout(false); }}>Cancel</button>
-                </div>
-              </>
+      <LoadingIndicator loading={loading || uploadingImage}>
+        <div className="profile-header">
+          <div className="profile-avatar-wrapper">
+            {profileImage ? (
+              <img
+                key={profileImage}
+                src={profileImage}
+                alt="Profile"
+                className="profile-avatar-image"
+              />
             ) : (
-              <>
-                {user.about || defaultAboutText}
-                <button
-                  className="edit-icon-button"
-                  onClick={() => setEditingAbout(true)}
-                  aria-label="Edit About"
-                  style={{ float: 'right', marginTop: '-8px' }}
-                >
-                  <img src={penIcon} alt="Edit" className="edit-icon" />
-                </button>
-              </>
+              <div className="profile-avatar">
+                {user.name?.charAt(0).toUpperCase() || 'U'}
+              </div>
+            )}
+
+            <Input
+              id="profile-pic-upload"
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              style={{ display: 'none' }}
+              onChange={handleImageChange}
+              disabled={uploadingImage}
+            />
+
+            <img
+              src={penIcon}
+              alt="Edit Profile"
+              className={`edit-image-icon ${uploadingImage ? 'uploading' : ''}`}
+              onClick={() => !uploadingImage && document.getElementById('profile-pic-upload').click()}
+              style={{ opacity: uploadingImage ? 0.5 : 1, cursor: uploadingImage ? 'not-allowed' : 'pointer' }}
+            />
+
+            {uploadingImage && (
+              <div className="upload-spinner">Uploading...</div>
             )}
           </div>
+
+          {uploadError && (
+            <div className="upload-error">{uploadError}</div>
+          )}
+
+          <h1>{user.name}</h1>
+          <p className="profile-email">{user.email}</p>
+          {joinedDate && (
+            <div className="profile-joined">Joined: {joinedDate}</div>
+          )}
         </div>
-        <div className="profile-section">
-          <h2>Personal Information</h2>
-          <div className="profile-info-card">
-            <div className="profile-info-item">
-              <span className="profile-info-label">Full Name</span>
-              {editingName ? (
+
+        <div className="profile-content">
+          <div className="profile-section">
+            <h2>About</h2>
+            <div className={`profile-about-card ${editingAbout ? 'editing' : ''}`}>
+              {editingAbout ? (
                 <>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="profile-input"
+                  <textarea
+                    value={about}
+                    onChange={(e) => setAbout(e.target.value)}
+                    className="profile-about-textarea"
+                    placeholder="Tell us about yourself..."
                   />
-                  <button onClick={handleSaveName}>Save</button>
-                  <button onClick={() => { setFullName(user.full_name); setEditingName(false); }}>Cancel</button>
+                  <div className="edit-buttons">
+                    <button onClick={handleSaveAbout}>Save</button>
+                    <button onClick={() => { setAbout(user.about || ''); setEditingAbout(false); }}>Cancel</button>
+                  </div>
                 </>
               ) : (
-                <span className="profile-info-value">
-                  {user.full_name}
+                <>
+                  {user.about || defaultAboutText}
                   <button
                     className="edit-icon-button"
-                    onClick={() => setEditingName(true)}
-                    aria-label="Edit Full Name"
+                    onClick={() => setEditingAbout(true)}
+                    aria-label="Edit About"
+                    style={{ float: 'right', marginTop: '-8px' }}
                   >
                     <img src={penIcon} alt="Edit" className="edit-icon" />
                   </button>
-                </span>
-              )}
-            </div>
-            <div className="profile-info-item">
-              <span className="profile-info-label">Username</span>
-              {editingUsername ? (
-                <>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="profile-input"
-                  />
-                  <button onClick={handleSaveUsername}>Save</button>
-                  <button onClick={() => { setUsername(user.username); setEditingUsername(false); }}>Cancel</button>
                 </>
-              ) : (
-                <span className="profile-info-value">
-                  {user.username}
-                  <button
-                    className="edit-icon-button"
-                    onClick={() => setEditingUsername(true)}
-                    aria-label="Edit Username"
-                  >
-                    <img src={penIcon} alt="Edit" className="edit-icon" />
-                  </button>
-                </span>
               )}
             </div>
-            <div className="profile-info-item">
-              <span className="profile-info-label">Email Address</span>
-              <span className="profile-info-value">{user.email}</span>
-            </div>
-            <div className="profile-info-item">
-              <span className="profile-info-label">User ID</span>
-              <span className="profile-info-value">{user.id}</span>
+          </div>
+          <div className="profile-section">
+            <h2>Personal Information</h2>
+            <div className="profile-info-card">
+              <div className="profile-info-item">
+                <span className="profile-info-label">Full Name</span>
+                {editingName ? (
+                  <>
+                    <Input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="profile-input"
+                    />
+                    <button onClick={handleSaveName}>Save</button>
+                    <button onClick={() => { setFullName(user.full_name); setEditingName(false); }}>Cancel</button>
+                  </>
+                ) : (
+                  <span className="profile-info-value">
+                    {user.full_name}
+                    <button
+                      className="edit-icon-button"
+                      onClick={() => setEditingName(true)}
+                      aria-label="Edit Full Name"
+                    >
+                      <img src={penIcon} alt="Edit" className="edit-icon" />
+                    </button>
+                  </span>
+                )}
+              </div>
+              <div className="profile-info-item">
+                <span className="profile-info-label">Username</span>
+                {editingUsername ? (
+                  <>
+                    <Input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="profile-input"
+                    />
+                    <button onClick={handleSaveUsername}>Save</button>
+                    <button onClick={() => { setUsername(user.username); setEditingUsername(false); }}>Cancel</button>
+                  </>
+                ) : (
+                  <span className="profile-info-value">
+                    {user.username}
+                    <button
+                      className="edit-icon-button"
+                      onClick={() => setEditingUsername(true)}
+                      aria-label="Edit Username"
+                    >
+                      <img src={penIcon} alt="Edit" className="edit-icon" />
+                    </button>
+                  </span>
+                )}
+              </div>
+              <div className="profile-info-item">
+                <span className="profile-info-label">Email Address</span>
+                <span className="profile-info-value">{user.email}</span>
+              </div>
+              <div className="profile-info-item">
+                <span className="profile-info-label">User ID</span>
+                <span className="profile-info-value">{user.id}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </LoadingIndicator>
     </div>
   );
 };

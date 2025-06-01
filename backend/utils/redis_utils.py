@@ -22,6 +22,7 @@ class RedisCache:
             bool: True if successful, False otherwise
         """
         if not redis_client:
+            current_app.logger.warning("Redis client not available")
             return False
             
         try:
@@ -31,9 +32,11 @@ class RedisCache:
                 value = str(value)
                 
             if expiration:
-                redis_client.setex(key, expiration, value)
+                result = redis_client.setex(key, expiration, value)
             else:
-                redis_client.set(key, value)
+                result = redis_client.set(key, value)
+            
+            current_app.logger.debug(f"Redis set successful for key {key}")
             return True
         except Exception as e:
             current_app.logger.error(f"Redis set error for key {key}: {e}")

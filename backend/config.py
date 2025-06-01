@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
+import urllib.parse
 
 load_dotenv()
 
@@ -47,11 +48,15 @@ class Config:
     REDIS_HOST = os.getenv('REDIS_HOST', 'valkey-22d89841-linuxgaruda52-2ca9.g.aivencloud.com')
     REDIS_PORT = int(os.getenv('REDIS_PORT', '14001'))
     REDIS_DB = int(os.getenv('REDIS_DB', '0'))
-    REDIS_SSL = os.getenv('REDIS_SSL', 'true').lower() == 'true'
-    REDIS_URL = os.getenv(
-        'REDIS_URL',
-        f"valkeys://default:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
-    )
+    REDIS_SSL = os.getenv('REDIS_SSL', 'false').lower() == 'true'
+    
+    # Construct Redis URL
+    REDIS_URL = os.getenv('REDIS_URL')
+    if not REDIS_URL:
+        if REDIS_PASSWORD:
+            REDIS_URL = f"redis://default:{urllib.parse.quote(REDIS_PASSWORD, safe='')}@{REDIS_HOST}:{REDIS_PORT}"
+        else:
+            REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 
 class DevelopmentConfig(Config):
     """Development configuration."""

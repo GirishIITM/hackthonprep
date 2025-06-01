@@ -95,48 +95,6 @@
   min-height: 100px;
 }
 
-.button-group {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.btn {
-  flex: 1;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--border-radius-sm, 4px);
-  font-weight: 500;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s;
-  border: none;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background-color: var(--color-btn-bg);
-  color: var(--color-btn-text);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: var(--color-btn-bg-hover);
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background-color: var(--color-input-bg);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-border);
-}
-
 .error-alert {
   background-color: rgba(239, 68, 68, 0.1);
   border: 1px solid var(--color-error);
@@ -168,13 +126,5 @@
 
   .task-create-form-container {
     padding: 1.5rem;
-  }
-
-  .button-group {
-    flex-direction: column;
-  }
-
-  .btn {
-    flex: none;
   }
 }

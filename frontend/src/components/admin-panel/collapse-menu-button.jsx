@@ -5,23 +5,23 @@ import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger
 } from "@/components/ui/collapsible";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { DropdownMenuArrow } from "@radix-ui/react-dropdown-menu";
@@ -45,21 +45,21 @@ export function CollapseMenuButton({
       <CollapsibleTrigger className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1" asChild>
         <Button
           variant={isSubmenuActive ? "secondary" : "ghost"}
-          className="w-full justify-start h-10">
+          className="w-full justify-start h-10 hover:bg-accent/50 transition-all duration-200">
           <div className="w-full items-center flex justify-between">
             <div className="flex items-center">
               <span className="mr-4">
                 <Icon size={18} />
               </span>
               <p
-                className={cn("max-w-[150px] truncate", isOpen
+                className={cn("max-w-[150px] truncate transition-all duration-200", isOpen
                   ? "translate-x-0 opacity-100"
                   : "-translate-x-96 opacity-0")}>
                 {label}
               </p>
             </div>
             <div
-              className={cn("whitespace-nowrap", isOpen
+              className={cn("whitespace-nowrap transition-all duration-200", isOpen
                 ? "translate-x-0 opacity-100"
                 : "-translate-x-96 opacity-0")}>
               <ChevronDown size={18} className="transition-transform duration-200" />
@@ -77,14 +77,14 @@ export function CollapseMenuButton({
                 ? "secondary"
                 : "ghost"
             }
-            className="w-full justify-start h-10 mb-1"
+            className="w-full justify-start h-10 mb-1 hover:bg-accent/50 transition-colors duration-200"
             asChild>
             <Link to={href}>
               <span className="mr-4 ml-2">
                 <Dot size={18} />
               </span>
               <p
-                className={cn("max-w-[170px] truncate", isOpen
+                className={cn("max-w-[170px] truncate transition-all duration-200", isOpen
                   ? "translate-x-0 opacity-100"
                   : "-translate-x-96 opacity-0")}>
                 {label}
@@ -102,7 +102,7 @@ export function CollapseMenuButton({
             <DropdownMenuTrigger asChild>
               <Button
                 variant={isSubmenuActive ? "secondary" : "ghost"}
-                className="w-full justify-start h-10 mb-1">
+                className="w-full justify-start h-10 mb-1 hover:bg-accent/50 transition-colors duration-200">
                 <div className="w-full items-center flex justify-between">
                   <div className="flex items-center">
                     <span className={cn(isOpen === false ? "" : "mr-4")}>

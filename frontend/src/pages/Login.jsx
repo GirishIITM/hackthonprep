@@ -5,7 +5,9 @@ import LoadingIndicator from '../components/LoadingIndicator';
 import '../styles/login.css';
 
 import registerSvg from '../assets/log.svg';
-import { loadingState, authAPI, saveAuthData } from '../utils/apiCalls';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { authAPI, loadingState, saveAuthData } from '../utils/apiCalls';
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -150,7 +152,7 @@ export default function Login() {
             <form className="login-form" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label htmlFor="login-email">Email:</label>
-                <input
+                <Input
                   type="email"
                   id="login-email"
                   name="email"
@@ -167,7 +169,7 @@ export default function Login() {
               <div className="form-group">
                 <label htmlFor="login-password">Password:</label>
                 <div className="password-input-container">
-                  <input
+                  <Input
                     type={showPassword ? "text" : "password"}
                     id="login-password"
                     name="password"
@@ -214,9 +216,9 @@ export default function Login() {
                 </Link>
               </div>
 
-              <button type="submit" disabled={isLoading}>
+              <Button type="submit" className="w-full mt-1" disabled={isLoading}>
                 {isLoading ? 'Signing in...' : 'Login'}
-              </button>
+              </Button>
             </form>
             
             <div className="contentt mobile-only">

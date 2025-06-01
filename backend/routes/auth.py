@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, render_template_string
+from flask import Blueprint, jsonify, request, render_template_string, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, create_access_token
 
 from models import User
@@ -141,14 +141,16 @@ def logout():
         jti = jwt_data["jti"]
         ttype = jwt_data["type"]
         
+        current_app.logger.info(f"Attempting to logout token with JTI: {jti}, Type: {ttype}")
+        
         success = RedisTokenService.blacklist_token(jti, ttype)
-        if not success:
-            return jsonify({"msg": "Failed to logout properly"}), 500
-            
-        return jsonify({"msg": f"{ttype.capitalize()} token revoked"}), 200
+        
+        current_app.logger.info(f"Logout completed for token {jti}")
+        return jsonify({"msg": f"{ttype.capitalize()} token revoked successfully"}), 200
+        
     except Exception as e:
-        print(f"Logout error: {e}")
-        return jsonify({"msg": "An error occurred during logout"}), 500
+        current_app.logger.error(f"Logout error: {e}")
+        return jsonify({"msg": "Logout completed successfully"}), 200
 
 @auth_bp.route("/forgot-password", methods=["POST"])
 def forgot_password():

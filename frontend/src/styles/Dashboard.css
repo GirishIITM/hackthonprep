@@ -109,58 +109,6 @@
   color: var(--color-text);
 }
 
-.action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.action-btn {
-  padding: 0.875rem 1.5rem;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: all 0.3s;
-  border: none;
-  cursor: pointer;
-  display: inline-block;
-  text-align: center;
-}
-
-.action-btn.primary {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.action-btn.primary:hover {
-  background-color: var(--color-primary-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-}
-
-.action-btn.secondary {
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  border: 2px solid var(--color-primary);
-}
-
-.action-btn.secondary:hover {
-  background-color: var(--color-primary);
-  color: white;
-  transform: translateY(-2px);
-}
-
-.action-btn.tertiary {
-  background-color: var(--color-surface-variant);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-}
-
-.action-btn.tertiary:hover {
-  background-color: var(--color-border);
-  transform: translateY(-2px);
-}
-
 .recent-items {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));

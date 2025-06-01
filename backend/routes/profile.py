@@ -32,7 +32,7 @@ def get_profile():
         print(f"Get profile error: {e}")
         return jsonify({"msg": "An error occurred while fetching profile"}), 500
 
-@profile_bp.route("/profile", methods=["PUT"])
+@profile_bp.route('/profile/', methods=['PUT'])
 @jwt_required()
 def update_profile():
     try:
@@ -68,6 +68,10 @@ def update_profile():
             user.notify_email = bool(data["notify_email"])
         if "notify_in_app" in data:
             user.notify_in_app = bool(data["notify_in_app"])
+        
+        # Invalidate user search cache
+        from utils.cache_helpers import UserSearchCache
+        UserSearchCache.invalidate_user_cache()
         
         db.session.commit()
         

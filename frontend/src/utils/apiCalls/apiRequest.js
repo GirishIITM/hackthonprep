@@ -1,5 +1,6 @@
-// export const API_BASE_URL = "http://localhost:5000";
-export const API_BASE_URL = "https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:5000";
 
 export const loadingState = {
   states: {},
@@ -17,7 +18,7 @@ export const loadingState = {
   },
 
   isAnyLoading: () => {
-    return Object.values(loadingState.states).some(state => state === true);
+    return Object.values(loadingState.states).some(loading => loading);
   },
 
   reset: () => {
@@ -29,10 +30,28 @@ export const loadingState = {
       loadingState.listeners[requestKey] = [];
     }
     loadingState.listeners[requestKey].push(callback);
+    
     return () => {
-      loadingState.listeners[requestKey] =
-        loadingState.listeners[requestKey].filter(cb => cb !== callback);
+      loadingState.listeners[requestKey] = loadingState.listeners[requestKey].filter(cb => cb !== callback);
     };
+  }
+};
+
+// Simple connection state
+export const connectionState = {
+  isOnline: true,
+  listeners: new Set(),
+
+  subscribe(callback) {
+    this.listeners.add(callback);
+    return () => this.listeners.delete(callback);
+  },
+
+  setOnline(isOnline) {
+    if (this.isOnline !== isOnline) {
+      this.isOnline = isOnline;
+      this.listeners.forEach(callback => callback(isOnline));
+    }
   }
 };
 
@@ -84,6 +103,9 @@ export const apiRequest = async (endpoint, method = 'GET', data = null, loadingK
       loadingState.setLoading(loadingKey, false);
     }
 
+    // Update connection state
+    connectionState.setOnline(true);
+
     if (response.status === 401 && (result.msg === "Token has expired" || result.error === "Token has expired")) {
       console.log("Access token expired, attempting refresh...");
       const { handleTokenRefresh } = await import('./auth.js');
@@ -108,8 +130,10 @@ export const apiRequest = async (endpoint, method = 'GET', data = null, loadingK
       loadingState.setLoading(loadingKey, false);
     }
 
+    // Update connection state for network errors
     if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-      throw new Error('Unable to connect to server. Please check if the backend server is running on https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net');
+      connectionState.setOnline(false);
+      throw new Error('Unable to connect to server. Please check your internet connection.');
     }
 
     if (error.name === 'AbortError') {

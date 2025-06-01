@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import LoadingIndicator from '../components/LoadingIndicator';
-import { authAPI, loadingState } from '../utils/apiCalls';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import '../styles/login.css';
+import { authAPI, loadingState } from '../utils/apiCalls';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -151,10 +153,12 @@ export default function ResetPassword() {
               <p>The password reset link is invalid or has expired.</p>
               <p>Please request a new password reset.</p>
               
-              <div style={{ marginTop: '2rem' }}>
-                <Link to="/forgot-password" className="verify-button" style={{ textDecoration: 'none' }}>
-                  Request New Reset Link
-                </Link>
+              <div className="text-center mt-6">
+                <Button asChild variant="outline">
+                  <Link to="/forgot-password">
+                    Request New Reset Link
+                  </Link>
+                </Button>
               </div>
               
               <p className="login-link-text" style={{ marginTop: '1rem' }}>
@@ -180,7 +184,7 @@ export default function ResetPassword() {
               <div className="form-group">
                 <label htmlFor="reset-password">New Password:</label>
                 <div className="password-input-container">
-                  <input
+                  <Input
                     type={showPassword ? "text" : "password"}
                     id="reset-password"
                     name="password"
@@ -215,7 +219,7 @@ export default function ResetPassword() {
               <div className="form-group">
                 <label htmlFor="reset-confirm-password">Confirm New Password:</label>
                 <div className="password-input-container">
-                  <input
+                  <Input
                     type={showConfirmPassword ? "text" : "password"}
                     id="reset-confirm-password"
                     name="confirmPassword"
@@ -247,9 +251,13 @@ export default function ResetPassword() {
                 {errors.confirmPassword && <span className="field-error">{errors.confirmPassword}</span>}
               </div>
 
-              <button type="submit" disabled={isLoading}>
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full"
+              >
                 {isLoading ? 'Resetting Password...' : 'Reset Password'}
-              </button>
+              </Button>
             </form>
             
             <p className="login-link-text">

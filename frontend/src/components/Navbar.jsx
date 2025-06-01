@@ -3,7 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import "../styles/navbar.css";
-import { clearAuthData, authState, isAuthenticated } from '../utils/apiCalls/auth';
+import { authState, clearAuthData, isAuthenticated } from '../utils/apiCalls/auth';
+import { Button } from './ui/button';
 
 function Navbar({ showWhenAuthenticated = false }) {
   const location = useLocation();
@@ -59,37 +60,46 @@ function Navbar({ showWhenAuthenticated = false }) {
         </Link>
       </div>
 
-      <button className="navbar-toggle" onClick={toggleMenu} aria-label="Toggle menu">
+      <Button 
+        className="navbar-toggle" 
+        onClick={toggleMenu} 
+        aria-label="Toggle menu"
+        variant="ghost"
+        size="icon"
+      >
         <FontAwesomeIcon icon={menuOpen ? faClose : faBars} />
-      </button>
+      </Button>
 
       <div className={`navbar-links ${menuOpen ? 'open' : ''}`}>
-        <Link
-          to="/about"
-          className={isActive("/about") ? "active" : ""}
-          onClick={closeMenu}
-        >
-          <i className="fas fa-info-circle"></i>
-          <span>About</span>
-        </Link>
+        <Button asChild variant="ghost" className={isActive("/about") ? "bg-accent" : ""}>
+          <Link
+            to="/about"
+            onClick={closeMenu}
+          >
+            <i className="fas fa-info-circle"></i>
+            <span>About</span>
+          </Link>
+        </Button>
 
-        <Link
-          to="/register"
-          className={`nav-button register ${isActive("/register") ? "active" : ""}`}
-          onClick={closeMenu}
-        >
-          <i className="fas fa-user-plus"></i>
-          <span>Register</span>
-        </Link>
+        <Button asChild variant="outline" className={isActive("/register") ? "bg-accent" : ""}>
+          <Link
+            to="/register"
+            onClick={closeMenu}
+          >
+            <i className="fas fa-user-plus"></i>
+            <span>Register</span>
+          </Link>
+        </Button>
         
-        <Link
-          to="/login"
-          className={`nav-button login ${isActive("/login") ? "active" : ""}`}
-          onClick={closeMenu}
-        >
-          <i className="fas fa-sign-in-alt"></i>
-          <span>Login</span>
-        </Link>
+        <Button asChild variant="default" className={isActive("/login") ? "bg-primary/90" : ""}>
+          <Link
+            to="/login"
+            onClick={closeMenu}
+          >
+            <i className="fas fa-sign-in-alt"></i>
+            <span>Login</span>
+          </Link>
+        </Button>
       </div>
     </nav>
   );

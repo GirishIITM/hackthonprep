@@ -27,6 +27,36 @@ class User(db.Model):
     # Add notifications relationship for Notification back_populates
     notifications = db.relationship('Notification', back_populates='user')
     
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
+        # Invalidate cache when new user is created
+        self._invalidate_search_cache()
+    
+    def _invalidate_search_cache(self):
+        """Invalidate user search cache when user data changes"""
+        try:
+            from utils.cache_helpers import UserSearchCache
+            UserSearchCache.invalidate_user_cache()
+        except ImportError:
+            # Cache helpers not available yet (during initial setup)
+            pass
+        except Exception as e:
+            print(f"Cache invalidation error: {e}")
+    
+    def save(self):
+        """Custom save method with cache invalidation"""
+        db.session.add(self)
+        db.session.commit()
+        self._invalidate_search_cache()
+    
+    def update(self, **kwargs):
+        """Update user with cache invalidation"""
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        db.session.commit()
+        self._invalidate_search_cache()
+    
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
     
@@ -58,6 +88,7 @@ class User(db.Model):
         )
         db.session.add(user)
         db.session.commit()
+        user._invalidate_search_cache()
         return user
 
     @staticmethod
