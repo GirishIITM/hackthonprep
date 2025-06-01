@@ -145,14 +145,11 @@ def logout():
         
         success = RedisTokenService.blacklist_token(jti, ttype)
         
-        # Always return success for logout, even if Redis fails
-        # The token will expire naturally anyway
         current_app.logger.info(f"Logout completed for token {jti}")
         return jsonify({"msg": f"{ttype.capitalize()} token revoked successfully"}), 200
         
     except Exception as e:
         current_app.logger.error(f"Logout error: {e}")
-        # Still return success for logout to avoid user confusion
         return jsonify({"msg": "Logout completed successfully"}), 200
 
 @auth_bp.route("/forgot-password", methods=["POST"])

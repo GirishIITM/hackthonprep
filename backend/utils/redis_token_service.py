@@ -71,22 +71,9 @@ class RedisTokenService:
             return None
     
     @staticmethod
-    def remove_from_blacklist(jti):
-        """Remove a token from the blacklist"""
-        try:
-            blacklist_key = RedisTokenService._get_blacklist_key(jti)
-            return RedisCache.delete(blacklist_key)
-            
-        except Exception as e:
-            current_app.logger.error(f"Error removing token {jti} from blacklist: {e}")
-            return False
-    
-    @staticmethod
     def blacklist_user_tokens(user_id, token_type=None):
         """Blacklist all tokens for a specific user (for logout all devices)"""
         try:
-            # This would require storing active tokens per user
-            # For now, we'll implement a user-specific blacklist
             user_blacklist_key = f"user_blacklist:{user_id}"
             blacklist_data = {
                 "user_id": user_id,
@@ -94,7 +81,6 @@ class RedisTokenService:
                 "type": token_type or "all"
             }
             
-            # Set with a longer expiration for user blacklists
             success = RedisCache.set(user_blacklist_key, blacklist_data, 604800)  # 7 days
             
             if not success:

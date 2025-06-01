@@ -3,6 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import Project, User, Notification
 from extensions import db
 from utils.email import send_email
+from utils.cloudinary_upload import upload_project_image, validate_image_file
+from datetime import datetime
 
 project_bp = Blueprint('project', __name__)
 
@@ -10,14 +12,95 @@ project_bp = Blueprint('project', __name__)
 @jwt_required()
 def create_project():
     user_id = int(get_jwt_identity())
-    data = request.get_json()
+    
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        data = request.form.to_dict()
+        member_emails = data.get('member_emails', '').split(',') if data.get('member_emails') else []
+        member_emails = [email.strip() for email in member_emails if email.strip()]
+    else:
+        data = request.get_json()
+        member_emails = data.get('member_emails', []) if data else []
+    
     if not data or 'name' not in data:
         return jsonify({'msg': 'Project name required'}), 400
-    project = Project(name=data['name'], description=data.get('description'), owner_id=user_id)
-    project.members.append(User.query.get(user_id))
+    
+    deadline = None
+    if 'deadline' in data and data['deadline']:
+        try:
+            deadline = datetime.fromisoformat(data['deadline'].replace('Z', '+00:00'))
+        except ValueError:
+            return jsonify({'msg': 'Invalid deadline format. Use ISO format'}), 400
+    
+    project = Project(
+        name=data['name'], 
+        description=data.get('description'),
+        deadline=deadline,
+        owner_id=user_id
+    )
+    
+    owner = User.query.get(user_id)
+    project.members.append(owner)
+    
+    invalid_emails = []
+    added_members = []
+    
+    if member_emails:
+        for email in member_emails:
+            if email == owner.email: 
+                continue
+                
+            member = User.query.filter_by(email=email).first()
+            if member:
+                if not any(m.id == member.id for m in project.members):
+                    project.members.append(member)
+                    added_members.append({
+                        'id': member.id,
+                        'email': member.email,
+                        'username': member.username,
+                        'full_name': getattr(member, 'full_name', member.username)
+                    })
+            else:
+                invalid_emails.append(email)
+    
     db.session.add(project)
+    db.session.flush() 
+    
+    if 'project_image' in request.files:
+        image_file = request.files['project_image']
+        if image_file.filename != '':
+            is_valid, error_message = validate_image_file(image_file)
+            if not is_valid:
+                return jsonify({'msg': f'Invalid image: {error_message}'}), 400
+            
+            upload_result = upload_project_image(image_file, project.id)
+            if upload_result:
+                project.project_image = upload_result['secure_url']
+    
     db.session.commit()
-    return jsonify({'msg': 'Project created', 'project_id': project.id}), 201
+    
+    # Send notifications to added members
+    for member_info in added_members:
+        member = User.query.get(member_info['id'])
+        message = f"You have been added to project '{project.name}'"
+        notification = Notification(user_id=member.id, message=message)
+        db.session.add(notification)
+        if getattr(member, 'notify_email', True):
+            send_email("Added to Project", [member.email], "", message)
+    
+    db.session.commit()
+    
+    response = {
+        'msg': 'Project created', 
+        'project_id': project.id,
+        'project_image': project.project_image,
+        'added_members': added_members
+    }
+    
+    if invalid_emails:
+        response['invalid_emails'] = invalid_emails
+        response['warning'] = f"Some emails were not found: {', '.join(invalid_emails)}"
+    
+    return jsonify(response), 201
 
 @project_bp.route('/projects', methods=['GET'])
 @jwt_required()
@@ -84,3 +167,60 @@ def add_member(project_id):
         send_email("Added to Project", [user.email], "", message)
     db.session.commit()
     return jsonify({'msg': 'Member added'}), 200
+
+@project_bp.route('/users/search', methods=['GET'])
+@jwt_required()
+def search_users():
+    """Get users for member auto-completion with optimized queries"""
+    try:
+        search_query = request.args.get('q', '').strip().lower()
+        limit = min(int(request.args.get('limit', 20)), 50)
+        offset = int(request.args.get('offset', 0))
+        
+        query = db.session.query(
+            User.id,
+            User.username, 
+            User.email,
+            User.full_name,
+            User.profile_picture
+        )
+        
+        if search_query:
+            search_pattern = f"%{search_query}%"
+            query = query.filter(
+                db.or_(
+                    User.username.ilike(search_pattern),
+                    User.email.ilike(search_pattern),
+                    User.full_name.ilike(search_pattern)
+                )
+            )
+        
+        query = query.order_by(User.username.asc())
+        
+        total_count = None
+        if offset == 0:  # Only calculate on first page
+            total_count = query.count()
+        
+        users = query.offset(offset).limit(limit).all()
+        
+        users_data = []
+        for user in users:
+            users_data.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': user.full_name or user.username,
+                'profile_picture': user.profile_picture
+            })
+        
+        result = {
+            'users': users_data,
+            'has_more': len(users_data) == limit,
+            'total_count': total_count
+        }
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"Search users error: {e}")
+        return jsonify({'msg': 'An error occurred while searching users'}), 500

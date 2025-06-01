@@ -16,10 +16,8 @@ def upload_profile_image(image_file, user_id):
         dict: Upload result from Cloudinary or None if failed
     """
     try:
-        # Create a folder structure for profile images
         folder = f"profile_images/user_{user_id}"
         
-        # Upload options
         upload_options = {
             'folder': folder,
             'resource_type': 'image',
@@ -35,7 +33,6 @@ def upload_profile_image(image_file, user_id):
             'public_id': f"profile_{user_id}"  # Consistent public ID
         }
         
-        # Upload the image
         result = cloudinary.uploader.upload(image_file, **upload_options)
         
         print(f"Image uploaded successfully: {result.get('public_id')}")
@@ -43,6 +40,44 @@ def upload_profile_image(image_file, user_id):
         
     except Exception as e:
         print(f"Cloudinary upload error: {e}")
+        return None
+
+def upload_project_image(image_file, project_id):
+    """
+    Upload project image to Cloudinary
+    
+    Args:
+        image_file: File object from request.files
+        project_id: Project ID for organizing uploads
+    
+    Returns:
+        dict: Upload result from Cloudinary or None if failed
+    """
+    try:
+        folder = f"project_images/project_{project_id}"
+        
+        upload_options = {
+            'folder': folder,
+            'resource_type': 'image',
+            'format': 'jpg',  # Convert all images to JPG for consistency
+            'quality': 'auto:good',  # Optimize quality
+            'fetch_format': 'auto',  # Auto-deliver best format for browser
+            'width': 800,  # Larger width for project images
+            'height': 600,  # Larger height for project images
+            'crop': 'fill',  # Crop to fill the dimensions
+            'gravity': 'center',  # Center the crop
+            'overwrite': True,  # Overwrite if file with same name exists
+            'unique_filename': False,  # Use consistent filename
+            'public_id': f"project_{project_id}"  # Consistent public ID
+        }
+        
+        result = cloudinary.uploader.upload(image_file, **upload_options)
+        
+        print(f"Project image uploaded successfully: {result.get('public_id')}")
+        return result
+        
+    except Exception as e:
+        print(f"Cloudinary project image upload error: {e}")
         return None
 
 def delete_cloudinary_image(image_url):
@@ -59,12 +94,10 @@ def delete_cloudinary_image(image_url):
         if not image_url or 'cloudinary.com' not in image_url:
             return False
         
-        # Extract public_id from URL
         public_id = extract_public_id_from_url(image_url)
         if not public_id:
             return False
         
-        # Delete from Cloudinary
         result = cloudinary.uploader.destroy(public_id)
         
         if result.get('result') == 'ok':
@@ -89,7 +122,6 @@ def extract_public_id_from_url(cloudinary_url):
         str: Public ID or None if extraction fails
     """
     try:
-        # Parse the URL
         parsed_url = urlparse(cloudinary_url)
         path = parsed_url.path
         
@@ -132,14 +164,12 @@ def validate_image_file(file):
     if not file or file.filename == '':
         return False, "No file selected"
     
-    # Check file extension
     allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     file_extension = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
     
     if file_extension not in allowed_extensions:
         return False, f"Invalid file type. Allowed: {', '.join(allowed_extensions).upper()}"
     
-    # Check file size (limit to 5MB)
     file.seek(0, os.SEEK_END)
     file_size = file.tell()
     file.seek(0)  # Reset file pointer
@@ -171,7 +201,6 @@ def get_optimized_image_url(cloudinary_url, width=None, height=None, quality='au
         if not public_id:
             return cloudinary_url
         
-        # Build transformation string
         transformations = []
         
         if quality:
@@ -184,12 +213,10 @@ def get_optimized_image_url(cloudinary_url, width=None, height=None, quality='au
         elif height:
             transformations.append(f'h_{height}')
         
-        # Add auto format
         transformations.append('f_auto')
         
         transformation_string = ','.join(transformations)
         
-        # Build optimized URL
         cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME')
         optimized_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/{transformation_string}/{public_id}"
         

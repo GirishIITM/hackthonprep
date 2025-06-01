@@ -1,10 +1,10 @@
-from flask import Flask
+from flask import Flask, current_app
 from flask_cors import CORS
 from dotenv import load_dotenv
 import cloudinary
 import os
+import atexit
 
-from sqlalchemy import false
 from config import get_config
 from extensions import db, jwt, bcrypt, mail, init_redis
 from models import User, TokenBlocklist
@@ -18,6 +18,7 @@ def create_app(config_class=None):
     """Application factory pattern."""
     app = Flask(__name__)
     
+    # Config loading
     if config_class is None:
         config_instance = get_config()
     else:
@@ -25,40 +26,45 @@ def create_app(config_class=None):
     
     app.config.from_object(config_instance)
     
-    CORS(app, 
-         origins="*", 
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-         allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials", "X-Requested-With"],  
-         supports_credentials=False)  
+    # CORS setup
+    CORS(
+        app,
+        origins="*",
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials", "X-Requested-With"],
+        supports_credentials=False
+    )
     
+    # Extensions
     db.init_app(app)
     jwt.init_app(app)
     bcrypt.init_app(app)
-    init_redis(app)  # Initialize Redis
+    init_redis(app)
     
+    # Cloudinary
     cloudinary.config(
         cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
         api_key=os.getenv('CLOUDINARY_API_KEY'),
         api_secret=os.getenv('CLOUDINARY_API_SECRET')
     )
     
+    # Blueprints
     register_blueprints(app)
     
-    # Register JWT token blocklist callback
+    # JWT token blocklist callback
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
         jti = jwt_payload['jti']
         token = TokenBlocklist.query.filter_by(jti=jti).first()
         return token is not None
     
+    # Everything below runs inside app context!
     with app.app_context():
-        # Handle database setup based on flags
         use_postgresql = getattr(config_instance, 'USE_POSTGRESQL', False)
         skip_migration = getattr(config_instance, 'SKIP_MIGRATION', False)
         
         try:
             if skip_migration:
-                # Direct database usage without migration checks
                 if use_postgresql:
                     print("Using PostgreSQL database (direct mode)")
                 else:
@@ -66,45 +72,59 @@ def create_app(config_class=None):
                 db.create_all()
                 print("Database tables created/verified")
             else:
-                # Legacy migration-aware mode
                 database_url = app.config.get('SQLALCHEMY_DATABASE_URI')
-                
                 if use_postgresql and 'postgresql' in database_url:
                     print("Using PostgreSQL database...")
-                    
-                    # Always create tables first
                     db.create_all()
                     print("PostgreSQL tables created/verified")
-                    
-                    # Check connection and migrate if possible
                     if check_postgresql_connection():
                         print("PostgreSQL connection verified")
-                        # Try to migrate data from SQLite if it exists (non-blocking)
                         migrate_sqlite_to_postgresql()
                     else:
                         print("PostgreSQL connection issues - falling back to SQLite")
-                        # Fallback to SQLite if PostgreSQL fails
                         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
                         db.create_all()
-                
                 else:
                     print("Using SQLite database...")
                     db.create_all()
             
-            # Initialize Gmail credentials (non-blocking)
+            # Gmail credentials
             try:
+                print("Initializing Gmail credentials...")
                 initialize_gmail_credentials()
+                print("Gmail credentials initialized successfully!")
             except Exception as e:
                 print(f"Gmail initialization warning: {e}")
-                
         except Exception as e:
             print(f"Database setup warning: {e}")
             print("App will continue with limited functionality")
+        
+        # Cache warm-up (SAFE inside app context)
+        try:
+            from utils.cache_helpers import warm_up_user_cache
+            warm_up_user_cache()
+            print("Cache warm-up completed successfully")
+        except Exception as e:
+            print(f"Cache warm-up error: {e}")
+    
+    # Cache invalidation listeners
+    @db.event.listens_for(User, 'after_insert')
+    @db.event.listens_for(User, 'after_update')
+    @db.event.listens_for(User, 'after_delete')
+    def invalidate_user_cache(mapper, connection, target):
+        """Invalidate user search cache on user changes"""
+        try:
+            from utils.cache_helpers import UserSearchCache
+            UserSearchCache.invalidate_user_cache()
+        except Exception as e:
+            current_app.logger.error(f"Cache invalidation error: {e}")
     
     return app
 
+# Create the app instance
 app = create_app()
+
+atexit.register(lambda: None)  # Cleanup placeholder
 
 if __name__ == '__main__':
     app.run(port=5000, host='0.0.0.0', debug=True)
-

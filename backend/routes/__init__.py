@@ -7,7 +7,6 @@ def register_blueprints(app):
     from .task import task_bp
     from .message import message_bp
     from .notification import notification_bp
-    from .redis_routes import redis_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -16,4 +15,3 @@ def register_blueprints(app):
     app.register_blueprint(task_bp)
     app.register_blueprint(message_bp)
     app.register_blueprint(notification_bp)
-    app.register_blueprint(redis_bp)

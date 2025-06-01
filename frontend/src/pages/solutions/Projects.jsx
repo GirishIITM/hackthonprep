@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { loadingState, projectAPI, getCurrentUser } from '../../utils/apiCalls';
+import { getCurrentUser, loadingState, projectAPI } from '../../utils/apiCalls';
 import './Projects.css';
 
 const Projects = () => {
