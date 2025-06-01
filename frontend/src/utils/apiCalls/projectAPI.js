@@ -1,8 +1,18 @@
-import { apiRequest } from "./apiRequest";
+import { apiRequest } from "./apiRequest.js";
 
 export const projectAPI = {
-  getAllProjects: () => {
-    return apiRequest('/projects', 'GET', null, 'projects-get-all');
+  getAllProjects: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    
+    if (params.search) queryParams.append('search', params.search);
+    if (params.owner) queryParams.append('owner', params.owner);
+    if (params.member) queryParams.append('member', params.member);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.offset) queryParams.append('offset', params.offset);
+    
+    const endpoint = queryParams.toString() ? `/projects?${queryParams}` : '/projects';
+    return apiRequest(endpoint, 'GET', null, 'projects-get-all');
   },
 
   getProject: (id) => {
@@ -12,8 +22,9 @@ export const projectAPI = {
   createProject: (projectData) => {
     const hasImage = projectData.project_image && projectData.project_image instanceof File;
     const hasMemberEmails = projectData.member_emails && Array.isArray(projectData.member_emails);
+    const hasMemberPermissions = projectData.member_permissions && typeof projectData.member_permissions === 'object';
     
-    if (hasImage || hasMemberEmails) {
+    if (hasImage || hasMemberEmails || hasMemberPermissions) {
       const formData = new FormData();
       formData.append('name', projectData.name);
       
@@ -28,6 +39,12 @@ export const projectAPI = {
       
       if (hasMemberEmails) {
         formData.append('member_emails', projectData.member_emails.join(','));
+      }
+      
+      if (hasMemberPermissions) {
+        Object.entries(projectData.member_permissions).forEach(([email, isEditor]) => {
+          formData.append(`member_permission_${email}`, isEditor.toString());
+        });
       }
       
       if (hasImage) {
@@ -47,6 +64,10 @@ export const projectAPI = {
       
       if (hasMemberEmails) {
         jsonData.member_emails = projectData.member_emails;
+      }
+      
+      if (hasMemberPermissions) {
+        jsonData.member_permissions = projectData.member_permissions;
       }
       
       return apiRequest('/projects', 'POST', jsonData, 'projects-create');
@@ -70,8 +91,12 @@ export const projectAPI = {
     return apiRequest(`/projects/${id}`, 'DELETE', null, 'projects-delete');
   },
 
-  addProjectMember: (id, memberData) => {
-    return apiRequest(`/projects/${id}/members`, 'POST', memberData, 'projects-add-member');
+  addProjectMember: (projectId, memberData) => {
+    const data = {
+      email: memberData.email,
+      isEditor: memberData.isEditor || false
+    };
+    return apiRequest(`/projects/${projectId}/members`, 'POST', data, 'projects-add-member');
   },
 
   searchUsers: (searchParams = {}) => {

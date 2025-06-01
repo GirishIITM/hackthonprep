@@ -6,7 +6,8 @@ class Membership(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
-    isEditor = db.Column(db.Boolean, default=False, nullable=False)
+    is_editor = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)

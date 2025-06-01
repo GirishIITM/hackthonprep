@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { getCurrentUser, loadingState, projectAPI, taskAPI } from '../../utils/apiCalls';
+import { getCurrentUser, loadingState } from '../../utils/apiCalls';
+import { taskAPI } from '../../utils/apiCalls/taskAPI.js';
+import { projectAPI } from '../../utils/apiCalls/projectAPI.js';
 import './Tasks.css';
 
 const Tasks = () => {

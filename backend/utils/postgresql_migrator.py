@@ -4,8 +4,49 @@ from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 
+def migrate_schema_before_data():
+    """Ensure PostgreSQL schema is updated before migrating data"""
+    postgresql_url = os.getenv('DATABASE_URL')
+    
+    if not postgresql_url or 'postgresql' not in postgresql_url:
+        return True
+    
+    try:
+        from sqlalchemy import create_engine, text
+        engine = create_engine(postgresql_url)
+        
+        schema_updates = [
+            "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS google_id VARCHAR(100)",
+            "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS profile_picture VARCHAR(255)", 
+            "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS full_name VARCHAR(100)",
+            "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS about TEXT",
+            "ALTER TABLE project ADD COLUMN IF NOT EXISTS deadline TIMESTAMP",
+            "ALTER TABLE project ADD COLUMN IF NOT EXISTS project_image VARCHAR(255)",
+            "ALTER TABLE membership ADD COLUMN IF NOT EXISTS is_editor BOOLEAN DEFAULT false",
+            "ALTER TABLE membership ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        ]
+        
+        with engine.connect() as conn:
+            for update in schema_updates:
+                try:
+                    conn.execute(text(update))
+                    conn.commit()
+                except Exception:
+                    # Column might already exist
+                    continue
+                    
+        print("PostgreSQL schema updated for migration")
+        return True
+        
+    except Exception as e:
+        print(f"Schema update failed: {e}")
+        return False
+
 def migrate_sqlite_to_postgresql():
     """Migrate data from SQLite to PostgreSQL - non-blocking"""
+    # First ensure schema is updated
+    migrate_schema_before_data()
+    
     sqlite_path = 'instance/app.db'
     postgresql_url = os.getenv('DATABASE_URL')
     

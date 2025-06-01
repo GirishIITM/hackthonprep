@@ -534,49 +534,6 @@
   border-top: 1px solid hsl(var(--border) / 0.5);
 }
 
-.create-button {
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.9) 100%);
-  color: hsl(var(--primary-foreground));
-  padding: 0.875rem 2rem;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 140px;
-  justify-content: center;
-}
-
-.create-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px hsl(var(--primary) / 0.3);
-}
-
-.create-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.cancel-button {
-  padding: 0.875rem 2rem;
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.cancel-button:hover:not(:disabled) {
-  background: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-  transform: translateY(-1px);
-}
 
 .cancel-button:disabled {
   opacity: 0.6;
@@ -601,8 +558,13 @@
 
 /* Animations */
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes slideIn {
@@ -610,6 +572,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -621,16 +584,16 @@
   .project-create-page {
     padding: 1rem;
   }
-  
+
   .page-title {
     font-size: 2rem;
   }
-  
+
   .project-create-container {
     padding: 1.5rem;
     border-radius: 12px;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -641,36 +604,36 @@
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-  
+
   .deadline-input-wrapper {
     min-width: auto;
   }
-  
+
   .form-actions {
     flex-direction: column-reverse;
   }
-  
+
   .create-button,
   .cancel-button {
     width: 100%;
   }
-  
+
   .selected-members-grid {
     gap: 0.5rem;
   }
-  
+
   .search-result-item,
   .selected-member {
     padding: 0.75rem;
   }
-  
+
   .user-avatar,
   .member-avatar {
     width: 36px;
     height: 36px;
     margin-right: 0.5rem;
   }
-  
+
   .preview-image {
     width: 150px;
     height: 150px;
@@ -681,19 +644,19 @@
   .project-create-page {
     padding: 0.5rem;
   }
-  
+
   .page-title {
     font-size: 1.75rem;
   }
-  
+
   .project-create-container {
     padding: 1rem;
   }
-  
+
   .form-section {
     padding: 1rem 0;
   }
-  
+
   .section-title {
     font-size: 1.1rem;
   }
@@ -702,7 +665,7 @@
 /* Loading States */
 .form-group input:disabled,
 .form-group textarea:disabled,
-.file-input-hidden:disabled + .file-upload-area {
+.file-input-hidden:disabled+.file-upload-area {
   opacity: 0.6;
   cursor: not-allowed;
 }
