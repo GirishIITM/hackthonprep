@@ -1,5 +1,6 @@
 def register_blueprints(app):
     """Register all blueprints with the Flask app."""
+    from .main import main_bp
     from .auth import auth_bp
     from .profile import profile_bp
     from .project import project_bp
@@ -8,6 +9,7 @@ def register_blueprints(app):
     from .notification import notification_bp
     from .redis_routes import redis_bp
     
+    app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(profile_bp)
     app.register_blueprint(project_bp)

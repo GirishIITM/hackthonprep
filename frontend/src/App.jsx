@@ -4,7 +4,8 @@ import './App.css';
 import Navbar from './components/Navbar';
 import PrivateRoute from './components/PrivateRoute';
 
-import NavSidebar from './components/NavSidebar';
+import AdminPanelLayout from './components/admin-panel/admin-panel-layout';
+import { ContentLayout } from './components/admin-panel/content-layout';
 import About from './pages/About';
 import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
@@ -14,7 +15,9 @@ import Profile from './pages/Profile';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
+import ProjectCreate from './pages/solutions/ProjectCreate';
 import Projects from './pages/solutions/Projects';
+import TaskCreate from './pages/solutions/TaskCreate';
 import Tasks from './pages/solutions/Tasks';
 import VerifyOTP from './pages/VerifyOTP';
 import { authState, isAuthenticated } from './utils/apiCalls/auth';
@@ -50,7 +53,6 @@ function App() {
       <div className="app-container">
         <main>
           <Routes>
-            {/* Public routes */}
             <Route path='/register' element={
               <>
                 <Navbar />
@@ -58,7 +60,6 @@ function App() {
               </>
             } />
             
-            {/* OTP Verification route */}
             <Route path='/verify-otp' element={
               <>
                 <Navbar />
@@ -72,17 +73,23 @@ function App() {
                 {authenticated ? <Navigate to="/dashboard" replace /> : <Login />}
               </>
             } />
+            
             <Route path='/about' element={
               <>
-                <Navbar showWhenAuthenticated={true} />
+                <Navbar showWhenAuthenticated/>
                 <About />
               </>
             } />
 
-            {/* Add Google OAuth callback route */}
             <Route path="/auth/google/callback" element={<GoogleOAuthCallback />} />
 
-            {/* Add this route for Reset Password */}
+            <Route path="/forgot-password" element={
+              <>
+                <Navbar />
+                {authenticated ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
+              </>
+            } />
+
             <Route path="/reset-password" element={
               <>
                 <Navbar />
@@ -90,15 +97,6 @@ function App() {
               </>
             } />
 
-            {/* Forgot password route */}
-            <Route path="/forgot-password" element={
-              <>
-                <Navbar />
-                <ForgotPassword />
-              </>
-            } />
-
-            {/* Home page - accessible to everyone, no redirection for authenticated users */}
             <Route path='/' element={
               <>
                 <Navbar showWhenAuthenticated={true} />
@@ -106,45 +104,74 @@ function App() {
               </>
             } />
 
-            {/* Protected routes with NavSidebar */}
             <Route path='/dashboard' element={
               <PrivateRoute>
-                <NavSidebar>
-                  <Dashboard />
-                </NavSidebar>
+                <AdminPanelLayout>
+                  <ContentLayout title="Dashboard">
+                    <Dashboard />
+                  </ContentLayout>
+                </AdminPanelLayout>
               </PrivateRoute>
             } />
             
             <Route path='/solutions/tasks' element={
               <PrivateRoute>
-                <NavSidebar>
-                  <Tasks />
-                </NavSidebar>
+                <AdminPanelLayout>
+                  <ContentLayout title="Tasks">
+                    <Tasks />
+                  </ContentLayout>
+                </AdminPanelLayout>
               </PrivateRoute>
             } />
             
             <Route path='/solutions/projects' element={
               <PrivateRoute>
-                <NavSidebar>
-                  <Projects />
-                </NavSidebar>
+                <AdminPanelLayout>
+                  <ContentLayout title="Projects">
+                    <Projects />
+                  </ContentLayout>
+                </AdminPanelLayout>
+              </PrivateRoute>
+            } />
+
+            <Route path='/solutions/projects/create' element={
+              <PrivateRoute>
+                <AdminPanelLayout>
+                  <ContentLayout title="Create Project">
+                    <ProjectCreate />
+                  </ContentLayout>
+                </AdminPanelLayout>
+              </PrivateRoute>
+            } />
+
+            <Route path='/solutions/tasks/create' element={
+              <PrivateRoute>
+                <AdminPanelLayout>
+                  <ContentLayout title="Create Task">
+                    <TaskCreate />
+                  </ContentLayout>
+                </AdminPanelLayout>
               </PrivateRoute>
             } />
 
             <Route path='/settings' element={
               <PrivateRoute>
-                <NavSidebar>
-                  <Settings />
-                </NavSidebar>
+                <AdminPanelLayout>
+                  <ContentLayout title="Settings">
+                    <Settings />
+                  </ContentLayout>
+                </AdminPanelLayout>
               </PrivateRoute>
             } />
 
-            {/* Profile route - protected and with NavSidebar */}
+            {/* Profile route - protected and with AdminPanelLayout */}
             <Route path='/profile' element={
               <PrivateRoute>
-                <NavSidebar>
-                  <Profile />
-                </NavSidebar>
+                <AdminPanelLayout>
+                  <ContentLayout title="Profile">
+                    <Profile />
+                  </ContentLayout>
+                </AdminPanelLayout>
               </PrivateRoute>
             } />
 

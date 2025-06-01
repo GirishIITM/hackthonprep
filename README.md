@@ -122,7 +122,7 @@ python app.py
 cd frontend
 npm install
 npm run dev
-Visit [http://localhost:5173](http://localhost:5173) to view the app.
+Visit [https://voluble-tapioca-bc2df4.netlify.app](https://voluble-tapioca-bc2df4.netlify.app) to view the app.
 
 ---
 

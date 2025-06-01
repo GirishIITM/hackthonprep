@@ -166,3 +166,11 @@ cython_debug/
 
 token_creds.json
 client_secrets.json
+
+# Docker
+.dockerignore
+
+# Docker build artifacts
+.docker_version
+.docker_image
+version.json

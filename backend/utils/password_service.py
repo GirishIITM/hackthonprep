@@ -3,6 +3,7 @@ from extensions import db
 from utils.email import send_email
 from utils.email_templates import get_password_reset_email_template
 from utils.validation import validate_email, validate_password, sanitize_email, sanitize_string
+from config import get_config
 
 class PasswordService:
     @staticmethod
@@ -20,7 +21,10 @@ class PasswordService:
                 return True, "If the email exists, a password reset link has been sent"
             
             reset_token = PasswordResetToken.create_token(user.id)
-            reset_link = f"http://localhost:3000/reset-password?token={reset_token}"
+            
+            # Use configured frontend URL for reset link
+            config = get_config()
+            reset_link = f"{config.FRONTEND_URL}/reset-password?token={reset_token}"
             
             subject = "Password Reset Request"
             html_body = get_password_reset_email_template(user.username, reset_link)
@@ -35,6 +39,29 @@ class PasswordService:
         except Exception as e:
             print(f"Send reset email error: {e}")
             return False, "An error occurred while processing your request"
+
+    @staticmethod
+    def verify_reset_token(token):
+        """Verify if a reset token is valid and not expired"""
+        try:
+            token = sanitize_string(token)
+            
+            reset_token = PasswordResetToken.query.filter_by(
+                token=token,
+                is_used=False
+            ).first()
+            
+            if not reset_token:
+                return False, "Invalid or expired reset token"
+            
+            if reset_token.is_expired():
+                return False, "Reset token has expired. Please request a new one."
+            
+            return True, "Token is valid"
+            
+        except Exception as e:
+            print(f"Verify reset token error: {e}")
+            return False, "An error occurred while verifying token"
 
     @staticmethod
     def reset_password_with_token(token, new_password):

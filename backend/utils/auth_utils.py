@@ -8,17 +8,25 @@ def create_user_tokens(user_id):
     refresh_token = create_refresh_token(identity=str(user_id))
     return access_token, refresh_token
 
+def create_refreshed_tokens(user_id):
+    """Create new access and refresh tokens (for token rotation)"""
+    access_token = create_access_token(identity=str(user_id))
+    refresh_token = create_refresh_token(identity=str(user_id))
+    return access_token, refresh_token
+
 def format_user_response(user):
     """Format user data for API responses"""
     return {
         "id": user.id,
         "name": getattr(user, 'full_name', user.username),
+        "full_name": getattr(user, 'full_name', user.username),
         "username": user.username,
         "email": user.email,
+        "about": getattr(user, 'about', ''),
         "profile_picture": user.profile_picture,
         "created_at": user.created_at.isoformat() if user.created_at else None,
-        "notify_email": user.notify_email,
-        "notify_in_app": user.notify_in_app
+        "notify_email": getattr(user, 'notify_email', True),
+        "notify_in_app": getattr(user, 'notify_in_app', True)
     }
 
 def validate_login_data(data):

@@ -4,7 +4,7 @@ This document provides comprehensive test cases for the SynergySphere API using 
 
 ## 📋 Prerequisites
 
-1. **Backend Server Running**: Ensure your Flask backend is running on `http://localhost:5000`
+1. **Backend Server Running**: Ensure your Flask backend is running on `https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net`
 2. **Admin User Setup**: Make sure you have an admin user with credentials:
    - Email: `admin@synergysphere.com`
    - Password: `12345678`
@@ -22,7 +22,7 @@ This document provides comprehensive test cases for the SynergySphere API using 
 ### 2. Configure Environment Variables
 
 The collection uses the following variables (automatically set during execution):
-- `base_url`: http://localhost:5000 (pre-configured)
+- `base_url`: https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net (pre-configured)
 - `access_token`: JWT access token (set after login)
 - `refresh_token`: JWT refresh token (set after login)
 - `user_id`: User ID (set after login)
@@ -139,12 +139,8 @@ The collection uses the following variables (automatically set during execution)
 ### Backend Server Issues:
 
 ```bash
-# Start the backend server
-cd hackthonprep/backend
-python app.py
-
 # Check if server is running
-curl http://localhost:5000/auth/profile
+curl https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net/auth/profile
 ```
 
 ### Database Issues:
@@ -212,4 +208,4 @@ The test collection includes comprehensive assertions for:
 - Token management
 - Variable persistence
 
-Each test includes detailed logging and variable extraction for debugging purposes. 
+Each test includes detailed logging and variable extraction for debugging purposes.

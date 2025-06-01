@@ -1,5 +1,5 @@
-// export const API_BASE_URL = "http://localhost:5000";
-export const API_BASE_URL = "https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net";
+export const API_BASE_URL = "http://localhost:5000";
+// export const API_BASE_URL = "https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net";
 
 export const loadingState = {
   states: {},
@@ -70,7 +70,7 @@ export const apiRequest = async (endpoint, method = 'GET', data = null, loadingK
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-    
+
     let result;
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
@@ -84,10 +84,12 @@ export const apiRequest = async (endpoint, method = 'GET', data = null, loadingK
       loadingState.setLoading(loadingKey, false);
     }
 
-    if (response.status === 401 && result.error === "Token has expired") {
+    if (response.status === 401 && (result.msg === "Token has expired" || result.error === "Token has expired")) {
+      console.log("Access token expired, attempting refresh...");
       const { handleTokenRefresh } = await import('./auth.js');
       const refreshSuccess = await handleTokenRefresh();
       if (refreshSuccess) {
+        console.log("Token refreshed, retrying request...");
         return apiRequest(endpoint, method, data, loadingKey);
       } else {
         throw new Error("Session expired. Please login again.");
@@ -101,15 +103,15 @@ export const apiRequest = async (endpoint, method = 'GET', data = null, loadingK
     return result;
   } catch (error) {
     console.error('API request error:', error);
-    
+
     if (loadingKey) {
       loadingState.setLoading(loadingKey, false);
     }
 
     if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-      throw new Error('Unable to connect to server. Please check if the backend server is running on http://localhost:5000');
+      throw new Error('Unable to connect to server. Please check if the backend server is running on https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net');
     }
-    
+
     if (error.name === 'AbortError') {
       throw new Error('Request timeout: The server took too long to respond.');
     }

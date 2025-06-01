@@ -7,7 +7,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:5000",
+      "value": "https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net",
       "type": "string"
     },
     {
@@ -1011,4 +1011,4 @@
       ]
     }
   ]
-} 
+}
