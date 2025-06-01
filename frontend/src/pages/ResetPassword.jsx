@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import LoadingIndicator from '../components/LoadingIndicator';
-import { authAPI, loadingState } from '../utils/apiCalls';
+import { Input } from '../components/ui/input';
 import '../styles/login.css';
+import { authAPI, loadingState } from '../utils/apiCalls';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -180,7 +181,7 @@ export default function ResetPassword() {
               <div className="form-group">
                 <label htmlFor="reset-password">New Password:</label>
                 <div className="password-input-container">
-                  <input
+                  <Input
                     type={showPassword ? "text" : "password"}
                     id="reset-password"
                     name="password"
@@ -215,7 +216,7 @@ export default function ResetPassword() {
               <div className="form-group">
                 <label htmlFor="reset-confirm-password">Confirm New Password:</label>
                 <div className="password-input-container">
-                  <input
+                  <Input
                     type={showConfirmPassword ? "text" : "password"}
                     id="reset-confirm-password"
                     name="confirmPassword"

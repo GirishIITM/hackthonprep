@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
 import OtpInput from 'react-otp-input';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LoadingIndicator from '../components/LoadingIndicator';
-import { authAPI, loadingState } from '../utils/apiCalls';
+import { Input } from '../components/ui/input';
 import '../styles/verifyOTP.css';
+import { authAPI, loadingState } from '../utils/apiCalls';
 
 export default function VerifyOTP() {
   const [otp, setOtp] = useState('');
@@ -189,7 +190,7 @@ export default function VerifyOTP() {
                     onChange={handleOtpChange}
                     numInputs={6}
                     renderSeparator={<span className="otp-separator">-</span>}
-                    renderInput={(props) => <input {...props} className="otp-single-input" />}
+                    renderInput={(props) => <Input {...props} className="otp-single-input" />}
                     shouldAutoFocus={true}
                     inputType="number"
                     containerStyle="otp-container"

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { loadingState, projectAPI, taskAPI, getCurrentUser } from '../../utils/apiCalls';
+import { Input } from '../../components/ui/input';
+import { getCurrentUser, loadingState, projectAPI, taskAPI } from '../../utils/apiCalls';
 import './Tasks.css';
 
 const Tasks = () => {
@@ -185,7 +186,7 @@ const Tasks = () => {
 
             <div className="form-group">
               <label className="form-label">Title</label>
-              <input
+              <Input
                 type="text"
                 name="title"
                 value={formData.title}
@@ -208,7 +209,7 @@ const Tasks = () => {
 
             <div className="form-group">
               <label className="form-label">Due Date</label>
-              <input
+              <Input
                 type="date"
                 name="due_date"
                 value={formData.due_date}

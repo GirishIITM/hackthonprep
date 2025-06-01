@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import '../styles/Profile.css';
-import { profileAPI, saveAuthData } from '../utils/apiCalls';
 import penIcon from '../assets/pen.png';
+import { Input } from '../components/ui/input';
+import '../styles/Profile.css';
+import { profileAPI } from '../utils/apiCalls';
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -156,7 +157,7 @@ const Profile = () => {
             </div>
           )}
 
-          <input
+          <Input
             id="profile-pic-upload"
             type="file"
             accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
@@ -228,7 +229,7 @@ const Profile = () => {
               <span className="profile-info-label">Full Name</span>
               {editingName ? (
                 <>
-                  <input
+                  <Input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -254,7 +255,7 @@ const Profile = () => {
               <span className="profile-info-label">Username</span>
               {editingUsername ? (
                 <>
-                  <input
+                  <Input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}

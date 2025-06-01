@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Input } from '../components/ui/input';
 import '../styles/Settings.css';
 import { getCurrentUser } from '../utils/apiCalls/auth';
 
@@ -156,7 +157,7 @@ const Settings = () => {
           <h2>Notifications</h2>
           <div className="setting-item">
             <label className="setting-label">Email Notifications</label>
-            <input
+            <Input
               type="checkbox"
               checked={settings.notifications.email}
               onChange={(e) => handleNotificationChange('email', e.target.checked)}
@@ -165,7 +166,7 @@ const Settings = () => {
           </div>
           <div className="setting-item">
             <label className="setting-label">Task Reminders</label>
-            <input
+            <Input
               type="checkbox"
               checked={settings.notifications.taskReminders}
               onChange={(e) => handleNotificationChange('taskReminders', e.target.checked)}
@@ -174,7 +175,7 @@ const Settings = () => {
           </div>
           <div className="setting-item">
             <label className="setting-label">Project Updates</label>
-            <input
+            <Input
               type="checkbox"
               checked={settings.notifications.projectUpdates}
               onChange={(e) => handleNotificationChange('projectUpdates', e.target.checked)}
@@ -200,7 +201,7 @@ const Settings = () => {
           </div>
           <div className="setting-item">
             <label className="setting-label">Show Activity Status</label>
-            <input
+            <Input
               type="checkbox"
               checked={settings.privacy.activityStatus}
               onChange={(e) => handlePrivacyChange('activityStatus', e.target.checked)}

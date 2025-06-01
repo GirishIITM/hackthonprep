@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Input } from '../../components/ui/input';
 import { getCurrentUser, projectAPI, taskAPI } from '../../utils/apiCalls';
 import './TaskCreate.css';
 
@@ -124,7 +125,7 @@ const TaskCreate = () => {
 
             <div className="form-group">
               <label className="form-label">Task Title *</label>
-              <input
+              <Input
                 type="text"
                 name="title"
                 value={formData.title}
@@ -149,7 +150,7 @@ const TaskCreate = () => {
 
             <div className="form-group">
               <label className="form-label">Due Date *</label>
-              <input
+              <Input
                 type="date"
                 name="due_date"
                 value={formData.due_date}

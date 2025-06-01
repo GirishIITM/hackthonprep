@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LoadingIndicator from '../components/LoadingIndicator';
+import { Input } from '../components/ui/input';
 import '../styles/login.css';
 import { authAPI, loadingState } from '../utils/apiCalls';
 
@@ -82,7 +83,7 @@ export default function ForgotPassword() {
               <form className="login-form" onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label htmlFor="forgot-email">Email:</label>
-                  <input 
+                  <Input
                     type="email" 
                     id="forgot-email" 
                     name="email" 

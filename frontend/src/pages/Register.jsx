@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import registerSvg from '../assets/register.svg';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 import LoadingIndicator from '../components/LoadingIndicator';
+import { Input } from '../components/ui/input';
 import '../styles/register.css';
 import { authAPI, loadingState, saveAuthData } from '../utils/apiCalls';
-import registerSvg from '../assets/register.svg';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -222,7 +223,7 @@ export default function Register() {
             <form className="register-form" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label htmlFor="register-fullName">Full Name:</label>
-                <input
+                <Input
                   type="text"
                   id="register-fullName"
                   name="fullName"
@@ -237,7 +238,7 @@ export default function Register() {
 
               <div className="form-group">
                 <label htmlFor="register-username">Username:</label>
-                <input
+                <Input
                   type="text"
                   id="register-username"
                   name="username"
@@ -252,7 +253,7 @@ export default function Register() {
 
               <div className="form-group">
                 <label htmlFor="register-email">Email:</label>
-                <input
+                <Input
                   type="email"
                   id="register-email"
                   name="email"
@@ -268,7 +269,7 @@ export default function Register() {
               <div className="form-group">
                 <label htmlFor="register-password">Password:</label>
                 <div className="password-input-container">
-                  <input
+                  <Input
                     type={showPassword ? "text" : "password"}
                     id="register-password"
                     name="password"
@@ -320,7 +321,7 @@ export default function Register() {
                     
                     <div className="weak-password-option">
                       <label className="weak-password-checkbox">
-                        <input
+                        <Input
                           type="checkbox"
                           checked={acceptWeakPassword}
                           onChange={(e) => setAcceptWeakPassword(e.target.checked)}
@@ -336,7 +337,7 @@ export default function Register() {
               <div className="form-group">
                 <label htmlFor="register-confirm-password">Confirm Password:</label>
                 <div className="password-input-container">
-                  <input
+                  <Input
                     type={showConfirmPassword ? "text" : "password"}
                     id="register-confirm-password"
                     name="confirmPassword"

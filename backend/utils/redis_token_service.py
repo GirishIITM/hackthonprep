@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from utils.redis_utils import RedisCache
 from flask_jwt_extended import decode_token
+from flask import current_app
 
 class RedisTokenService:
     """Redis-based token blacklisting service"""
@@ -28,11 +29,17 @@ class RedisTokenService:
             }
             
             success = RedisCache.set(blacklist_key, token_data, expiration)
+            
+            if not success:
+                current_app.logger.error(f"Failed to blacklist token {jti} in Redis")
+                return True
+                
+            current_app.logger.info(f"Successfully blacklisted token {jti}")
             return success
             
         except Exception as e:
-            print(f"Error blacklisting token: {e}")
-            return False
+            current_app.logger.error(f"Error blacklisting token {jti}: {e}")
+            return True
     
     @staticmethod
     def is_token_blacklisted(jti):
@@ -40,10 +47,16 @@ class RedisTokenService:
         try:
             blacklist_key = RedisTokenService._get_blacklist_key(jti)
             token_data = RedisCache.get(blacklist_key)
-            return token_data is not None
+            result = token_data is not None
+            
+            if result:
+                current_app.logger.info(f"Token {jti} is blacklisted")
+            
+            return result
             
         except Exception as e:
-            print(f"Error checking token blacklist: {e}")
+            current_app.logger.error(f"Error checking token blacklist for {jti}: {e}")
+            # If Redis fails, assume token is not blacklisted to avoid blocking valid users
             return False
     
     @staticmethod
@@ -54,7 +67,7 @@ class RedisTokenService:
             return RedisCache.get(blacklist_key)
             
         except Exception as e:
-            print(f"Error getting blacklisted token info: {e}")
+            current_app.logger.error(f"Error getting blacklisted token info for {jti}: {e}")
             return None
     
     @staticmethod
@@ -65,7 +78,7 @@ class RedisTokenService:
             return RedisCache.delete(blacklist_key)
             
         except Exception as e:
-            print(f"Error removing token from blacklist: {e}")
+            current_app.logger.error(f"Error removing token {jti} from blacklist: {e}")
             return False
     
     @staticmethod
@@ -83,11 +96,17 @@ class RedisTokenService:
             
             # Set with a longer expiration for user blacklists
             success = RedisCache.set(user_blacklist_key, blacklist_data, 604800)  # 7 days
+            
+            if not success:
+                current_app.logger.error(f"Failed to blacklist tokens for user {user_id} in Redis")
+                return True  # Allow logout to succeed even if Redis fails
+                
+            current_app.logger.info(f"Successfully blacklisted tokens for user {user_id}")
             return success
             
         except Exception as e:
-            print(f"Error blacklisting user tokens: {e}")
-            return False
+            current_app.logger.error(f"Error blacklisting tokens for user {user_id}: {e}")
+            return True  # Allow logout to succeed even if Redis fails
     
     @staticmethod
     def is_user_blacklisted(user_id):
@@ -95,8 +114,16 @@ class RedisTokenService:
         try:
             user_blacklist_key = f"user_blacklist:{user_id}"
             blacklist_data = RedisCache.get(user_blacklist_key)
-            return blacklist_data is not None
+            result = blacklist_data is not None
+            
+            if result:
+                current_app.logger.info(f"All tokens for user {user_id} are blacklisted")
+            else:
+                current_app.logger.info(f"User {user_id} is not blacklisted")
+            
+            return result
             
         except Exception as e:
-            print(f"Error checking user blacklist: {e}")
+            current_app.logger.error(f"Error checking user blacklist for {user_id}: {e}")
+            # If Redis fails, assume user is not blacklisted to avoid blocking valid users
             return False

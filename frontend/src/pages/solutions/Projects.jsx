@@ -103,11 +103,6 @@ const Projects = () => {
 
   return (
     <div className="projects-page">
-      <div className="projects-header">
-        <h1 className="projects-title">Project Management</h1>
-        <p className="projects-subtitle">Create and manage your projects</p>
-      </div>
-
       {error && (
         <div className="error-alert">
           {error}
@@ -115,45 +110,8 @@ const Projects = () => {
       )}
 
       <div className="projects-grid">
-        {/* Project Form */}
-        <div className="project-form">
-          <h2 className="form-title">{isEditing ? 'Edit Project' : 'Create New Project'}</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">Project Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="form-input"
-                required
-              />
-            </div>
 
-            <div className="button-group">
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
-                {isEditing ? 'Update Project' : 'Create Project'}
-              </button>
-              {isEditing && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="btn btn-secondary"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        {/* Project List */}
         <div>
-          <h2 className="form-title">Projects</h2>
           {projects.length === 0 ? (
             <div className="empty-state">
               No projects found. Create a new project to get started.

@@ -9,6 +9,12 @@ redis_bp = Blueprint('redis', __name__, url_prefix='/redis')
 def test_redis():
     """Test Redis connection and basic operations."""
     try:
+        if not redis_client:
+            return jsonify({
+                'error': 'Redis client not available',
+                'message': 'Redis connection was not established during startup'
+            }), 503
+            
         # Test basic set/get
         test_key = 'test_key'
         test_value = 'hello world from flask'
@@ -189,7 +195,10 @@ def redis_stats():
     """Get Redis connection and usage statistics."""
     try:
         if not redis_client:
-            return jsonify({'error': 'Redis not available'}), 500
+            return jsonify({
+                'connected': False,
+                'error': 'Redis client not available'
+            }), 503
         
         # Get Redis info
         info = redis_client.info()

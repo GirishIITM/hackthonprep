@@ -46,10 +46,6 @@ const ProjectCreate = () => {
 
   return (
     <div className="project-create-container">
-      <div className="project-create-header">
-        <h1 className="project-create-title">Create New Project</h1>
-        <p className="project-create-subtitle">Start a new project to organize your tasks</p>
-      </div>
 
       {error && (
         <div className="error-alert">
