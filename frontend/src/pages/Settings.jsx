@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getCurrentUser } from '../utils/apiCalls/auth';
 import '../styles/Settings.css';
+import { getCurrentUser } from '../utils/apiCalls/auth';
 
 const Settings = () => {
   const [user, setUser] = useState(getCurrentUser());
@@ -27,10 +27,18 @@ const Settings = () => {
   useEffect(() => {
     // Load settings from localStorage
     const savedSettings = localStorage.getItem('userSettings');
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    
     if (savedSettings) {
       setSettings(prev => ({
         ...prev,
-        ...JSON.parse(savedSettings)
+        ...JSON.parse(savedSettings),
+        theme: savedTheme // Always use the theme from localStorage
+      }));
+    } else {
+      setSettings(prev => ({
+        ...prev,
+        theme: savedTheme
       }));
     }
   }, []);

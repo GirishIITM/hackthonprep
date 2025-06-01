@@ -126,12 +126,10 @@
 
 .verify-otp-container {
   width: 100%;
-  max-width: 370px;
   margin: 0 auto;
   padding: 2.5rem 2.5rem 2rem 2.5rem;
   background: var(--color-surface);
   border-radius: 14px;
-  box-shadow: 0 4px 24px var(--color-shadow);
 }
 
 .otp-header {
@@ -413,16 +411,15 @@
   }
 
   .verify-otp-left {
-    padding: 1rem 5vw 0.5rem 5vw;
-    min-height: 150px;
+    display: none;
   }
 
   .verify-otp-right {
     padding: 0.5rem 5vw 2rem 5vw;
     justify-content: flex-start;
     align-items: flex-start;
-    flex: 1;
     min-height: auto;
+    width: 100%;
   }
 
   .verify-otp-svg-img {
