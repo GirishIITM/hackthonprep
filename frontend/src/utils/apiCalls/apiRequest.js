@@ -1,5 +1,5 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.DEV ? "/api" : "https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net");
+  (import.meta.env.DEV ? "http://localhost:3000/api" : "https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net");
 
 export const loadingState = {
   states: {},
@@ -102,7 +102,6 @@ export const apiRequest = async (endpoint, method = 'GET', data = null, loadingK
       loadingState.setLoading(loadingKey, false);
     }
 
-    // Update connection state
     connectionState.setOnline(true);
 
     if (response.status === 401 && (result.msg === "Token has expired" || result.error === "Token has expired")) {

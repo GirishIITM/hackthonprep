@@ -7,6 +7,8 @@ export const taskAPI = {
     if (params.project_id) queryParams.append('project_id', params.project_id);
     if (params.status) queryParams.append('status', params.status);
     if (params.assignee) queryParams.append('assignee', params.assignee);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.owner) queryParams.append('owner', params.owner);
     if (params.limit) queryParams.append('limit', params.limit);
     if (params.offset) queryParams.append('offset', params.offset);
     

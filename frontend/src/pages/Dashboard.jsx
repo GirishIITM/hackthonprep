@@ -42,7 +42,7 @@ const Dashboard = () => {
       const [projectsResponse, tasksResponse] = await Promise.all([
         projectAPI.getAllProjects().catch(err => {
           console.error('Failed to fetch projects:', err);
-          return [];
+          return { projects: [], pagination: { total: 0 } };
         }),
         taskAPI.getAllTasks().catch(err => {
           console.error('Failed to fetch tasks:', err);
@@ -50,7 +50,8 @@ const Dashboard = () => {
         })
       ]);
 
-      const projects = Array.isArray(projectsResponse) ? projectsResponse : [];
+      // Handle new API response structure
+      const projects = projectsResponse.projects || [];
       const tasks = Array.isArray(tasksResponse) ? tasksResponse : [];
 
       // Calculate statistics

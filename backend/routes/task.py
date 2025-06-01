@@ -88,7 +88,7 @@ def add_attachment(task_id):
     db.session.commit()
     return jsonify({'msg': 'File uploaded', 'url': attachment.file_url})
 
-@task_bp.route('/tasks/', methods=['GET'])
+@task_bp.route('/tasks', methods=['GET'])
 @jwt_required()
 def get_all_tasks():
     user_id = int(get_jwt_identity())
@@ -119,7 +119,7 @@ def get_all_tasks():
         tasks_data.append(task_data)
     return jsonify(tasks_data)
 
-@task_bp.route('/tasks/', methods=['POST'])
+@task_bp.route('/tasks', methods=['POST'])
 @jwt_required()
 def create_task_direct():
     user_id = int(get_jwt_identity())

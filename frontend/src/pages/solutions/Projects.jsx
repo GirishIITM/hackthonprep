@@ -1,4 +1,4 @@
-import { AlertCircle, Calendar, CheckCircle, CircleEllipsis, Clock, Edit, Plus, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle, Clock, Edit, Plus, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
@@ -10,7 +10,7 @@ import { ScrollArea } from '../../components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../../components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/ui/tooltip';
 import { getCurrentUser, loadingState, projectAPI } from '../../utils/apiCalls';
-
+import './Projects.css';
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -35,14 +35,6 @@ const Projects = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [error, setError] = useState('');
   const [memberEmailInput, setMemberEmailInput] = useState('');
-  
-  // Member search state
-  const [memberQuery, setMemberQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [selectedMembers, setSelectedMembers] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [searchDebounceTimeout, setSearchDebounceTimeout] = useState(null);
 
   const currentUser = getCurrentUser();
 
@@ -72,8 +64,22 @@ const Projects = () => {
       });
 
       const response = await projectAPI.getAllProjects(params);
-      setProjects(response.projects || []);
-      setPagination(response.pagination || { total: 0, limit: 20, offset: 0, has_more: false });
+      
+      // Handle new API response structure
+      const projectsData = response.projects || [];
+      const paginationData = response.pagination || {
+        total: 0,
+        limit: pagination.limit,
+        offset: pagination.offset,
+        has_more: false
+      };
+
+      setProjects(Array.isArray(projectsData) ? projectsData : []);
+      setPagination(prev => ({
+        ...prev,
+        total: paginationData.total,
+        has_more: paginationData.has_more
+      }));
       setError('');
     } catch (err) {
       setError('Failed to fetch projects: ' + (err.message || 'Unknown error'));
@@ -191,10 +197,6 @@ const Projects = () => {
     setSelectedProject(null);
     setIsEditing(false);
     setMemberEmailInput('');
-    setSelectedMembers([]);
-    setMemberQuery('');
-    setSearchResults([]);
-    setShowDropdown(false);
   };
 
   const loadMore = () => {
@@ -226,67 +228,6 @@ const Projects = () => {
     return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
   };
 
-  const searchUsers = async (query) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setShowDropdown(false);
-      return;
-    }
-
-    try {
-      setIsSearching(true);
-      const response = await projectAPI.searchUsers({ q: query, limit: 10 });
-      
-      const filteredResults = response.users.filter(
-        user => !selectedMembers.some(selected => selected.id === user.id) &&
-                !formData.member_emails.includes(user.email)
-      );
-      
-      setSearchResults(filteredResults);
-      setShowDropdown(true);
-    } catch (err) {
-      console.error('User search error:', err);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleMemberSearch = (e) => {
-    const query = e.target.value;
-    setMemberQuery(query);
-
-    if (searchDebounceTimeout) {
-      clearTimeout(searchDebounceTimeout);
-    }
-
-    const timeout = setTimeout(() => {
-      searchUsers(query);
-    }, 300);
-
-    setSearchDebounceTimeout(timeout);
-  };
-
-  const addMemberFromSearch = (user) => {
-    setSelectedMembers(prev => [...prev, user]);
-    setFormData(prev => ({
-      ...prev,
-      member_emails: [...prev.member_emails, user.email],
-      member_permissions: { ...prev.member_permissions, [user.email]: false }
-    }));
-    setMemberQuery('');
-    setSearchResults([]);
-    setShowDropdown(false);
-  };
-
-  const removeMemberFromSelected = (userId) => {
-    const member = selectedMembers.find(m => m.id === userId);
-    if (member) {
-      setSelectedMembers(prev => prev.filter(m => m.id !== userId));
-      removeMemberEmail(member.email);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50/30 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -304,303 +245,142 @@ const Projects = () => {
                 Create Project
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-full sm:w-[550px] sm:max-w-[550px] p-0">
+            <SheetContent className="w-[500px] sm:max-w-[500px]">
               <ScrollArea className="h-full">
-                <div className="p-4 sm:p-6">
-                  <SheetHeader className="pb-6">
-                    <SheetTitle className="text-xl font-semibold">
-                      {isEditing ? 'Edit Project' : 'Create New Project'}
-                    </SheetTitle>
-                  </SheetHeader>
-                  
-                  <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8 pb-6">
-                    {error && (
-                      <div className="p-3 sm:p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-                        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                        <span>{error}</span>
-                      </div>
-                    )}
+                <SheetHeader>
+                  <SheetTitle>{isEditing ? 'Edit Project' : 'Create New Project'}</SheetTitle>
+                </SheetHeader>
+                
+                <form onSubmit={handleSubmit} className="space-y-6 py-6">
+                  {error && (
+                    <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
+                      {error}
+                    </div>
+                  )}
 
-                    {/* Basic Information Section */}
-                    <div className="space-y-4 sm:space-y-6">
-                      <div className="border-b border-gray-200 pb-3 sm:pb-4">
-                        <h3 className="text-base sm:text-lg font-medium text-gray-900">Basic Information</h3>
-                        <p className="text-sm text-muted-foreground">Essential project details</p>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Project Name *</label>
+                    <Input
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Enter project name"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Description</label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      placeholder="Enter project description"
+                      className="w-full p-3 border border-input rounded-md resize-none focus:ring-2 focus:ring-ring focus:border-ring min-h-[80px]"
+                      rows="3"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Deadline</label>
+                    <Input
+                      type="date"
+                      name="deadline"
+                      value={formData.deadline}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+
+                  {!isEditing && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Project Image</label>
+                        <Input
+                          type="file"
+                          name="project_image"
+                          onChange={handleInputChange}
+                          accept="image/*"
+                          className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                        />
                       </div>
 
                       <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-900">Project Name *</label>
+                        <label className="text-sm font-medium">Add Members</label>
+                        <div className="flex gap-2">
                           <Input
-                            name="name"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            placeholder="Enter a descriptive project name"
-                            required
-                            className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            type="email"
+                            value={memberEmailInput}
+                            onChange={(e) => setMemberEmailInput(e.target.value)}
+                            placeholder="Enter member email"
+                            className="flex-1"
                           />
+                          <Button type="button" onClick={addMemberEmail} variant="outline" size="default">
+                            <UserPlus className="w-4 h-4" />
+                          </Button>
                         </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-900">Description</label>
-                          <textarea
-                            name="description"
-                            value={formData.description}
-                            onChange={handleInputChange}
-                            placeholder="Describe your project goals and objectives..."
-                            className="w-full p-3 border border-input rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px] sm:min-h-[100px] transition-colors"
-                            rows="3"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-900">Deadline</label>
-                          <Input
-                            type="date"
-                            name="deadline"
-                            value={formData.deadline}
-                            onChange={handleInputChange}
-                            className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                          <p className="text-xs text-muted-foreground">Optional: Set a target completion date</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {!isEditing && (
-                      <>
-                        <div className="space-y-4 sm:space-y-6">
-                          <div className="border-b border-gray-200 pb-3 sm:pb-4">
-                            <h3 className="text-base sm:text-lg font-medium text-gray-900">Visual Assets</h3>
-                            <p className="text-sm text-muted-foreground">Add images to make your project stand out</p>
-                          </div>
-
+                        
+                        {formData.member_emails.length > 0 && (
                           <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-900">Project Image</label>
-                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 hover:border-gray-400 transition-colors">
-                              <Input
-                                type="file"
-                                name="project_image"
-                                onChange={handleInputChange}
-                                accept="image/*"
-                                className="file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:transition-colors"
-                              />
-                              <p className="text-xs text-muted-foreground mt-2">
-                                Upload a project banner or logo (PNG, JPG, GIF up to 10MB)
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-4 sm:space-y-6">
-                          <div className="border-b border-gray-200 pb-3 sm:pb-4">
-                            <h3 className="text-base sm:text-lg font-medium text-gray-900">Team Members</h3>
-                            <p className="text-sm text-muted-foreground">Invite collaborators to your project</p>
-                          </div>
-
-                          <div className="space-y-4">
-                            {/* User Search Input */}
-                            <div className="member-search-container relative">
-                              <div className="flex flex-col sm:flex-row gap-3">
-                                <div className="flex-1 relative">
-                                  <Input
-                                    type="text"
-                                    value={memberQuery}
-                                    onChange={handleMemberSearch}
-                                    placeholder="Search users by name, username, or email..."
-                                    className="flex-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
-                                  />
-                                  
-                                  {isSearching && (
-                                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                      <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-                                    </div>
-                                  )}
+                            {formData.member_emails.map(email => (
+                              <div key={email} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="w-8 h-8">
+                                    <AvatarFallback className="text-xs">
+                                      {getInitials(email)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-sm font-medium">{email}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                      type="checkbox"
+                                      checked={formData.member_permissions[email] || false}
+                                      onChange={() => toggleMemberPermission(email)}
+                                      className="rounded border-gray-300"
+                                    />
+                                    Editor
+                                  </label>
+                                  <Button 
+                                    type="button" 
+                                    onClick={() => removeMemberEmail(email)}
+                                    variant="ghost"
+                                    size="sm"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
                                 </div>
                               </div>
-                              
-                              {/* Search Dropdown */}
-                              {showDropdown && searchResults.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50 mt-1">
-                                  {searchResults.map(user => (
-                                    <div
-                                      key={user.id}
-                                      className="flex items-center p-3 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
-                                      onClick={() => addMemberFromSearch(user)}
-                                    >
-                                      <Avatar className="w-8 h-8 mr-3">
-                                        <AvatarImage src={user.profile_picture} />
-                                        <AvatarFallback className="text-xs font-medium bg-blue-100 text-blue-700">
-                                          {getInitials(user.full_name)}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-medium text-gray-900 truncate">
-                                          {user.full_name}
-                                        </div>
-                                        <div className="text-xs text-gray-500 truncate">
-                                          {user.email}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                              
-                              {showDropdown && memberQuery && searchResults.length === 0 && !isSearching && (
-                                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 mt-1">
-                                  <div className="p-4 text-center text-gray-500 text-sm">
-                                    No users found
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Manual Email Input */}
-                            <div className="space-y-2">
-                              <div className="text-sm font-medium text-gray-700">Or add by email address</div>
-                              <div className="flex flex-col sm:flex-row gap-3">
-                                <Input
-                                  type="email"
-                                  value={memberEmailInput}
-                                  onChange={(e) => setMemberEmailInput(e.target.value)}
-                                  placeholder="Enter member email address"
-                                  className="flex-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMemberEmail())}
-                                />
-                                <Button 
-                                  type="button" 
-                                  onClick={addMemberEmail} 
-                                  variant="outline" 
-                                  size="default"
-                                  className="w-full sm:w-auto px-4 hover:bg-blue-50 hover:border-blue-300"
-                                >
-                                  <UserPlus className="w-4 h-4 mr-2 sm:mr-0" />
-                                  <span className="sm:hidden">Add Member</span>
-                                </Button>
-                              </div>
-                            </div>
-                            
-                            {/* Selected Members Display */}
-                            {(selectedMembers.length > 0 || formData.member_emails.length > 0) && (
-                              <div className="space-y-3">
-                                <div className="text-sm font-medium text-gray-900">
-                                  Added Members ({selectedMembers.length + formData.member_emails.filter(email => !selectedMembers.some(m => m.email === email)).length})
-                                </div>
-                                <div className="space-y-2">
-                                  {/* Members added via search */}
-                                  {selectedMembers.map(member => (
-                                    <div key={member.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors gap-3 sm:gap-0">
-                                      <div className="flex items-center gap-3">
-                                        <Avatar className="w-8 h-8 sm:w-10 sm:h-10">
-                                          <AvatarImage src={member.profile_picture} />
-                                          <AvatarFallback className="text-xs sm:text-sm font-medium bg-blue-100 text-blue-700">
-                                            {getInitials(member.full_name)}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className="space-y-1 min-w-0 flex-1">
-                                          <span className="text-sm font-medium text-gray-900">{member.full_name}</span>
-                                          <div className="text-xs text-muted-foreground break-all">{member.email}</div>
-                                          <div className="text-xs text-muted-foreground">
-                                            {formData.member_permissions[member.email] ? 'Can edit project' : 'View only access'}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center justify-between sm:justify-end gap-3">
-                                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                          <input
-                                            type="checkbox"
-                                            checked={formData.member_permissions[member.email] || false}
-                                            onChange={() => toggleMemberPermission(member.email)}
-                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                          />
-                                          <span className="font-medium">Editor</span>
-                                        </label>
-                                        <Button 
-                                          type="button" 
-                                          onClick={() => removeMemberFromSelected(member.id)}
-                                          variant="ghost"
-                                          size="sm"
-                                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                        >
-                                          <X className="w-4 h-4" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                  
-                                  {/* Members added via email */}
-                                  {formData.member_emails
-                                    .filter(email => !selectedMembers.some(m => m.email === email))
-                                    .map(email => (
-                                    <div key={email} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors gap-3 sm:gap-0">
-                                      <div className="flex items-center gap-3">
-                                        <Avatar className="w-8 h-8 sm:w-10 sm:h-10">
-                                          <AvatarFallback className="text-xs sm:text-sm font-medium bg-blue-100 text-blue-700">
-                                            {getInitials(email)}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className="space-y-1 min-w-0 flex-1">
-                                          <span className="text-sm font-medium text-gray-900 break-all">{email}</span>
-                                          <div className="text-xs text-muted-foreground">
-                                            {formData.member_permissions[email] ? 'Can edit project' : 'View only access'}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center justify-between sm:justify-end gap-3">
-                                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                          <input
-                                            type="checkbox"
-                                            checked={formData.member_permissions[email] || false}
-                                            onChange={() => toggleMemberPermission(email)}
-                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                          />
-                                          <span className="font-medium">Editor</span>
-                                        </label>
-                                        <Button 
-                                          type="button" 
-                                          onClick={() => removeMemberEmail(email)}
-                                          variant="ghost"
-                                          size="sm"
-                                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                        >
-                                          <X className="w-4 h-4" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                            ))}
                           </div>
-                        </div>
-                      </>
-                    )}
+                        )}
+                      </div>
+                    </>
+                  )}
 
-                    <div className="flex flex-col sm:flex-row gap-3 pt-4 sm:pt-6 border-t border-gray-200">
-                      <Button 
-                        type="submit" 
-                        className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
-                        disabled={loadingState.isLoading('projects-create') || loadingState.isLoading('projects-update')}
-                      >
-                        {isEditing ? 'Update Project' : 'Create Project'}
-                      </Button>
-                      <Button 
-                        type="button" 
-                        variant="outline"
-                        onClick={() => { setShowCreateForm(false); resetForm(); }}
-                        className="px-6 hover:bg-gray-50"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </form>
-                </div>
+                  <div className="flex gap-3 pt-4">
+                    <Button 
+                      type="submit" 
+                      className="flex-1"
+                      disabled={loadingState.isLoading('projects-create') || loadingState.isLoading('projects-update')}
+                    >
+                      {isEditing ? 'Update Project' : 'Create Project'}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => { setShowCreateForm(false); resetForm(); }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
               </ScrollArea>
             </SheetContent>
           </Sheet>
         </div>
 
+        {/* Filters */}
         <Card>
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -691,8 +471,8 @@ const Projects = () => {
                         {(project.is_owner || project.user_can_edit) && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button size="sm" variant="ghost" className="group-hover:opacity-100 transition-opacity h-8 w-8 p-0">
-                                <CircleEllipsis className="w-4 h-4" />
+                              <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Edit className="w-4 h-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -703,7 +483,7 @@ const Projects = () => {
                               {project.is_owner && (
                                 <DropdownMenuItem 
                                   onClick={() => handleDelete(project.id)}
-                                  className="text-red-600 focus:text-red-600"
+                                  variant="destructive"
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" />
                                   Delete

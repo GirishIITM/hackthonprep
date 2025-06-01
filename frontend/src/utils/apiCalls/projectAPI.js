@@ -14,10 +14,39 @@ export const projectAPI = {
     
     const endpoint = queryParams.toString() ? `/projects?${queryParams}` : '/projects';
     return apiRequest(endpoint, 'GET', null, 'projects-get-all')
-      .then(result => Array.isArray(result) ? result : [])
+      .then(result => {
+        if (result && result.projects && Array.isArray(result.projects)) {
+          return {
+            projects: result.projects,
+            pagination: result.pagination || {
+              has_more: false,
+              limit: 20,
+              offset: 0,
+              total: result.projects.length
+            }
+          };
+        }
+        return {
+          projects: Array.isArray(result) ? result : [],
+          pagination: {
+            has_more: false,
+            limit: 20,
+            offset: 0,
+            total: Array.isArray(result) ? result.length : 0
+          }
+        };
+      })
       .catch(error => {
         console.error('Error fetching projects:', error);
-        return [];
+        return {
+          projects: [],
+          pagination: {
+            has_more: false,
+            limit: 20,
+            offset: 0,
+            total: 0
+          }
+        };
       });
   },
 

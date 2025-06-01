@@ -1,12 +1,12 @@
 import {
-    ArrowLeft,
-    Calendar,
-    CheckSquare,
-    FileText,
-    FolderKanban,
-    Save,
-    Tag,
-    User
+  ArrowLeft,
+  Calendar,
+  CheckSquare,
+  FileText,
+  FolderKanban,
+  Save,
+  Tag,
+  User
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -38,8 +38,10 @@ const TaskCreate = () => {
 
   const fetchProjects = async () => {
     try {
-      const allProjects = await projectAPI.getAllProjects();
-      setProjects(allProjects);
+      const response = await projectAPI.getAllProjects();
+      // Handle new API response structure
+      const projectsData = response.projects || response || [];
+      setProjects(Array.isArray(projectsData) ? projectsData : []);
     } catch (err) {
       setError('Failed to load projects: ' + (err.message || 'Unknown error'));
       console.error('Error fetching projects:', err);
