@@ -1,10 +1,17 @@
+import {
+  CheckSquare,
+  Filter,
+  Plus,
+  Search
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { getCurrentUser, loadingState } from '../../utils/apiCalls';
-import { taskAPI } from '../../utils/apiCalls/taskAPI.js';
 import { projectAPI } from '../../utils/apiCalls/projectAPI.js';
+import { taskAPI } from '../../utils/apiCalls/taskAPI.js';
 import './Tasks.css';
 
 const Tasks = () => {
@@ -51,9 +58,10 @@ const Tasks = () => {
   const fetchProjects = async () => {
     try {
       const allProjects = await projectAPI.getAllProjects();
-      setProjects(allProjects);
+      setProjects(Array.isArray(allProjects) ? allProjects : []);
     } catch (err) {
       console.error('Error fetching projects:', err);
+      setProjects([]); // Ensure projects is always an array
     }
   };
 
@@ -97,7 +105,7 @@ const Tasks = () => {
       fetchTasks();
       setError('');
     } catch (err) {
-      setError(`Failed to ${isEditing ? 'update' : 'create'} task: ${err.message || 'Unknown error'}`);
+      setError(`Failed to ${isEditing ? 'update' : 'create'} task: ${err.message || 'Unknown error'
     }
   };
 
@@ -159,13 +167,33 @@ const Tasks = () => {
 
   return (
     <div className="task-container px-4">
-      <h1 className="text-2xl font-bold mb-6 page-title">Task Management</h1>
-      
-      {error && (
-        <div className="error-message mb-4">
-          {error}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-2">
+          <CheckSquare className="h-6 w-6" />
+          <h1 className="text-3xl font-bold">Tasks</h1>
         </div>
-      )}
+        <Button asChild>
+          <Link to="/solutions/tasks/create" className="flex items-center space-x-2">
+            <Plus className="h-4 w-4" />
+            <span>New Task</span>
+          </Link>
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center space-x-4 mb-6">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search tasks..."
+            className="pl-10"
+          />
+        </div>
+        <Button variant="outline" className="flex items-center space-x-2">
+          <Filter className="h-4 w-4" />
+          <span>Filter</span>
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Task Form */}
@@ -182,7 +210,7 @@ const Tasks = () => {
                 required
               >
                 <option value="">Select a Project</option>
-                {projects.map(project => (
+                {Array.isArray(projects) && projects.map(project => (
                   <option key={project.id} value={project.id}>{project.name}</option>
                 ))}
               </select>
@@ -310,6 +338,23 @@ const Tasks = () => {
           )}
         </div>
       </div>
+
+      {/* Empty State */}
+      {tasks.length === 0 && (
+        <div className="text-center py-12">
+          <CheckSquare className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-semibold">No tasks found</h3>
+          <p className="mt-2 text-muted-foreground">
+            Get started by creating your first task.
+          </p>
+          <Button asChild className="mt-4">
+            <Link to="/solutions/tasks/create">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Task
+            </Link>
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

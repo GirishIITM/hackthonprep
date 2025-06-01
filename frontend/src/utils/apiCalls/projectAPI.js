@@ -10,9 +10,15 @@ export const projectAPI = {
     if (params.status) queryParams.append('status', params.status);
     if (params.limit) queryParams.append('limit', params.limit);
     if (params.offset) queryParams.append('offset', params.offset);
+    if (params.include_tasks) queryParams.append('include_tasks', 'true');
     
     const endpoint = queryParams.toString() ? `/projects?${queryParams}` : '/projects';
-    return apiRequest(endpoint, 'GET', null, 'projects-get-all');
+    return apiRequest(endpoint, 'GET', null, 'projects-get-all')
+      .then(result => Array.isArray(result) ? result : [])
+      .catch(error => {
+        console.error('Error fetching projects:', error);
+        return [];
+      });
   },
 
   getProject: (id) => {
@@ -97,6 +103,14 @@ export const projectAPI = {
       isEditor: memberData.isEditor || false
     };
     return apiRequest(`/projects/${projectId}/members`, 'POST', data, 'projects-add-member');
+  },
+
+  updateProjectMember: (projectId, memberId, memberData) => {
+    return apiRequest(`/projects/${projectId}/members/${memberId}`, 'PUT', memberData, 'projects-update-member');
+  },
+
+  removeProjectMember: (projectId, memberId) => {
+    return apiRequest(`/projects/${projectId}/members/${memberId}`, 'DELETE', null, 'projects-remove-member');
   },
 
   searchUsers: (searchParams = {}) => {

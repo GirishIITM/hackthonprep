@@ -1,4 +1,10 @@
-import { CheckSquare, FolderOpen, LayoutGrid, Settings, Users } from "lucide-react";
+import {
+  CheckSquare,
+  FolderKanban,
+  LayoutDashboard,
+  Settings,
+  User
+} from "lucide-react";
 
 export function getMenuList(pathname) {
   return [
@@ -8,8 +14,8 @@ export function getMenuList(pathname) {
         {
           href: "/dashboard",
           label: "Dashboard",
-          icon: LayoutGrid,
-          submenus: []
+          icon: LayoutDashboard,
+          active: pathname === "/dashboard",
         }
       ]
     },
@@ -17,32 +23,38 @@ export function getMenuList(pathname) {
       groupLabel: "Solutions",
       menus: [
         {
-          href: "",
+          href: "/solutions/projects",
           label: "Projects",
-          icon: FolderOpen,
+          icon: FolderKanban,
+          active: pathname.includes("/solutions/projects"),
           submenus: [
             {
               href: "/solutions/projects",
-              label: "All Projects"
+              label: "All Projects",
+              active: pathname === "/solutions/projects"
             },
             {
               href: "/solutions/projects/create",
-              label: "Create Project"
+              label: "Create Project",
+              active: pathname === "/solutions/projects/create"
             }
           ]
         },
         {
-          href: "",
+          href: "/solutions/tasks",
           label: "Tasks",
           icon: CheckSquare,
+          active: pathname.includes("/solutions/tasks"),
           submenus: [
             {
               href: "/solutions/tasks",
-              label: "All Tasks"
+              label: "All Tasks", 
+              active: pathname === "/solutions/tasks"
             },
             {
               href: "/solutions/tasks/create",
-              label: "Create Task"
+              label: "Create Task",
+              active: pathname === "/solutions/tasks/create"
             }
           ]
         }
@@ -54,12 +66,14 @@ export function getMenuList(pathname) {
         {
           href: "/profile",
           label: "Profile",
-          icon: Users
+          icon: User,
+          active: pathname === "/profile"
         },
         {
           href: "/settings",
-          label: "Settings",
-          icon: Settings
+          label: "Settings", 
+          icon: Settings,
+          active: pathname === "/settings"
         }
       ]
     }

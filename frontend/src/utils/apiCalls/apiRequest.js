@@ -1,6 +1,5 @@
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.DEV ? "/api" : "https://odoo336-akhta2hvagf3czda.southindia-01.azurewebsites.net");
 
 export const loadingState = {
   states: {},
