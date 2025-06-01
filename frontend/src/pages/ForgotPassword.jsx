@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LoadingIndicator from '../components/LoadingIndicator';
+import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import '../styles/login.css';
 import { authAPI, loadingState } from '../utils/apiCalls';
@@ -96,9 +97,13 @@ export default function ForgotPassword() {
                   />
                   {errors.email && <span className="field-error">{errors.email}</span>}
                 </div>
-                <button type="submit" disabled={isLoading}>
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="w-full"
+                >
                   {isLoading ? 'Sending...' : 'Send Reset Link'}
-                </button>
+                </Button>
               </form>
             ) : (
               <div className="form-submitted" style={{ textAlign: 'center', padding: '2rem 0' }}>
@@ -108,17 +113,17 @@ export default function ForgotPassword() {
                 <p style={{ marginBottom: '2rem', color: '#666' }}>
                   Please check your email and follow the instructions to reset your password.
                 </p>
-                <button 
+                <Button 
                   onClick={() => {
                     setSubmitted(false);
                     setMessage('');
                     setFormData({ email: '' });
                   }}
-                  className="verify-button"
-                  style={{ marginBottom: '1rem' }}
+                  variant="outline"
+                  className="w-full"
                 >
                   Send Another Reset Link
-                </button>
+                </Button>
               </div>
             )}
             

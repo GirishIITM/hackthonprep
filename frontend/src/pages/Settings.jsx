@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import '../styles/Settings.css';
 import { getCurrentUser } from '../utils/apiCalls/auth';
@@ -136,18 +137,20 @@ const Settings = () => {
           <div className="setting-item">
             <label className="setting-label">Theme</label>
             <div className="theme-options">
-              <button
+              <Button
                 className={`theme-btn ${settings.theme === 'light' ? 'active' : ''}`}
                 onClick={() => handleThemeChange('light')}
+                variant={settings.theme === 'light' ? 'default' : 'outline'}
               >
                 ☀️ Light
-              </button>
-              <button
+              </Button>
+              <Button
                 className={`theme-btn ${settings.theme === 'dark' ? 'active' : ''}`}
                 onClick={() => handleThemeChange('dark')}
+                variant={settings.theme === 'dark' ? 'default' : 'outline'}
               >
                 🌙 Dark
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -210,20 +213,19 @@ const Settings = () => {
           </div>
         </div>
 
-          {/* Action Buttons */}
+        {/* Action Buttons */}
         <div className="settings-actions">
-          <button
+          <Button
             onClick={handleSaveSettings}
-            className="btn btn-primary"
           >
             Save Settings
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleResetSettings}
-            className="btn btn-secondary"
+            variant="secondary"
           >
             Reset to Defaults
-          </button>
+          </Button>
         </div>
       </div>
     </div>

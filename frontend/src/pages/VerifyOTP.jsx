@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import OtpInput from 'react-otp-input';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LoadingIndicator from '../components/LoadingIndicator';
+import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import '../styles/verifyOTP.css';
 import { authAPI, loadingState } from '../utils/apiCalls';
@@ -132,8 +133,10 @@ export default function VerifyOTP() {
             We've sent a verification code to your email. 
             Please check your inbox and enter the code to complete your registration.
           </p>
-          <Link to="/register" className="btn transparent">
-            Back 
+          <Link to="/register" className="inline-block">
+            <Button className="btn transparent" variant="outline" size="lg">
+              Back 
+            </Button>
           </Link>
         </div>
         <div className="verify-otp-svg-container">
@@ -204,7 +207,7 @@ export default function VerifyOTP() {
                 </p>
               </div>
               
-              <button 
+              <Button 
                 type="submit" 
                 disabled={isVerifying || otp.length !== 6}
                 className="verify-button"
@@ -215,16 +218,17 @@ export default function VerifyOTP() {
                     Verifying...
                   </>
                 ) : 'Verify Email'}
-              </button>
+              </Button>
             </form>
 
             <div className="resend-section">
               <p className="resend-text">Didn't receive the code?</p>
-              <button
+              <Button
                 type="button"
                 onClick={handleResendOTP}
                 disabled={!canResend || isResending}
                 className="resend-button"
+                variant="outline"
               >
                 {isResending ? (
                   <>
@@ -242,7 +246,7 @@ export default function VerifyOTP() {
                     Resend OTP
                   </>
                 )}
-              </button>
+              </Button>
             </div>
 
             <div className="back-to-register mobile-only">

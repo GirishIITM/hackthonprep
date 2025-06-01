@@ -147,22 +147,7 @@
   box-sizing: border-box;
 }
 
-.register-form button[type="submit"] {
-  width: 100%;
-  padding: 0.6rem;
-  background: var(--color-btn-bg);
-  color: var(--color-btn-text);
-  border: none;
-  border-radius: 5px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  margin-top: 0.5rem;
-  transition: background 0.2s;
-}
-
-.register-form button[type="submit"]:hover {
-  background: var(--color-btn-bg-hover);
-}
+/* Remove .register-form button[type="submit"] styles as they will be handled by shadcn Button component */
 
 .register-link-text {
   margin-top: 1rem;

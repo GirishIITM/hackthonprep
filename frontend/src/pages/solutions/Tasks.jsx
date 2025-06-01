@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import LoadingIndicator from '../../components/LoadingIndicator';
+import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { getCurrentUser, loadingState, projectAPI, taskAPI } from '../../utils/apiCalls';
 import './Tasks.css';
@@ -147,7 +149,7 @@ const Tasks = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="loading-spinner"></div>
+        <LoadingIndicator />
         <span className="ml-3 text-lg">Loading tasks...</span>
       </div>
     );
@@ -236,20 +238,21 @@ const Tasks = () => {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <button
+              <Button
                 type="submit"
                 className="btn btn-primary"
               >
                 {isEditing ? 'Update Task' : 'Create Task'}
-              </button>
+              </Button>
               {isEditing && (
-                <button
+                <Button
                   type="button"
                   onClick={resetForm}
+                  variant="secondary"
                   className="btn btn-secondary"
                 >
                   Cancel
-                </button>
+                </Button>
               )}
             </div>
           </form>
@@ -281,20 +284,22 @@ const Tasks = () => {
                       </div>
                     </div>
                     <div className="task-actions mt-3 md:mt-0">
-                      <button
+                      <Button
                         onClick={() => handleEdit(task)}
                         className="action-btn edit-btn"
+                        variant="outline"
                         aria-label="Edit task"
                       >
                         Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => handleDelete(task.id, task.project_id)}
                         className="action-btn delete-btn"
+                        variant="destructive"
                         aria-label="Delete task"
                       >
                         Delete
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>

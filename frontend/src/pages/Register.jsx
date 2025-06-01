@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import registerSvg from '../assets/register.svg';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 import LoadingIndicator from '../components/LoadingIndicator';
+import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import '../styles/register.css';
-import { authAPI, loadingState, saveAuthData } from '../utils/apiCalls';
+import { authAPI, connectionState, loadingState, saveAuthData } from '../utils/apiCalls';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -30,9 +31,25 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptWeakPassword, setAcceptWeakPassword] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const navigate = useNavigate();
 
   // Check loading state from the API
+  useEffect(() => {
+    const checkLoadingState = () => {
+      setIsLoading(loadingState.isLoading('auth-register') || loadingState.isLoading('auth-google-register'));
+    };
+
+    checkLoadingState();
+    const interval = setInterval(checkLoadingState, 100);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Subscribe to connection state
   useEffect(() => {
     const checkLoadingState = () => {
       setIsLoading(loadingState.isLoading('auth-register') || loadingState.isLoading('auth-google-register'));
@@ -44,8 +61,20 @@ export default function Register() {
     // Set up an interval to check the loading state
     const interval = setInterval(checkLoadingState, 100);
 
-    return () => clearInterval(interval);
-  }, []);
+    // Subscribe to connection state
+    const unsubscribeConnection = connectionState.subscribe((isOnline) => {
+      setConnectionError(!isOnline);
+      if (isOnline && isRetrying) {
+        setIsRetrying(false);
+        setErrors(prev => ({ ...prev, general: '' }));
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      unsubscribeConnection();
+    };
+  }, [isRetrying]);
 
   // Validate password in real-time
   useEffect(() => {
@@ -138,6 +167,9 @@ export default function Register() {
     }
 
     try {
+      setConnectionError(false);
+      setIsRetrying(false);
+      
       const response = await authAPI.register(
         formData.fullName.trim(),
         formData.username.trim(),
@@ -161,8 +193,15 @@ export default function Register() {
     } catch (error) {
       const errorMessage = error.message || 'Failed to register. Please try again.';
       
-      // Handle specific backend errors
-      if (errorMessage.includes('Username already exists')) {
+      // Handle connection errors
+      if (errorMessage.includes('Unable to connect to server') || 
+          errorMessage.includes('Network Error')) {
+        setConnectionError(true);
+        setIsRetrying(true);
+        setErrors({ 
+          general: 'Unable to connect to server. Please check your internet connection and try again.' 
+        });
+      } else if (errorMessage.includes('Username already exists')) {
         setErrors({ username: 'This username is already taken' });
       } else if (errorMessage.includes('Email already exists')) {
         setErrors({ email: 'An account with this email already exists' });
@@ -172,6 +211,12 @@ export default function Register() {
         setErrors({ general: errorMessage });
       }
     }
+  };
+
+  const handleRetryConnection = () => {
+    setConnectionError(false);
+    setIsRetrying(true);
+    setErrors(prev => ({ ...prev, general: '' }));
   };
 
   const handleGoogleSuccess = (response) => {
@@ -195,7 +240,7 @@ export default function Register() {
             Send and receive notifications,
           </p>
           <Link to="/login" id="login-btn">
-            <button className="btn transparent">login</button>
+            <Button className="btn transparent" variant="outline">login</Button>
           </Link>
         </div>
         <img src={registerSvg} alt="Register illustration" className="register-svg-img" />
@@ -205,7 +250,22 @@ export default function Register() {
           <div className="register-container">
             <h1 className="register-title">Create an account</h1>
             
-            {errors.general && <div className="error-message">{errors.general}</div>}
+            {errors.general && (
+              <div className="error-message">
+                {errors.general}
+                {connectionError && (
+                  <Button
+                    type="button"
+                    onClick={handleRetryConnection}
+                    variant="outline"
+                    size="sm"
+                    disabled={isRetrying}
+                  >
+                    {isRetrying ? 'Retrying...' : 'Retry'}
+                  </Button>
+                )}
+              </div>
+            )}
             {success && <div className="success-message">{success}</div>}
             
             <div className="google-auth-section">
@@ -368,9 +428,13 @@ export default function Register() {
                 {errors.confirmPassword && <span className="field-error">{errors.confirmPassword}</span>}
               </div>
 
-              <button type="submit" disabled={isLoading}>
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full"
+              >
                 Create an account
-              </button>
+              </Button>
             </form>
             <div className="contentt mobile-only">
               <p className="center-text">

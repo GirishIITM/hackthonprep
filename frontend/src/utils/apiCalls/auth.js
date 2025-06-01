@@ -1,4 +1,43 @@
-import { apiRequest, loadingState, API_BASE_URL } from "/src/utils/apiCalls/apiRequest.js";
+import { API_BASE_URL, apiRequest, loadingState } from "/src/utils/apiCalls/apiRequest.js";
+
+// Client ID cache with connection-aware management
+const googleClientCache = {
+  clientId: null,
+  lastFetchTime: null,
+  isValid: false,
+  lastError: null,
+  CACHE_DURATION: 24 * 60 * 60 * 1000, // 24 hours
+  RETRY_DELAY: 5 * 60 * 1000, // 5 minutes after error
+
+  isExpired() {
+    if (!this.lastFetchTime) return true;
+    return Date.now() - this.lastFetchTime > this.CACHE_DURATION;
+  },
+
+  canRetry() {
+    if (!this.lastError) return true;
+    return Date.now() - this.lastError > this.RETRY_DELAY;
+  },
+
+  setClientId(clientId) {
+    this.clientId = clientId;
+    this.lastFetchTime = Date.now();
+    this.isValid = true;
+    this.lastError = null;
+  },
+
+  setError() {
+    this.lastError = Date.now();
+    this.isValid = false;
+  },
+
+  clear() {
+    this.clientId = null;
+    this.lastFetchTime = null;
+    this.isValid = false;
+    this.lastError = null;
+  }
+};
 
 /**
  * Check if token is expired
@@ -304,16 +343,37 @@ const authAPI = {
   },
 
   /**
-   * Get Google OAuth client ID
+   * Get Google OAuth client ID with caching and connection management
    * @returns {Promise} - Client ID response
    */
-  getGoogleClientId: () => {
-    return apiRequest(
-      "/auth/google/client-id",
-      "GET",
-      null,
-      "auth-google-client-id"
-    );
+  getGoogleClientId: async () => {
+    // Return cached client ID if valid and not expired
+    if (googleClientCache.isValid && !googleClientCache.isExpired()) {
+      return Promise.resolve({ client_id: googleClientCache.clientId });
+    }
+
+    // Don't retry if we recently failed and retry delay hasn't passed
+    if (!googleClientCache.canRetry()) {
+      const timeUntilRetry = Math.ceil((googleClientCache.RETRY_DELAY - (Date.now() - googleClientCache.lastError)) / 1000);
+      throw new Error(`Google client ID unavailable. Retry in ${timeUntilRetry} seconds.`);
+    }
+
+    try {
+      const response = await apiRequest(
+        "/auth/google/client-id",
+        "GET",
+        null,
+        "auth-google-client-id"
+      );
+      
+      // Cache the successful response
+      googleClientCache.setClientId(response.client_id);
+      return response;
+    } catch (error) {
+      // Mark error and don't retry immediately
+      googleClientCache.setError();
+      throw error;
+    }
   },
 
   /**
@@ -342,11 +402,7 @@ const saveAuthData = (accessToken, refreshToken, user) => {
 export {
   authAPI,
   authState,
-  clearAuthData,
-  getCurrentUser,
-  isAuthenticated,
-  saveAuthData,
-  ensureValidToken,
-  handleTokenRefresh,
+  clearAuthData, ensureValidToken, getCurrentUser, googleClientCache, handleTokenRefresh, isAuthenticated,
+  saveAuthData
 };
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
+import LoadingIndicator from './components/LoadingIndicator';
 import Navbar from './components/Navbar';
 import PrivateRoute from './components/PrivateRoute';
 
@@ -52,132 +53,134 @@ function App() {
     <BrowserRouter>
       <div className="app-container">
         <main>
-          <Routes>
-            <Route path='/register' element={
-              <>
-                <Navbar />
-                {authenticated ? <Navigate to="/dashboard" replace /> : <Register />}
-              </>
-            } />
-            
-            <Route path='/verify-otp' element={
-              <>
-                <Navbar />
-                {authenticated ? <Navigate to="/dashboard" replace /> : <VerifyOTP />}
-              </>
-            } />
-            
-            <Route path='/login' element={
-              <>
-                <Navbar />
-                {authenticated ? <Navigate to="/dashboard" replace /> : <Login />}
-              </>
-            } />
-            
-            <Route path='/about' element={
-              <>
-                <Navbar showWhenAuthenticated/>
-                <About />
-              </>
-            } />
+          <LoadingIndicator loading={isLoading}>
+            <Routes>
+              <Route path='/register' element={
+                <>
+                  <Navbar />
+                  {authenticated ? <Navigate to="/dashboard" replace /> : <Register />}
+                </>
+              } />
+              
+              <Route path='/verify-otp' element={
+                <>
+                  <Navbar />
+                  {authenticated ? <Navigate to="/dashboard" replace /> : <VerifyOTP />}
+                </>
+              } />
+              
+              <Route path='/login' element={
+                <>
+                  <Navbar />
+                  {authenticated ? <Navigate to="/dashboard" replace /> : <Login />}
+                </>
+              } />
+              
+              <Route path='/about' element={
+                <>
+                  <Navbar showWhenAuthenticated/>
+                  <About />
+                </>
+              } />
 
-            <Route path="/auth/google/callback" element={<GoogleOAuthCallback />} />
+              <Route path="/auth/google/callback" element={<GoogleOAuthCallback />} />
 
-            <Route path="/forgot-password" element={
-              <>
-                <Navbar />
-                {authenticated ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
-              </>
-            } />
+              <Route path="/forgot-password" element={
+                <>
+                  <Navbar />
+                  {authenticated ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
+                </>
+              } />
 
-            <Route path="/reset-password" element={
-              <>
-                <Navbar />
-                <ResetPassword />
-              </>
-            } />
+              <Route path="/reset-password" element={
+                <>
+                  <Navbar />
+                  <ResetPassword />
+                </>
+              } />
 
-            <Route path='/' element={
-              <>
-                <Navbar showWhenAuthenticated={true} />
-                <Home />
-              </>
-            } />
+              <Route path='/' element={
+                <>
+                  <Navbar showWhenAuthenticated={true} />
+                  <Home />
+                </>
+              } />
 
-            <Route path='/dashboard' element={
-              <PrivateRoute>
-                <AdminPanelLayout>
-                  <ContentLayout title="Dashboard">
-                    <Dashboard />
-                  </ContentLayout>
-                </AdminPanelLayout>
-              </PrivateRoute>
-            } />
-            
-            <Route path='/solutions/tasks' element={
-              <PrivateRoute>
-                <AdminPanelLayout>
-                  <ContentLayout title="Tasks">
-                    <Tasks />
-                  </ContentLayout>
-                </AdminPanelLayout>
-              </PrivateRoute>
-            } />
-            
-            <Route path='/solutions/projects' element={
-              <PrivateRoute>
-                <AdminPanelLayout>
-                  <ContentLayout title="Projects">
-                    <Projects />
-                  </ContentLayout>
-                </AdminPanelLayout>
-              </PrivateRoute>
-            } />
+              <Route path='/dashboard' element={
+                <PrivateRoute>
+                  <AdminPanelLayout>
+                    <ContentLayout title="Dashboard">
+                      <Dashboard />
+                    </ContentLayout>
+                  </AdminPanelLayout>
+                </PrivateRoute>
+              } />
+              
+              <Route path='/solutions/tasks' element={
+                <PrivateRoute>
+                  <AdminPanelLayout>
+                    <ContentLayout title="Tasks">
+                      <Tasks />
+                    </ContentLayout>
+                  </AdminPanelLayout>
+                </PrivateRoute>
+              } />
+              
+              <Route path='/solutions/projects' element={
+                <PrivateRoute>
+                  <AdminPanelLayout>
+                    <ContentLayout title="Projects">
+                      <Projects />
+                    </ContentLayout>
+                  </AdminPanelLayout>
+                </PrivateRoute>
+              } />
 
-            <Route path='/solutions/projects/create' element={
-              <PrivateRoute>
-                <AdminPanelLayout>
-                  <ContentLayout title="Create Project">
-                    <ProjectCreate />
-                  </ContentLayout>
-                </AdminPanelLayout>
-              </PrivateRoute>
-            } />
+              <Route path='/solutions/projects/create' element={
+                <PrivateRoute>
+                  <AdminPanelLayout>
+                    <ContentLayout title="Create Project">
+                      <ProjectCreate />
+                    </ContentLayout>
+                  </AdminPanelLayout>
+                </PrivateRoute>
+              } />
 
-            <Route path='/solutions/tasks/create' element={
-              <PrivateRoute>
-                <AdminPanelLayout>
-                  <ContentLayout title="Create Task">
-                    <TaskCreate />
-                  </ContentLayout>
-                </AdminPanelLayout>
-              </PrivateRoute>
-            } />
+              <Route path='/solutions/tasks/create' element={
+                <PrivateRoute>
+                  <AdminPanelLayout>
+                    <ContentLayout title="Create Task">
+                      <TaskCreate />
+                    </ContentLayout>
+                  </AdminPanelLayout>
+                </PrivateRoute>
+              } />
 
-            <Route path='/settings' element={
-              <PrivateRoute>
-                <AdminPanelLayout>
-                  <ContentLayout title="Settings">
-                    <Settings />
-                  </ContentLayout>
-                </AdminPanelLayout>
-              </PrivateRoute>
-            } />
+              <Route path='/settings' element={
+                <PrivateRoute>
+                  <AdminPanelLayout>
+                    <ContentLayout title="Settings">
+                      <Settings />
+                    </ContentLayout>
+                  </AdminPanelLayout>
+                </PrivateRoute>
+              } />
 
-            {/* Profile route - protected and with AdminPanelLayout */}
-            <Route path='/profile' element={
-              <PrivateRoute>
-                <AdminPanelLayout>
-                  <ContentLayout title="Profile">
-                    <Profile />
-                  </ContentLayout>
-                </AdminPanelLayout>
-              </PrivateRoute>
-            } />
+              {/* Profile route - protected and with AdminPanelLayout */}
+              <Route path='/profile' element={
+                <PrivateRoute>
+                  <AdminPanelLayout>
+                    <ContentLayout title="Profile">
+                      <Profile />
+                    </ContentLayout>
+                  </AdminPanelLayout>
+                </PrivateRoute>
+              } />
 
-            {/* Catch all route */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+              {/* Catch all route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </LoadingIndicator>
         </main>
       </div>
     </BrowserRouter>

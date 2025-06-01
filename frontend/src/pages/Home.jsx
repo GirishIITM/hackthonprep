@@ -1,5 +1,6 @@
 // pages/HomePage.jsx
 import Footer from '../components/Footer';
+import { Button } from '../components/ui/button';
 import './HomePage.css';
 
 const HomePage = () => {
@@ -39,7 +40,7 @@ const HomePage = () => {
       <section className="cta-section">
         <h2>Ready to Streamline Your Project Management?</h2>
         <p>Join SynergySphere today and transform how your team collaborates on tasks and projects.</p>
-        <button className="cta-button">Start Free Trial</button>
+        <Button className="cta-button">Start Free Trial</Button>
       </section>
       
       <Footer />

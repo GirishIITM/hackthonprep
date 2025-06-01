@@ -101,31 +101,6 @@
   box-shadow: 0 0 0 2px var(--color-primary);
 }
 
-.search-button {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--color-primary);
-  border: none;
-  cursor: pointer;
-  color: #fff;
-  font-size: 1rem;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-  padding: 6px 10px;
-  border-radius: 50%;
-  box-shadow: 0 2px 6px var(--color-shadow);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.search-button:hover {
-  background-color: var(--color-primary-hover);
-  color: #fff;
-  box-shadow: 0 4px 12px var(--color-shadow);
-}
-
 .profile-container {
   display: flex;
   align-items: center;

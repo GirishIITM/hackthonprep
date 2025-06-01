@@ -183,45 +183,19 @@
   --color-gray-800: #f8fafc;
   --color-gray-900: #ffffff;
 
-  /* Card/Sidebar */
-  --color-card-bg: #24314a;
-  --color-card-hover: #334155;
-  --color-form-bg: #24314a;
-
-  /* Status */
-  --color-status-not-started-bg: #334155;
-  --color-status-not-started-text: #cbd5e1;
-  --color-status-in-progress-bg: rgba(96, 165, 250, 0.2);
-  --color-status-in-progress-text: #93c5fd;
-  --color-status-completed-bg: rgba(52, 211, 153, 0.2);
-  --color-status-completed-text: #6ee7b7;
-  --color-status-blocked-bg: rgba(248, 113, 113, 0.2);
-  --color-status-blocked-text: #fca5a5;
-
-  /* Badge */
-  --color-badge-bg: rgba(251, 191, 36, 0.2);
-  --color-badge-text: #fcd34d;
-
-  /* Sidebar */
-  --color-sidebar-bg: #1e293b;
-  --color-sidebar-text: #f1f5f9;
-  --color-sidebar-text-hover: #60a5fa;
-  --color-sidebar-item-hover: rgba(96, 165, 250, 0.1);
-  --color-sidebar-item-active: #60a5fa;
-  --color-sidebar-text-active: #ffffff;
-  --color-sidebar-bg-active: rgb(96, 165, 250);
-
-  /* Enhanced badge colors */
-  --color-badge-red-bg: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-  --color-badge-red-text: #0f172a;
-  --color-badge-gray-bg: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
-  --color-badge-gray-text: #0f172a;
-  --color-badge-yellow-bg: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  --color-badge-yellow-text: #0f172a;
-  --color-badge-blue-bg: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-  --color-badge-blue-text: #0f172a;
-  --color-badge-green-bg: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-  --color-badge-green-text: #0f172a;
+  /* Enhanced button styles for legacy compatibility */
+  --color-btn-primary: hsl(var(--primary));
+  --color-btn-primary-hover: hsl(var(--primary) / 0.9);
+  --color-btn-primary-foreground: hsl(var(--primary-foreground));
+  --color-btn-secondary: hsl(var(--secondary));
+  --color-btn-secondary-hover: hsl(var(--secondary) / 0.8);
+  --color-btn-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-btn-outline: hsl(var(--background));
+  --color-btn-outline-hover: hsl(var(--accent));
+  --color-btn-outline-foreground: hsl(var(--foreground));
+  --color-btn-destructive: hsl(var(--destructive));
+  --color-btn-destructive-hover: hsl(var(--destructive) / 0.9);
+  --color-btn-destructive-foreground: hsl(var(--destructive-foreground));
 }
 
 /* Theme Toggle Button */

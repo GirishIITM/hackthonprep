@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Button } from './ui/button';
 
 export function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
@@ -29,9 +30,10 @@ export function ThemeToggle() {
   };
 
   return (
-    <button
+    <Button
       onClick={toggleTheme}
-      className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8"
+      variant="outline"
+      size="icon"
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
     >
@@ -45,6 +47,6 @@ export function ThemeToggle() {
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
       )}
-    </button>
+    </Button>
   );
 }

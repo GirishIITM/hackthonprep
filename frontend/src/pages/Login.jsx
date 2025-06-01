@@ -5,6 +5,7 @@ import LoadingIndicator from '../components/LoadingIndicator';
 import '../styles/login.css';
 
 import registerSvg from '../assets/log.svg';
+import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { authAPI, loadingState, saveAuthData } from '../utils/apiCalls';
 
@@ -215,9 +216,9 @@ export default function Login() {
                 </Link>
               </div>
 
-              <button type="submit" disabled={isLoading}>
+              <Button type="submit" className="w-full mt-1" disabled={isLoading}>
                 {isLoading ? 'Signing in...' : 'Login'}
-              </button>
+              </Button>
             </form>
             
             <div className="contentt mobile-only">

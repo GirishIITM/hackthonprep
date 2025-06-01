@@ -239,33 +239,7 @@
   font-weight: 500;
 }
 
-.verify-button {
-  width: 100%;
-  padding: 0.6rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  background: var(--color-btn-bg);
-  color: var(--color-btn-text);
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.verify-button:hover:not(:disabled) {
-  background: var(--color-btn-bg-hover);
-}
-
-.verify-button:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
+/* Remove .verify-button styles as they will be handled by shadcn Button component */
 
 .resend-section {
   text-align: center;

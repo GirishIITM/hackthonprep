@@ -89,6 +89,19 @@
 }
 
 
+.forgot-password-link {
+  color: var(--color-link);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.forgot-password-link:hover {
+  color: var(--color-link-hover);
+  text-decoration: underline;
+}
+
+
 .login-svg-img {
   width: 95%;
   max-width: 500px;
@@ -160,25 +173,6 @@
   color: var(--color-input-text);
   margin-bottom: 1.2rem;
   box-sizing: border-box;
-}
-
-.login-form button[type="submit"],
-.login-form button[type="submit"] {
-  width: 100%;
-  padding: 0.6rem;
-  background: var(--color-btn-bg);
-  color: var(--color-btn-text);
-  border: none;
-  border-radius: 5px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  margin-top: 0.5rem;
-  transition: background 0.2s;
-}
-
-.login-form button[type="submit"]:hover,
-.login-form button[type="submit"]:hover {
-  background: var(--color-btn-bg-hover);
 }
 
 .login-link-text,
@@ -286,8 +280,6 @@
   .content h2 {
     font-size: 1.2rem;
   }
-
-
 
   .btn.transparent {
     width: 110px;
@@ -454,18 +446,6 @@
     margin: 0;
     width: auto;
     accent-color: var(--color-btn-bg);
-  }
-
-  .forgot-password-link {
-    color: var(--color-link);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.9rem;
-  }
-
-  .forgot-password-link:hover {
-    color: var(--color-link-hover);
-    text-decoration: underline;
   }
 
   /* Improved button states */
