@@ -7,13 +7,11 @@ from extensions import db
 from utils.email import send_email
 from utils.datetime_utils import ensure_utc
 from utils.route_cache import cache_route, invalidate_cache_on_change
-from utils.route_cache import cache_route, invalidate_cache_on_change
 
 task_bp = Blueprint('task', __name__)
 
 @task_bp.route('/projects/<int:project_id>/tasks', methods=['POST'])
 @jwt_required()
-@invalidate_cache_on_change(['tasks', 'projects'])
 @invalidate_cache_on_change(['tasks', 'projects'])
 def create_task(project_id):
     user_id = int(get_jwt_identity())
@@ -82,7 +80,6 @@ def create_task(project_id):
 @task_bp.route('/tasks/<int:task_id>/attachment', methods=['POST'])
 @jwt_required()
 @invalidate_cache_on_change(['tasks'])
-@invalidate_cache_on_change(['tasks'])
 def add_attachment(task_id):
     user_id = int(get_jwt_identity())
     task = Task.query.get_or_404(task_id)
@@ -103,7 +100,6 @@ def add_attachment(task_id):
 @task_bp.route('/tasks', methods=['GET'])
 @jwt_required()
 @cache_route(ttl=120, user_specific=True)  # Cache for 2 minutes
-@cache_route(ttl=120, user_specific=True)  # Cache for 2 minutes
 def get_all_tasks():
     user_id = int(get_jwt_identity())
     tasks = Task.query.filter_by(owner_id=user_id).all()
@@ -111,18 +107,9 @@ def get_all_tasks():
     for task in tasks:
         status_mapping = {
             'pending': 'Not Started',
-            'pending': 'Not Started',
             'in_progress': 'In Progress',
             'completed': 'Completed'
-            'completed': 'Completed'
         }
-        readable_status = status_mapping.get(task.status.value if hasattr(task.status, 'value') else str(task.status), 'Not Started')
-        
-        # Get assignee name
-        assignee_name = None
-        if task.owner_id:
-            assignee = User.query.get(task.owner_id)
-            assignee_name = assignee.full_name if assignee else 'Unknown User'
         readable_status = status_mapping.get(task.status.value if hasattr(task.status, 'value') else str(task.status), 'Not Started')
         
         # Get assignee name
@@ -141,8 +128,6 @@ def get_all_tasks():
             'owner_id': task.owner_id,
             'assignee_id': task.owner_id,
             'assignee': assignee_name,
-            'assignee_id': task.owner_id,
-            'assignee': assignee_name,
             'created_at': task.created_at.isoformat() if task.created_at else None,
             'project_name': task.project.name if task.project else None
         }
@@ -151,7 +136,6 @@ def get_all_tasks():
 
 @task_bp.route('/tasks', methods=['POST'])
 @jwt_required()
-@invalidate_cache_on_change(['tasks', 'projects'])
 @invalidate_cache_on_change(['tasks', 'projects'])
 def create_task_direct():
     user_id = int(get_jwt_identity())
@@ -235,7 +219,6 @@ def create_task_direct():
 @task_bp.route('/tasks/<int:task_id>', methods=['PUT'])
 @jwt_required()
 @invalidate_cache_on_change(['tasks', 'projects'])
-@invalidate_cache_on_change(['tasks', 'projects'])
 def update_task_direct(task_id):
     user_id = int(get_jwt_identity())
     data = request.get_json()
@@ -283,7 +266,6 @@ def update_task_direct(task_id):
         task.status = status_mapping.get(data['status'], 'pending')
     if 'project_id' in data:
         task.project_id = data['project_id']
-    user_id = int(get_jwt_identity())
     if 'owner_id' in data:
         task.owner_id = data['owner_id']
     db.session.commit()
@@ -291,7 +273,6 @@ def update_task_direct(task_id):
 
 @task_bp.route('/tasks/<int:task_id>', methods=['DELETE'])
 @jwt_required()
-@invalidate_cache_on_change(['tasks', 'projects'])
 @invalidate_cache_on_change(['tasks', 'projects'])
 def delete_task_direct(task_id):
     user_id = int(get_jwt_identity())
