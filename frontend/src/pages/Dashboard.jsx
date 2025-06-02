@@ -13,18 +13,11 @@ import { Link } from 'react-router-dom';
 import LoadingIndicator from '../components/LoadingIndicator';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { projectAPI, taskAPI } from '../utils/apiCalls';
+import { dashboardAPI } from '../utils/apiCalls';
 import { getCurrentUser } from '../utils/apiCalls/auth';
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({
-    totalProjects: 0,
-    totalTasks: 0,
-    completedTasks: 0,
-    pendingTasks: 0
-  });
-  const [recentTasks, setRecentTasks] = useState([]);
-  const [recentProjects, setRecentProjects] = useState([]);
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -37,38 +30,8 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch projects and tasks with proper error handling
-      const [projectsResponse, tasksResponse] = await Promise.all([
-        projectAPI.getAllProjects().catch(err => {
-          console.error('Failed to fetch projects:', err);
-          return { projects: [], pagination: { total: 0 } };
-        }),
-        taskAPI.getAllTasks().catch(err => {
-          console.error('Failed to fetch tasks:', err);
-          return [];
-        })
-      ]);
-
-      // Handle new API response structure
-      const projects = projectsResponse.projects || [];
-      const tasks = Array.isArray(tasksResponse) ? tasksResponse : [];
-
-      // Calculate statistics
-      const completedTasks = tasks.filter(task => task.status === 'Completed').length;
-      const pendingTasks = tasks.filter(task => task.status !== 'Completed').length;
-
-      setStats({
-        totalProjects: projects.length,
-        totalTasks: tasks.length,
-        completedTasks,
-        pendingTasks
-      });
-
-      // Get recent items (last 5)
-      setRecentTasks(tasks.slice(-5).reverse());
-      setRecentProjects(projects.slice(-5).reverse());
-      
+      const data = await dashboardAPI.getOverview();
+      setDashboardData(data);
       setError('');
     } catch (err) {
       setError('Failed to load dashboard data');
@@ -78,41 +41,36 @@ const Dashboard = () => {
     }
   };
 
-  const getProjectName = (projectId) => {
-    const project = recentProjects.find(p => p.id === projectId);
-    return project ? project.name : 'Unknown Project';
-  };
-
-  const statsData = [
+  const statsData = dashboardData ? [
     {
       title: "Total Projects",
-      value: stats.totalProjects,
+      value: dashboardData.statistics.total_projects,
       icon: FolderKanban,
-      change: "+20.1%",
+      change: `${dashboardData.statistics.owned_projects} owned`,
       changeType: "positive"
     },
     {
       title: "Total Tasks", 
-      value: stats.totalTasks,
+      value: dashboardData.statistics.total_tasks,
       icon: CheckSquare,
-      change: "+15.3%",
+      change: `${dashboardData.statistics.completed_tasks} completed`,
       changeType: "positive"
     },
     {
       title: "Team Members",
-      value: "24",
+      value: dashboardData.statistics.team_members,
       icon: Users,
-      change: "+8.2%", 
+      change: "across projects", 
       changeType: "positive"
     },
     {
       title: "Completion Rate",
-      value: "87%",
+      value: `${dashboardData.statistics.completion_rate}%`,
       icon: Target,
-      change: "+5.4%",
-      changeType: "positive"
+      change: `${dashboardData.statistics.overdue_tasks} overdue`,
+      changeType: dashboardData.statistics.overdue_tasks > 0 ? "negative" : "positive"
     }
-  ];
+  ] : [];
 
   const recentActivity = [
     {
@@ -151,7 +109,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div className="container mx-auto p-4 max-w-5xl">
       <LoadingIndicator loading={loading}>
         {/* Header */}
         <div className="mb-8">
@@ -159,7 +117,9 @@ const Dashboard = () => {
             <LayoutDashboard className="h-6 w-6" />
             <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
           </div>
-          <p className="text-lg text-muted-foreground">Welcome back, {currentUser?.name || 'User'}!</p>
+          <p className="text-lg text-muted-foreground">
+            Welcome back, {dashboardData?.user?.name || currentUser?.name || 'User'}!
+          </p>
         </div>
 
         {error && (
@@ -170,7 +130,6 @@ const Dashboard = () => {
           </Card>
         )}
 
-        {/* Statistics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {statsData.map((stat, index) => (
             <StatCard
@@ -183,7 +142,6 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Quick Actions */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
@@ -195,7 +153,7 @@ const Dashboard = () => {
                 <Link to="/solutions/projects">Create New Project</Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link to="solutions/tasks">Add New Task</Link>
+                <Link to="/solutions/tasks">Add New Task</Link>
               </Button>
               <Button variant="secondary" asChild>
                 <Link to="/profile">View Profile</Link>
@@ -204,9 +162,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Recent Items Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Projects */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -216,16 +172,16 @@ const Dashboard = () => {
               <CardDescription>Your latest projects</CardDescription>
             </CardHeader>
             <CardContent>
-              {recentProjects.length === 0 ? (
+              {!dashboardData?.recent_projects?.length ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground mb-4">No projects yet.</p>
                   <Button asChild variant="outline">
-                    <Link to="/projects">Create your first project</Link>
+                    <Link to="/solutions/projects">Create your first project</Link>
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {recentProjects.map(project => (
+                  {dashboardData.recent_projects.map(project => (
                     <div 
                       key={project.id} 
                       className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
@@ -234,7 +190,7 @@ const Dashboard = () => {
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">{project.name}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {project.task_count || 0} tasks
+                          {project.task_count} tasks • {project.completed_tasks} completed
                         </p>
                       </div>
                     </div>
@@ -244,7 +200,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Recent Tasks */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -254,27 +209,28 @@ const Dashboard = () => {
               <CardDescription>Your latest tasks</CardDescription>
             </CardHeader>
             <CardContent>
-              {recentTasks.length === 0 ? (
+              {!dashboardData?.recent_tasks?.length ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground mb-4">No tasks yet.</p>
                   <Button asChild variant="outline">
-                    <Link to="/tasks">Create your first task</Link>
+                    <Link to="/solutions/tasks">Create your first task</Link>
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {recentTasks.map(task => (
+                  {dashboardData.recent_tasks.map(task => (
                     <div 
                       key={task.id} 
                       className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
                     >
                       <div className="text-2xl">
-                        {task.status === 'Completed' ? '✅' : '📋'}
+                        {task.status === 'Completed' ? '✅' : task.is_overdue ? '⚠️' : '📋'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">{task.title}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {getProjectName(task.project_id)} • {task.status}
+                          {task.project_name} • {task.status}
+                          {task.is_overdue && ' • Overdue'}
                         </p>
                       </div>
                     </div>
@@ -285,8 +241,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Stats Grid (Lucide Icons) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-8">
           {statsData.map((stat, index) => {
             const Icon = stat.icon;
             return (

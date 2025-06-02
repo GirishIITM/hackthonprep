@@ -168,11 +168,12 @@ async function testAddProjectMember() {
 // Task tests
 async function testCreateTask() {
   console.log('\n🔹 Testing task creation...');
-  const response = await api.post(`/projects/${projectId}/tasks`, {
+  const response = await api.post('/tasks', {
+    project_id: projectId,
     title: `Test Task ${Date.now()}`,
     description: 'This is a task created by automated API tests',
-    due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-    status: 'To Do'
+    due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now with time
+    status: 'Not Started'
   });
   taskId = response.data.task_id;
   console.log(`Task created with ID: ${taskId}`);
@@ -184,6 +185,7 @@ async function testUpdateTask() {
   const response = await api.put(`/tasks/${taskId}`, {
     title: `Updated Task ${Date.now()}`,
     description: 'This task was updated by automated API tests',
+    due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now with time
     status: 'In Progress'
   });
   console.log('Task updated successfully');

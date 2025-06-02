@@ -244,7 +244,7 @@ const authAPI = {
     return apiRequest(
       "/auth/login",
       "POST",
-      { username: email, email, password },
+      { email, password },
       "auth-login"
     );
   },
@@ -381,7 +381,7 @@ const authAPI = {
    * @returns {Promise} - User data response
    */
   getCurrentUserFromBackend: () => {
-    return apiRequest('/auth/profile/', 'GET', null, 'auth-get-profile');
+    return apiRequest('/auth/me', 'GET', null, 'auth-get-current-user');
   },
 };
 

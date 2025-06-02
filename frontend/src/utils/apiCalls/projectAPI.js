@@ -55,9 +55,9 @@ export const projectAPI = {
   },
 
   createProject: (projectData) => {
-    const hasImage = projectData.project_image && projectData.project_image instanceof File;
-    const hasMemberEmails = projectData.member_emails && Array.isArray(projectData.member_emails);
-    const hasMemberPermissions = projectData.member_permissions && typeof projectData.member_permissions === 'object';
+    const hasMemberEmails = projectData.member_emails && projectData.member_emails.length > 0;
+    const hasMemberPermissions = projectData.member_permissions && Object.keys(projectData.member_permissions).length > 0;
+    const hasImage = projectData.project_image instanceof File;
     
     if (hasImage || hasMemberEmails || hasMemberPermissions) {
       const formData = new FormData();
@@ -68,18 +68,19 @@ export const projectAPI = {
       }
       
       if (projectData.deadline) {
+        // Ensure we send datetime in ISO format
         const deadlineISO = new Date(projectData.deadline).toISOString();
         formData.append('deadline', deadlineISO);
       }
       
       if (hasMemberEmails) {
-        formData.append('member_emails', projectData.member_emails.join(','));
+        // Send member emails as JSON string for FormData
+        formData.append('member_emails', JSON.stringify(projectData.member_emails));
       }
       
       if (hasMemberPermissions) {
-        Object.entries(projectData.member_permissions).forEach(([email, isEditor]) => {
-          formData.append(`member_permission_${email}`, isEditor.toString());
-        });
+        // Send member permissions as JSON string for FormData
+        formData.append('member_permissions', JSON.stringify(projectData.member_permissions));
       }
       
       if (hasImage) {
@@ -94,6 +95,7 @@ export const projectAPI = {
       };
       
       if (projectData.deadline) {
+        // Ensure we send datetime in ISO format
         jsonData.deadline = new Date(projectData.deadline).toISOString();
       }
       
@@ -116,6 +118,7 @@ export const projectAPI = {
     };
     
     if (data.deadline) {
+      // Ensure we send datetime in ISO format
       jsonData.deadline = new Date(data.deadline).toISOString();
     }
     
@@ -143,8 +146,39 @@ export const projectAPI = {
   },
 
   searchUsers: (searchParams = {}) => {
-    const queryParams = new URLSearchParams(searchParams).toString();
-    const endpoint = queryParams ? `/users/search?${queryParams}` : '/users/search';
-    return apiRequest(endpoint, 'GET', null, 'users-search');
+    const queryParams = new URLSearchParams();
+    
+    // Handle the search query parameter properly
+    if (searchParams.q) {
+      queryParams.append('q', searchParams.q);
+    }
+    if (searchParams.search) {
+      queryParams.append('search', searchParams.search);
+    }
+    if (searchParams.limit) {
+      queryParams.append('limit', searchParams.limit);
+    }
+    if (searchParams.offset) {
+      queryParams.append('offset', searchParams.offset);
+    }
+    
+    const endpoint = queryParams.toString() ? `/users/search?${queryParams}` : '/users/search';
+    return apiRequest(endpoint, 'GET', null, 'users-search')
+      .then(result => {
+        // Ensure we return a consistent structure
+        if (result && result.users && Array.isArray(result.users)) {
+          return result;
+        }
+        // If the response is directly an array
+        if (Array.isArray(result)) {
+          return { users: result };
+        }
+        // Fallback
+        return { users: [] };
+      })
+      .catch(error => {
+        console.error('Error searching users:', error);
+        return { users: [] };
+      });
   }
 };

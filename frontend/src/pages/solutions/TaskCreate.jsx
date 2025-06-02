@@ -1,21 +1,17 @@
 import {
   ArrowLeft,
-  Calendar,
-  CheckSquare,
-  FileText,
-  FolderKanban,
-  Save,
-  Tag,
-  User
+  Save
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import LoadingIndicator from '../../components/LoadingIndicator';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { getCurrentUser, loadingState, projectAPI, taskAPI } from '../../utils/apiCalls';
+import { projectAPI } from '../../utils/apiCalls/projectAPI';
+import { taskAPI } from '../../utils/apiCalls/taskAPI';
+import { getCurrentUser } from '../../utils/auth';
+import { loadingState } from '../../utils/loadingState';
 import './TaskCreate.css';
 
 const TaskCreate = () => {
@@ -25,10 +21,21 @@ const TaskCreate = () => {
     title: '',
     description: '',
     due_date: '',
-    status: 'Not Started'
+    status: 'Not Started',
+    assigned_to: '' // Add assigned user field
   });
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  // Add member search state for task assignment
+  const [assigneeQuery, setAssigneeQuery] = useState('');
+  const [assigneeResults, setAssigneeResults] = useState([]);
+  const [selectedAssignee, setSelectedAssignee] = useState(null);
+  const [isSearchingAssignee, setIsSearchingAssignee] = useState(false);
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const [assigneeDebounceTimeout, setAssigneeDebounceTimeout] = useState(null);
+  
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
 
@@ -58,6 +65,55 @@ const TaskCreate = () => {
     });
   };
 
+  const searchAssignees = async (query) => {
+    if (!query.trim()) {
+      setAssigneeResults([]);
+      setShowAssigneeDropdown(false);
+      return;
+    }
+
+    try {
+      setIsSearchingAssignee(true);
+      const response = await projectAPI.searchUsers({ q: query, limit: 10 });
+      setAssigneeResults(response.users || []);
+      setShowAssigneeDropdown(true);
+    } catch (err) {
+      console.error('User search error:', err);
+      setAssigneeResults([]);
+    } finally {
+      setIsSearchingAssignee(false);
+    }
+  };
+
+  const handleAssigneeSearch = (e) => {
+    const query = e.target.value;
+    setAssigneeQuery(query);
+
+    if (assigneeDebounceTimeout) {
+      clearTimeout(assigneeDebounceTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      searchAssignees(query);
+    }, 300);
+
+    setAssigneeDebounceTimeout(timeout);
+  };
+
+  const selectAssignee = (user) => {
+    setSelectedAssignee(user);
+    setFormData(prev => ({ ...prev, assigned_to: user.email }));
+    setAssigneeQuery(user.full_name || user.email);
+    setAssigneeResults([]);
+    setShowAssigneeDropdown(false);
+  };
+
+  const clearAssignee = () => {
+    setSelectedAssignee(null);
+    setFormData(prev => ({ ...prev, assigned_to: '' }));
+    setAssigneeQuery('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -72,198 +128,209 @@ const TaskCreate = () => {
         formData.title,
         formData.description,
         formData.due_date,
-        formData.status
+        formData.status,
+        formData.assigned_to // Include assigned user
       );
-      navigate('/solutions/tasks');
+      
+      setSuccess('Task created successfully! Redirecting...');
+      setTimeout(() => {
+        navigate('/solutions/tasks');
+      }, 1500);
+      setError('');
     } catch (err) {
-      setError(`Failed to create task: ${err.message || 'Unknown error'}`);
+      setError('Failed to create task: ' + (err.message || 'Unknown error'));
     }
   };
 
-  const handleCancel = () => {
-    navigate('/solutions/tasks');
-  };
+  if (loadingProjects) {
+    return <div className="task-create-loading">Loading projects...</div>;
+  }
 
   return (
-    <div className="task-create-container">
-      <LoadingIndicator loading={loadingState.isLoading('task-create') || loadingState.isLoading('projects-fetch') || loadingProjects}>
-        <div className="task-create-header">
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/solutions/tasks">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <div className="flex items-center space-x-2">
-              <CheckSquare className="h-6 w-6" />
-              <h1 className="text-3xl font-bold">Create New Task</h1>
+    <div className="task-create-page">
+      <div className="task-create-header">
+        <Button asChild variant="outline">
+          <Link to="/solutions/tasks">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Tasks
+          </Link>
+        </Button>
+        <h1>Create New Task</h1>
+      </div>
+
+      {error && (
+        <Card className="mb-6 border-destructive">
+          <CardContent className="p-4">
+            <p className="text-destructive">{error}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {success && (
+        <Card className="mb-6 border-success">
+          <CardContent className="p-4">
+            <p className="text-success">{success}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Task Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="task-create-form">
+            <div className="form-group">
+              <label htmlFor="project_id">Project *</label>
+              <select
+                id="project_id"
+                name="project_id"
+                value={formData.project_id}
+                onChange={handleInputChange}
+                required
+                className="form-select"
+              >
+                <option value="">Select a project</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
-        </div>
 
-        {error && (
-          <div className="error-alert">
-            {error}
-          </div>
-        )}
+            <div className="form-group">
+              <label htmlFor="title">Task Title *</label>
+              <Input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="Enter task title"
+                required
+              />
+            </div>
 
-        {projects.length === 0 ? (
-          <div className="no-projects-alert">
-            <p>No projects available. You need to create a project first before adding tasks.</p>
-            <Button
-              onClick={() => navigate('/solutions/projects/create')}
-            >
-              Create Project
-            </Button>
-          </div>
-        ) : (
-          <div className="task-create-form-container">
-            <Card className="max-w-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5" />
-                  <span>Task Details</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Task Title */}
-                  <div className="space-y-2">
-                    <label htmlFor="title" className="text-sm font-medium">
-                      Task Title *
-                    </label>
-                    <Input
-                      id="title"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      placeholder="Enter task title"
-                      required
-                    />
+            <div className="form-group">
+              <label htmlFor="description">Description</label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Enter task description"
+                rows={4}
+                className="form-textarea"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="due_date">Due Date & Time *</label>
+              <Input
+                type="datetime-local"
+                id="due_date"
+                name="due_date"
+                value={formData.due_date}
+                onChange={handleInputChange}
+                required
+                min={new Date().toISOString().slice(0, 16)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="status">Status</label>
+              <select
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="form-select"
+              >
+                <option value="Not Started">Not Started</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+
+            {/* Add Assignee Selection */}
+            <div className="form-group">
+              <label htmlFor="assigned_to">Assign To (Optional)</label>
+              <div className="relative">
+                <Input
+                  type="text"
+                  value={assigneeQuery}
+                  onChange={handleAssigneeSearch}
+                  placeholder="Search users to assign task..."
+                />
+                
+                {isSearchingAssignee && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                   </div>
-
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <label htmlFor="description" className="text-sm font-medium">
-                      Description
-                    </label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      placeholder="Enter task description"
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
-                    />
+                )}
+                
+                {showAssigneeDropdown && assigneeResults.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                    {assigneeResults.map(user => (
+                      <div
+                        key={user.id}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center space-x-3"
+                        onClick={() => selectAssignee(user)}
+                      >
+                        <div className="flex-shrink-0">
+                          {user.profile_picture ? (
+                            <img 
+                              src={user.profile_picture} 
+                              alt={user.full_name}
+                              className="w-6 h-6 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium">
+                              {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{user.full_name}</div>
+                          <div className="text-xs text-gray-500">{user.email}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-
-                  {/* Project */}
-                  <div className="space-y-2">
-                    <label htmlFor="project" className="flex items-center space-x-2 text-sm font-medium">
-                      <FolderKanban className="h-4 w-4" />
-                      <span>Project</span>
-                    </label>
-                    <select
-                      id="project"
-                      name="project_id"
-                      value={formData.project_id}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
+                )}
+                
+                {selectedAssignee && (
+                  <div className="mt-2 flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium">
+                        {selectedAssignee.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                      </div>
+                      <span className="text-sm text-gray-900">{selectedAssignee.full_name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={clearAssignee}
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-800"
                     >
-                      <option value="">Select a project</option>
-                      {projects.map(project => (
-                        <option key={project.id} value={project.id}>
-                          {project.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Assignee */}
-                  <div className="space-y-2">
-                    <label htmlFor="assignee" className="flex items-center space-x-2 text-sm font-medium">
-                      <User className="h-4 w-4" />
-                      <span>Assignee</span>
-                    </label>
-                    <Input
-                      id="assignee"
-                      name="assignee"
-                      value={formData.assignee}
-                      onChange={handleInputChange}
-                      placeholder="Enter assignee name"
-                    />
-                  </div>
-
-                  {/* Due Date */}
-                  <div className="space-y-2">
-                    <label htmlFor="dueDate" className="flex items-center space-x-2 text-sm font-medium">
-                      <Calendar className="h-4 w-4" />
-                      <span>Due Date</span>
-                    </label>
-                    <Input
-                      id="dueDate"
-                      name="due_date"
-                      type="date"
-                      value={formData.due_date}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-
-                  {/* Priority */}
-                  <div className="space-y-2">
-                    <label htmlFor="priority" className="flex items-center space-x-2 text-sm font-medium">
-                      <Tag className="h-4 w-4" />
-                      <span>Priority</span>
-                    </label>
-                    <select
-                      id="priority"
-                      name="priority"
-                      value={formData.priority}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
-                    >
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                    </select>
-                  </div>
-
-                  {/* Status */}
-                  <div className="space-y-2">
-                    <label htmlFor="status" className="text-sm font-medium">
-                      Status
-                    </label>
-                    <select
-                      id="status"
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
-                    >
-                      <option value="Not Started">Not Started</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Completed">Completed</option>
-                      <option value="Blocked">Blocked</option>
-                    </select>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center space-x-4 pt-4">
-                    <Button type="submit" className="flex items-center space-x-2">
-                      <Save className="h-4 w-4" />
-                      <span>Create Task</span>
-                    </Button>
-                    <Button type="button" variant="outline" asChild>
-                      <Link to="/solutions/tasks">Cancel</Link>
+                      ×
                     </Button>
                   </div>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </LoadingIndicator>
+                )}
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <Button type="submit" disabled={loadingState.isLoading('tasks-create')}>
+                <Save className="h-4 w-4 mr-2" />
+                {loadingState.isLoading('tasks-create') ? 'Creating...' : 'Create Task'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

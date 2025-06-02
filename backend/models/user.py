@@ -1,5 +1,5 @@
 from extensions import db, bcrypt
-from datetime import datetime, timezone
+from utils.datetime_utils import get_utc_now
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -12,24 +12,19 @@ class User(db.Model):
     about = db.Column(db.Text, nullable=True)  # Add about field
     notify_email = db.Column(db.Boolean, default=True)
     notify_in_app = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=get_utc_now)
 
     
-    # Add the projects relationship that corresponds to the 'members' relationship in Project
     projects = db.relationship('Project', secondary='membership', back_populates='members')
     
-    # Add the tasks relationship to match the 'assignee' back_populates in the Task model
     tasks = db.relationship('Task', back_populates='assignee')
     
-    # Add the messages relationship to match the 'user' back_populates in the Message model
     messages = db.relationship('Message', back_populates='user')
     
-    # Add notifications relationship for Notification back_populates
     notifications = db.relationship('Notification', back_populates='user')
     
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
-        # Invalidate cache when new user is created
         self._invalidate_search_cache()
     
     def _invalidate_search_cache(self):
@@ -38,7 +33,6 @@ class User(db.Model):
             from utils.cache_helpers import UserSearchCache
             UserSearchCache.invalidate_user_cache()
         except ImportError:
-            # Cache helpers not available yet (during initial setup)
             pass
         except Exception as e:
             print(f"Cache invalidation error: {e}")
@@ -68,10 +62,8 @@ class User(db.Model):
     @staticmethod
     def create_google_user(google_info):
         """Create a new user from Google OAuth info"""
-        # Extract full name from Google info
         full_name = google_info.get('name', google_info.get('given_name', 'User'))
         
-        # Ensure username is unique
         username = google_info.get('given_name', google_info['email'].split('@')[0])
         base_username = username
         counter = 1
@@ -94,20 +86,16 @@ class User(db.Model):
     @staticmethod
     def find_or_create_google_user(google_info):
         """Find existing user by Google ID or email, or create new user"""
-        # First try to find by Google ID
         user = User.query.filter_by(google_id=google_info['google_id']).first()
         if user:
             return user
         
-        # Then try to find by email
         user = User.query.filter_by(email=google_info['email']).first()
         if user:
-            # Link existing account with Google
             user.google_id = google_info['google_id']
             if google_info.get('picture'):
                 user.profile_picture = google_info['picture']
             db.session.commit()
             return user
         
-        # Create new user using the create_google_user method
         return User.create_google_user(google_info)

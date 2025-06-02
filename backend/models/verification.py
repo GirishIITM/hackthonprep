@@ -1,8 +1,9 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 import random
 from extensions import db
 import secrets
 import string
+from utils.datetime_utils import get_utc_now, is_expired
 
 class OTPVerification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -11,16 +12,11 @@ class OTPVerification(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
     attempts = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=get_utc_now)
     
     @staticmethod
     def generate_otp():
         return ''.join(random.choices(string.digits, k=6))
-    
-    @staticmethod
-    def get_current_utc():
-        """Get current UTC time with timezone info"""
-        return datetime.now(timezone.utc)
     
     @classmethod
     def create_otp(cls, email):
@@ -28,7 +24,7 @@ class OTPVerification(db.Model):
         cls.query.filter_by(email=email).delete()
         
         otp = cls.generate_otp()
-        current_time = cls.get_current_utc()
+        current_time = get_utc_now()
         expires_at = current_time + timedelta(minutes=10)
         
         verification = cls(
@@ -43,12 +39,7 @@ class OTPVerification(db.Model):
     
     def is_expired(self):
         """Check if OTP is expired"""
-        current_time = self.get_current_utc()
-        # Handle both timezone-aware and naive datetime objects
-        expires_at = self.expires_at
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        return current_time > expires_at
+        return is_expired(self.expires_at)
 
 class PasswordResetToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,7 +47,7 @@ class PasswordResetToken(db.Model):
     token = db.Column(db.String(100), nullable=False, unique=True)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=get_utc_now)
     
     user = db.relationship('User', backref='reset_tokens')
     
@@ -64,18 +55,13 @@ class PasswordResetToken(db.Model):
     def generate_token():
         return secrets.token_urlsafe(50)
     
-    @staticmethod
-    def get_current_utc():
-        """Get current UTC time with timezone info"""
-        return datetime.now(timezone.utc)
-    
     @classmethod
     def create_token(cls, user_id):
         # Clean up old tokens for this user
         cls.query.filter_by(user_id=user_id).delete()
         
         token = cls.generate_token()
-        current_time = cls.get_current_utc()
+        current_time = get_utc_now()
         expires_at = current_time + timedelta(hours=1)
         
         reset_token = cls(
@@ -90,9 +76,4 @@ class PasswordResetToken(db.Model):
     
     def is_expired(self):
         """Check if token is expired"""
-        current_time = self.get_current_utc()
-        # Handle both timezone-aware and naive datetime objects
-        expires_at = self.expires_at
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        return current_time > expires_at
+        return is_expired(self.expires_at)

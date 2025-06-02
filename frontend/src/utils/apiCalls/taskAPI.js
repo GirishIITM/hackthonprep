@@ -20,16 +20,16 @@ export const taskAPI = {
     return apiRequest(`/tasks/${id}`, 'GET', null, 'tasks-get-single');
   },
 
-  createTask: (project_id, title, description, due_date, status) => {
-    return apiRequest('/tasks', 'POST', { project_id, title, description, due_date, status }, 'tasks-create');
+  createTask: (project_id, title, description, due_date, status, assigned_to) => {
+    return apiRequest('/tasks', 'POST', { project_id, title, description, due_date, status, assigned_to }, 'tasks-create');
   },
 
-  updateTask: (id, project_id, title, description, due_date, status) => {
-    return apiRequest(`/tasks/${id}`, 'PUT', { project_id, title, description, due_date, status }, 'tasks-update');
+  updateTask: (id, project_id, title, description, due_date, status, assigned_to) => {
+    return apiRequest(`/tasks/${id}`, 'PUT', { project_id, title, description, due_date, status, assigned_to }, 'tasks-update');
   },
 
   updateTaskStatus: (id, status) => {
-    return apiRequest(`/tasks/${id}/status`, 'PATCH', { status }, 'tasks-update-status');
+    return apiRequest(`/tasks/${id}/status`, 'PUT', { status }, 'tasks-update-status');
   },
 
   deleteTask: (id, project_id) => {

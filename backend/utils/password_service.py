@@ -17,12 +17,10 @@ class PasswordService:
             
             user = User.query.filter_by(email=email).first()
             if not user:
-                # Don't reveal if email exists or not for security
                 return True, "If the email exists, a password reset link has been sent"
             
             reset_token = PasswordResetToken.create_token(user.id)
             
-            # Use configured frontend URL for reset link
             config = get_config()
             reset_link = f"{config.FRONTEND_URL}/reset-password?token={reset_token}"
             
@@ -69,7 +67,6 @@ class PasswordService:
         try:
             token = sanitize_string(token)
             
-            # Validate password strength
             is_valid, msg = validate_password(new_password)
             if not is_valid:
                 return False, msg

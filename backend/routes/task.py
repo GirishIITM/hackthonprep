@@ -7,11 +7,13 @@ from extensions import db
 from utils.email import send_email
 from utils.datetime_utils import ensure_utc
 from utils.route_cache import cache_route, invalidate_cache_on_change
+from utils.route_cache import cache_route, invalidate_cache_on_change
 
 task_bp = Blueprint('task', __name__)
 
 @task_bp.route('/projects/<int:project_id>/tasks', methods=['POST'])
 @jwt_required()
+@invalidate_cache_on_change(['tasks', 'projects'])
 @invalidate_cache_on_change(['tasks', 'projects'])
 def create_task(project_id):
     user_id = int(get_jwt_identity())
@@ -24,9 +26,17 @@ def create_task(project_id):
     title = data.get('title')
     description = data.get('description')
     due_date = None
-    if 'due_date' in data:
+    if 'due_date' in data and data['due_date']:
         try:
-            parsed_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+            # Handle both date and datetime formats
+            date_str = data['due_date']
+            if 'T' not in date_str:
+                # If only date is provided, add time
+                date_str += 'T23:59:59'
+            if not date_str.endswith('Z') and '+' not in date_str and '-' not in date_str[-6:]:
+                # If no timezone info, assume local time
+                date_str += 'Z'
+            parsed_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
             due_date = ensure_utc(parsed_date)
         except ValueError:
             return jsonify({'msg': 'Invalid date format. Use ISO format with timezone.'}), 400
@@ -72,6 +82,7 @@ def create_task(project_id):
 @task_bp.route('/tasks/<int:task_id>/attachment', methods=['POST'])
 @jwt_required()
 @invalidate_cache_on_change(['tasks'])
+@invalidate_cache_on_change(['tasks'])
 def add_attachment(task_id):
     user_id = int(get_jwt_identity())
     task = Task.query.get_or_404(task_id)
@@ -92,6 +103,7 @@ def add_attachment(task_id):
 @task_bp.route('/tasks', methods=['GET'])
 @jwt_required()
 @cache_route(ttl=120, user_specific=True)  # Cache for 2 minutes
+@cache_route(ttl=120, user_specific=True)  # Cache for 2 minutes
 def get_all_tasks():
     user_id = int(get_jwt_identity())
     tasks = Task.query.filter_by(owner_id=user_id).all()
@@ -99,9 +111,18 @@ def get_all_tasks():
     for task in tasks:
         status_mapping = {
             'pending': 'Not Started',
+            'pending': 'Not Started',
             'in_progress': 'In Progress',
             'completed': 'Completed'
+            'completed': 'Completed'
         }
+        readable_status = status_mapping.get(task.status.value if hasattr(task.status, 'value') else str(task.status), 'Not Started')
+        
+        # Get assignee name
+        assignee_name = None
+        if task.owner_id:
+            assignee = User.query.get(task.owner_id)
+            assignee_name = assignee.full_name if assignee else 'Unknown User'
         readable_status = status_mapping.get(task.status.value if hasattr(task.status, 'value') else str(task.status), 'Not Started')
         
         # Get assignee name
@@ -120,6 +141,8 @@ def get_all_tasks():
             'owner_id': task.owner_id,
             'assignee_id': task.owner_id,
             'assignee': assignee_name,
+            'assignee_id': task.owner_id,
+            'assignee': assignee_name,
             'created_at': task.created_at.isoformat() if task.created_at else None,
             'project_name': task.project.name if task.project else None
         }
@@ -128,6 +151,7 @@ def get_all_tasks():
 
 @task_bp.route('/tasks', methods=['POST'])
 @jwt_required()
+@invalidate_cache_on_change(['tasks', 'projects'])
 @invalidate_cache_on_change(['tasks', 'projects'])
 def create_task_direct():
     user_id = int(get_jwt_identity())
@@ -152,7 +176,15 @@ def create_task_direct():
     due_date = None
     if 'due_date' in data and data['due_date']:
         try:
-            parsed_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+            # Handle both date and datetime formats
+            date_str = data['due_date']
+            if 'T' not in date_str:
+                # If only date is provided, add time
+                date_str += 'T23:59:59'
+            if not date_str.endswith('Z') and '+' not in date_str and '-' not in date_str[-6:]:
+                # If no timezone info, assume local time
+                date_str += 'Z'
+            parsed_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
             due_date = ensure_utc(parsed_date)
         except ValueError:
             return jsonify({'msg': 'Invalid date format. Use ISO format with timezone.'}), 400
@@ -203,6 +235,7 @@ def create_task_direct():
 @task_bp.route('/tasks/<int:task_id>', methods=['PUT'])
 @jwt_required()
 @invalidate_cache_on_change(['tasks', 'projects'])
+@invalidate_cache_on_change(['tasks', 'projects'])
 def update_task_direct(task_id):
     user_id = int(get_jwt_identity())
     data = request.get_json()
@@ -223,12 +256,21 @@ def update_task_direct(task_id):
     if 'due_date' in data:
         if data['due_date']:
             try:
-                parsed_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+                # Handle both date and datetime formats
+                date_str = data['due_date']
+                if 'T' not in date_str:
+                    # If only date is provided, add time
+                    date_str += 'T23:59:59'
+                if not date_str.endswith('Z') and '+' not in date_str and '-' not in date_str[-6:]:
+                    # If no timezone info, assume local time
+                    date_str += 'Z'
+                parsed_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
                 task.due_date = ensure_utc(parsed_date)
             except ValueError:
                 return jsonify({'msg': 'Invalid date format. Use ISO format with timezone.'}), 400
         else:
             task.due_date = None
+    
     if 'status' in data:
         status_mapping = {
             'To Do': 'pending',
@@ -250,6 +292,7 @@ def update_task_direct(task_id):
 @task_bp.route('/tasks/<int:task_id>', methods=['DELETE'])
 @jwt_required()
 @invalidate_cache_on_change(['tasks', 'projects'])
+@invalidate_cache_on_change(['tasks', 'projects'])
 def delete_task_direct(task_id):
     user_id = int(get_jwt_identity())
     task = Task.query.get_or_404(task_id)
@@ -261,4 +304,34 @@ def delete_task_direct(task_id):
     db.session.delete(task)
     db.session.commit()
     return jsonify({'msg': 'Task deleted'})
+
+@task_bp.route('/tasks/<int:task_id>/status', methods=['PUT'])
+@jwt_required()
+@invalidate_cache_on_change(['tasks', 'projects'])
+def update_task_status(task_id):
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    
+    if not data or 'status' not in data:
+        return jsonify({'msg': 'Status is required'}), 400
+        
+    task = Task.query.get_or_404(task_id)
+    project = task.project
+    
+    if not any(member.id == user_id for member in project.members):
+        return jsonify({'msg': 'Not authorized'}), 403
+    
+    status_mapping = {
+        'Not Started': 'pending',
+        'In Progress': 'in_progress', 
+        'Completed': 'completed',
+        'pending': 'pending',
+        'in_progress': 'in_progress',
+        'completed': 'completed'
+    }
+    new_status = status_mapping.get(data['status'], 'pending')
+    task.status = new_status
+    
+    db.session.commit()
+    return jsonify({'msg': 'Task status updated'})
 

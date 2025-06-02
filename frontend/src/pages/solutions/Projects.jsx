@@ -1,20 +1,18 @@
-import { AlertCircle, Calendar, CheckCircle, Clock, Edit, Plus, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle, Clock, Edit, MoreHorizontal, Plus, Search, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
 import { Input } from '../../components/ui/input';
-import { ScrollArea } from '../../components/ui/scroll-area';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../../components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/ui/tooltip';
 import { getCurrentUser, loadingState, projectAPI } from '../../utils/apiCalls';
 import './Projects.css';
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
-  const [selectedProject, setSelectedProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ total: 0, limit: 20, offset: 0, has_more: false });
   const [filters, setFilters] = useState({
@@ -23,20 +21,10 @@ const Projects = () => {
     status: '',
     member: ''
   });
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    deadline: '',
-    member_emails: [],
-    member_permissions: {},
-    project_image: null
-  });
-  const [isEditing, setIsEditing] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [error, setError] = useState('');
-  const [memberEmailInput, setMemberEmailInput] = useState('');
 
   const currentUser = getCurrentUser();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProjects();
@@ -89,88 +77,11 @@ const Projects = () => {
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({ ...prev, offset: 0 })); // Reset to first page
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, type, files } = e.target;
-    if (type === 'file') {
-      setFormData(prev => ({ ...prev, [name]: files[0] }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const addMemberEmail = () => {
-    if (memberEmailInput.trim() && !formData.member_emails.includes(memberEmailInput.trim())) {
-      const email = memberEmailInput.trim();
-      setFormData(prev => ({
-        ...prev,
-        member_emails: [...prev.member_emails, email],
-        member_permissions: { ...prev.member_permissions, [email]: false }
-      }));
-      setMemberEmailInput('');
-    }
-  };
-
-  const removeMemberEmail = (email) => {
-    setFormData(prev => {
-      const newPermissions = { ...prev.member_permissions };
-      delete newPermissions[email];
-      return {
-        ...prev,
-        member_emails: prev.member_emails.filter(e => e !== email),
-        member_permissions: newPermissions
-      };
-    });
-  };
-
-  const toggleMemberPermission = (email) => {
-    setFormData(prev => ({
-      ...prev,
-      member_permissions: {
-        ...prev.member_permissions,
-        [email]: !prev.member_permissions[email]
-      }
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!formData.name.trim()) {
-      setError('Project name is required');
-      return;
-    }
-
-    try {
-      if (isEditing && selectedProject) {
-        await projectAPI.updateProject(selectedProject.id, formData);
-      } else {
-        await projectAPI.createProject(formData);
-      }
-
-      resetForm();
-      fetchProjects();
-      setError('');
-      setShowCreateForm(false);
-    } catch (err) {
-      setError(`Failed to ${isEditing ? 'update' : 'create'} project: ${err.message || 'Unknown error'}`);
-    }
+    setPagination(prev => ({ ...prev, offset: 0 }));
   };
 
   const handleEdit = (project) => {
-    setSelectedProject(project);
-    setFormData({
-      name: project.name,
-      description: project.description || '',
-      deadline: project.deadline ? project.deadline.split('T')[0] : '',
-      member_emails: [],
-      member_permissions: {},
-      project_image: null
-    });
-    setIsEditing(true);
-    setShowCreateForm(true);
+    navigate(`/solutions/projects/edit/${project.id}`);
   };
 
   const handleDelete = async (projectId) => {
@@ -178,25 +89,11 @@ const Projects = () => {
 
     try {
       await projectAPI.deleteProject(projectId);
-      setProjects(projects.filter(project => project.id !== projectId));
+      fetchProjects();
       setError('');
     } catch (err) {
       setError('Failed to delete project: ' + (err.message || 'Unknown error'));
     }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      deadline: '',
-      member_emails: [],
-      member_permissions: {},
-      project_image: null
-    });
-    setSelectedProject(null);
-    setIsEditing(false);
-    setMemberEmailInput('');
   };
 
   const loadMore = () => {
@@ -238,146 +135,12 @@ const Projects = () => {
             <p className="text-muted-foreground">Manage and organize your collaborative projects</p>
           </div>
           
-          <Sheet open={showCreateForm} onOpenChange={setShowCreateForm}>
-            <SheetTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Create Project
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="w-[500px] sm:max-w-[500px]">
-              <ScrollArea className="h-full">
-                <SheetHeader>
-                  <SheetTitle>{isEditing ? 'Edit Project' : 'Create New Project'}</SheetTitle>
-                </SheetHeader>
-                
-                <form onSubmit={handleSubmit} className="space-y-6 py-6">
-                  {error && (
-                    <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
-                      {error}
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Project Name *</label>
-                    <Input
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder="Enter project name"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Description</label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      placeholder="Enter project description"
-                      className="w-full p-3 border border-input rounded-md resize-none focus:ring-2 focus:ring-ring focus:border-ring min-h-[80px]"
-                      rows="3"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Deadline</label>
-                    <Input
-                      type="date"
-                      name="deadline"
-                      value={formData.deadline}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-
-                  {!isEditing && (
-                    <>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Project Image</label>
-                        <Input
-                          type="file"
-                          name="project_image"
-                          onChange={handleInputChange}
-                          accept="image/*"
-                          className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                        />
-                      </div>
-
-                      <div className="space-y-4">
-                        <label className="text-sm font-medium">Add Members</label>
-                        <div className="flex gap-2">
-                          <Input
-                            type="email"
-                            value={memberEmailInput}
-                            onChange={(e) => setMemberEmailInput(e.target.value)}
-                            placeholder="Enter member email"
-                            className="flex-1"
-                          />
-                          <Button type="button" onClick={addMemberEmail} variant="outline" size="default">
-                            <UserPlus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        
-                        {formData.member_emails.length > 0 && (
-                          <div className="space-y-2">
-                            {formData.member_emails.map(email => (
-                              <div key={email} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="w-8 h-8">
-                                    <AvatarFallback className="text-xs">
-                                      {getInitials(email)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-sm font-medium">{email}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <label className="flex items-center gap-2 text-sm">
-                                    <input
-                                      type="checkbox"
-                                      checked={formData.member_permissions[email] || false}
-                                      onChange={() => toggleMemberPermission(email)}
-                                      className="rounded border-gray-300"
-                                    />
-                                    Editor
-                                  </label>
-                                  <Button 
-                                    type="button" 
-                                    onClick={() => removeMemberEmail(email)}
-                                    variant="ghost"
-                                    size="sm"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  <div className="flex gap-3 pt-4">
-                    <Button 
-                      type="submit" 
-                      className="flex-1"
-                      disabled={loadingState.isLoading('projects-create') || loadingState.isLoading('projects-update')}
-                    >
-                      {isEditing ? 'Update Project' : 'Create Project'}
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => { setShowCreateForm(false); resetForm(); }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </ScrollArea>
-            </SheetContent>
-          </Sheet>
+          <Button asChild className="gap-2">
+            <Link to="/solutions/projects/create">
+              <Plus className="w-4 h-4" />
+              Create Project
+            </Link>
+          </Button>
         </div>
 
         {/* Filters */}
@@ -438,9 +201,11 @@ const Projects = () => {
                     <h3 className="text-lg font-semibold">No projects found</h3>
                     <p className="text-muted-foreground">Create a new project or adjust your filters to see projects.</p>
                   </div>
-                  <Button onClick={() => setShowCreateForm(true)} className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Create Your First Project
+                  <Button asChild className="gap-2">
+                    <Link to="/solutions/projects/create">
+                      <Plus className="w-4 h-4" />
+                      Create Your First Project
+                    </Link>
                   </Button>
                 </div>
               </CardContent>
@@ -471,8 +236,8 @@ const Projects = () => {
                         {(project.is_owner || project.user_can_edit) && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Edit className="w-4 h-4" />
+                              <Button variant="ghost" size="sm" className="group-hover:opacity-100 transition-opacity">
+                                <MoreHorizontal className="w-4 h-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -483,7 +248,7 @@ const Projects = () => {
                               {project.is_owner && (
                                 <DropdownMenuItem 
                                   onClick={() => handleDelete(project.id)}
-                                  variant="destructive"
+                                  className="text-red-600"
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" />
                                   Delete

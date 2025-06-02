@@ -12,10 +12,12 @@ from utils.redis_token_service import RedisTokenService
 from utils.google_oauth_service import GoogleOAuthService
 from utils.password_service import PasswordService
 from utils.cloudinary_upload import delete_cloudinary_image
+from utils.route_cache import cache_route, invalidate_cache_on_change
 
 auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/register", methods=["POST"])
+@invalidate_cache_on_change(['users'])
 def register():
     try:
         data = request.get_json()
@@ -59,6 +61,7 @@ def register():
         return jsonify({"msg": "An error occurred during registration"}), 500
 
 @auth_bp.route("/verify-otp", methods=["POST"])
+@invalidate_cache_on_change(['users'])
 def verify_otp():
     try:
         data = request.get_json()
@@ -203,6 +206,7 @@ def reset_password():
         return jsonify({"msg": "An error occurred while resetting password"}), 500
 
 @auth_bp.route("/google-register", methods=["POST"])
+@invalidate_cache_on_change(['users'])
 def google_register():
     try:
         data = request.get_json()
@@ -245,6 +249,7 @@ def google_login():
         return jsonify({"msg": "An error occurred during Google login"}), 500
 
 @auth_bp.route("/google/client-id", methods=["GET"])
+@cache_route(ttl=3600, user_specific=False)  # Cache for 1 hour, not user-specific
 def get_google_client_id():
     try:
         result, error_msg = GoogleOAuthService.get_client_id()
@@ -367,7 +372,7 @@ def google_callback():
         return jsonify({"msg": "OAuth callback error"}), 500
 
 @auth_bp.route("/settings", methods=["GET"])
-@jwt_required()
+@cache_route(ttl=300, user_specific=True)  # Cache for 5 minutes
 def get_settings():
     try:
         user_id = int(get_jwt_identity())
@@ -393,7 +398,7 @@ def get_settings():
         return jsonify({"msg": "An error occurred while fetching settings"}), 500
 
 @auth_bp.route("/settings", methods=["PUT"])
-@jwt_required()
+@invalidate_cache_on_change(['users', 'profile'])
 def update_settings():
     try:
         user_id = int(get_jwt_identity())

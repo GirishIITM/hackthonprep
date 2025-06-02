@@ -61,32 +61,33 @@ def create_app(config_class=None):
     # Everything below runs inside app context!
     with app.app_context():
         use_postgresql = getattr(config_instance, 'USE_POSTGRESQL', False)
-        skip_migration = getattr(config_instance, 'SKIP_MIGRATION', False)
+        skip_migration = getattr(config_instance, 'SKIP_MIGRATION', True)
         
         try:
-            if skip_migration:
-                if use_postgresql:
-                    print("Using PostgreSQL database (direct mode)")
-                else:
-                    print("Using SQLite database (direct mode)")
+            database_url = app.config.get('SQLALCHEMY_DATABASE_URI')
+            if use_postgresql and 'postgresql' in database_url:
+                print("Using PostgreSQL database...")
                 db.create_all()
-                print("Database tables created/verified")
-            else:
-                database_url = app.config.get('SQLALCHEMY_DATABASE_URI')
-                if use_postgresql and 'postgresql' in database_url:
-                    print("Using PostgreSQL database...")
-                    db.create_all()
-                    print("PostgreSQL tables created/verified")
-                    if check_postgresql_connection():
-                        print("PostgreSQL connection verified")
-                        migrate_sqlite_to_postgresql()
-                    else:
-                        print("PostgreSQL connection issues - falling back to SQLite")
-                        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-                        db.create_all()
+                print("PostgreSQL tables created/verified")
+                
+                # Update existing schema
+                from utils.postgresql_migrator import update_existing_schema
+                update_existing_schema()
+                
+                if check_postgresql_connection() and not skip_migration:
+                    print("PostgreSQL connection verified")
+                    migrate_sqlite_to_postgresql()
                 else:
-                    print("Using SQLite database...")
+                    print("PostgreSQL connection issues - falling back to SQLite")
+                    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
                     db.create_all()
+            else:
+                print("Using SQLite database...")
+                db.create_all()
+                
+                # Update SQLite schema
+                from utils.db_migrate import update_sqlite_schema
+                update_sqlite_schema()
             
             # Gmail credentials
             try:

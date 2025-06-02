@@ -35,10 +35,8 @@ class RedisPasswordService:
             
             user = User.query.filter_by(email=email).first()
             if not user:
-                # Don't reveal if email exists or not for security
                 return True, "If the email exists, a password reset link has been sent"
             
-            # Generate token and store in Redis
             reset_token = RedisPasswordService.generate_token()
             token_key = RedisPasswordService._get_token_key(reset_token)
             
@@ -79,7 +77,6 @@ class RedisPasswordService:
         try:
             token = sanitize_string(token)
             
-            # Validate password strength
             is_valid, msg = validate_password(new_password)
             if not is_valid:
                 return False, msg
@@ -93,15 +90,12 @@ class RedisPasswordService:
             if token_data.get("used", False):
                 return False, "Reset token has already been used"
             
-            # Get user
             user = User.query.get(token_data["user_id"])
             if not user:
                 return False, "User not found"
             
-            # Update password
             user.set_password(new_password)
             
-            # Mark token as used in Redis
             token_data["used"] = True
             token_data["used_at"] = datetime.utcnow().isoformat()
             RedisCache.set(token_key, token_data, 300)  # Keep for 5 minutes as used

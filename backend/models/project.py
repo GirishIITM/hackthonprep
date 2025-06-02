@@ -17,6 +17,7 @@ class Project(db.Model):
     deadline = db.Column(db.DateTime, nullable=True)
     project_image = db.Column(db.String(255),default="https://cdn-icons-png.flaticon.com/512/1087/1087927.png", nullable=True) 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     owner = db.relationship('User', backref='owned_projects', foreign_keys=[owner_id])
