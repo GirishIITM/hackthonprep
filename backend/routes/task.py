@@ -279,9 +279,26 @@ def delete_task_direct(task_id):
     task = Task.query.get_or_404(task_id)
     project = task.project
     
-    if project.owner_id != user_id and task.owner_id != user_id:
-        return jsonify({'msg': 'Only project owner or task assignee can delete tasks'}), 403
+    # Check permissions - project owner, task assignee, or project editor can delete
+    from models.project import Membership
+    user_membership = Membership.query.filter_by(
+        user_id=user_id, 
+        project_id=project.id
+    ).first()
     
+    can_delete = (
+        project.owner_id == user_id or 
+        task.owner_id == user_id or 
+        (user_membership and user_membership.is_editor)
+    )
+    
+    if not can_delete:
+        return jsonify({'msg': 'Not authorized to delete this task'}), 403
+    
+    # Delete task attachments first
+    TaskAttachment.query.filter_by(task_id=task_id).delete()
+    
+    # Delete the task
     db.session.delete(task)
     db.session.commit()
     return jsonify({'msg': 'Task deleted'})

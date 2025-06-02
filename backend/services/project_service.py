@@ -287,10 +287,27 @@ class ProjectService:
     @staticmethod
     def delete_project(project_id, user_id):
         """Delete a project (owner only)"""
+        from models.project import Membership
+        
         project = Project.query.get_or_404(project_id)
         if project.owner_id != user_id:
             raise PermissionError('Only owner can delete project')
         
+        # Delete related data in proper order to avoid constraint violations
+        # First delete tasks
+        Task.query.filter_by(project_id=project_id).delete()
+        
+        # Delete memberships
+        Membership.query.filter_by(project_id=project_id).delete()
+        
+        # Delete notifications related to this project (if any)
+        project_notifications = Notification.query.filter(
+            Notification.message.like(f"%project '{project.name}'%")
+        ).all()
+        for notification in project_notifications:
+            db.session.delete(notification)
+        
+        # Finally delete the project
         db.session.delete(project)
         db.session.commit()
         return True

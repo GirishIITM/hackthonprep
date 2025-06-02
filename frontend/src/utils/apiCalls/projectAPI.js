@@ -118,8 +118,11 @@ export const projectAPI = {
     };
     
     if (data.deadline) {
-      // Ensure we send datetime in ISO format
       jsonData.deadline = new Date(data.deadline).toISOString();
+    }
+    
+    if (data.status !== undefined) {
+      jsonData.status = data.status;
     }
     
     return apiRequest(`/projects/${id}`, 'PUT', jsonData, 'projects-update');

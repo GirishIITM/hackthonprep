@@ -168,6 +168,7 @@ def search_users():
 @invalidate_cache_on_change(['projects', 'memberships', 'tasks'])
 def delete_project(project_id):
     """Delete a project (owner only)"""
+    print(f"Delete project request for ID: {project_id}")
     user_id = int(get_jwt_identity())
     
     try:

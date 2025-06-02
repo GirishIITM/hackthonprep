@@ -8,8 +8,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../comp
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
 import { Input } from '../../components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../components/ui/alert-dialog';
 import { getCurrentUser, loadingState, projectAPI } from '../../utils/apiCalls';
-import './Projects.css';
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -22,6 +22,8 @@ const Projects = () => {
     member: ''
   });
   const [error, setError] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
 
   const currentUser = getCurrentUser();
   const navigate = useNavigate();
@@ -45,14 +47,14 @@ const Projects = () => {
         limit: pagination.limit,
         offset: pagination.offset
       };
-      
+
       // Remove empty filters
       Object.keys(params).forEach(key => {
         if (!params[key]) delete params[key];
       });
 
       const response = await projectAPI.getAllProjects(params);
-      
+
       // Handle new API response structure
       const projectsData = response.projects || [];
       const paginationData = response.pagination || {
@@ -85,8 +87,6 @@ const Projects = () => {
   };
 
   const handleDelete = async (projectId) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) return;
-
     try {
       await projectAPI.deleteProject(projectId);
       fetchProjects();
@@ -134,7 +134,7 @@ const Projects = () => {
             <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
             <p className="text-muted-foreground">Manage and organize your collaborative projects</p>
           </div>
-          
+
           <Button asChild className="gap-2">
             <Link to="/solutions/projects/create">
               <Plus className="w-4 h-4" />
@@ -156,7 +156,7 @@ const Projects = () => {
                   className="pl-10"
                 />
               </div>
-              
+
               <div className="flex gap-2">
                 <select
                   value={filters.status}
@@ -217,7 +217,7 @@ const Projects = () => {
                   Showing {projects.length} of {pagination.total} projects
                 </p>
               </div>
-              
+
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {projects.map(project => (
                   <Card key={project.id} className="group hover:shadow-md transition-shadow">
@@ -232,7 +232,7 @@ const Projects = () => {
                             </span>
                           </div>
                         </div>
-                        
+
                         {(project.is_owner || project.user_can_edit) && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -246,8 +246,11 @@ const Projects = () => {
                                 Edit
                               </DropdownMenuItem>
                               {project.is_owner && (
-                                <DropdownMenuItem 
-                                  onClick={() => handleDelete(project.id)}
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setProjectToDelete(project.id);
+                                    setDeleteDialogOpen(true);
+                                  }}
                                   className="text-red-600"
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" />
@@ -259,35 +262,35 @@ const Projects = () => {
                         )}
                       </div>
                     </CardHeader>
-                    
+
                     <CardContent className="space-y-4">
                       {project.project_image && (
-                        <img 
-                          src={project.project_image} 
-                          alt={project.name} 
+                        <img
+                          src={project.project_image}
+                          alt={project.name}
                           className="w-full h-32 object-cover rounded-md"
                         />
                       )}
-                      
+
                       {project.description && (
                         <p className="text-sm text-muted-foreground line-clamp-2">
                           {project.description}
                         </p>
                       )}
-                      
+
                       <div className="space-y-3">
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>Tasks: {project.task_stats.completed}/{project.task_stats.total}</span>
                           <div className="w-24 bg-gray-200 rounded-full h-1.5">
-                            <div 
-                              className="bg-primary h-1.5 rounded-full" 
-                              style={{ 
-                                width: `${project.task_stats.total > 0 ? (project.task_stats.completed / project.task_stats.total) * 100 : 0}%` 
+                            <div
+                              className="bg-primary h-1.5 rounded-full"
+                              style={{
+                                width: `${project.task_stats.total > 0 ? (project.task_stats.completed / project.task_stats.total) * 100 : 0}%`
                               }}
                             />
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center justify-between">
                           <div className="flex -space-x-2">
                             {project.members.slice(0, 3).map(member => (
@@ -314,7 +317,7 @@ const Projects = () => {
                               </div>
                             )}
                           </div>
-                          
+
                           {project.user_can_edit && (
                             <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200">
                               Editor
@@ -323,7 +326,7 @@ const Projects = () => {
                         </div>
                       </div>
                     </CardContent>
-                    
+
                     {project.deadline && (
                       <CardFooter className="pt-0">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -335,7 +338,7 @@ const Projects = () => {
                   </Card>
                 ))}
               </div>
-              
+
               {pagination.has_more && (
                 <div className="flex justify-center pt-6">
                   <Button onClick={loadMore} variant="outline" className="gap-2">
@@ -345,7 +348,34 @@ const Projects = () => {
               )}
             </div>
           )}
-        </LoadingIndicator>
+        </LoadingIndicator>  <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) setProjectToDelete(null);
+        }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Project</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this project? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (projectToDelete) {
+                    await handleDelete(projectToDelete);
+                  }
+                  setDeleteDialogOpen(false);
+                  setProjectToDelete(null);
+                }}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

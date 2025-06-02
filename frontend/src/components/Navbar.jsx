@@ -55,7 +55,6 @@ function Navbar({ showWhenAuthenticated = false }) {
     <nav className="navbar">
       <div className="navbar-brand">
         <Link to="/">
-          <FontAwesomeIcon icon={faProjectDiagram} className="brand-icon" />
           <span>SynergySphere</span>
         </Link>
       </div>

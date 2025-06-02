@@ -1,12 +1,20 @@
-// pages/HomePage.jsx
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
+import { Link } from 'react-router-dom';
 import './HomePage.css';
 
 const HomePage = () => {
   return (
     <div className="home-page">
-    
+      <nav className="home-nav">
+        <div className="nav-content-vertical">
+          <span className="nav-message">Login to start</span>
+          <div className="nav-links-vertical">
+            <Link to="/login" className="nav-link">Login</Link>
+            <Link to="/register" className="nav-link">Register</Link>
+          </div>
+        </div>
+      </nav>
       <section className="features">
         <h2>Why Choose SynergySphere?</h2>
         <div className="feature-cards">
