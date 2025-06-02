@@ -1,18 +1,19 @@
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@radix-ui/react-dropdown-menu';
 import {
   ArrowLeft,
   Save
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { loadingState } from '../../utils/apiCalls';
+import { getCurrentUser } from '../../utils/apiCalls/auth';
 import { projectAPI } from '../../utils/apiCalls/projectAPI';
 import { taskAPI } from '../../utils/apiCalls/taskAPI';
-import { getCurrentUser } from '../../utils/auth';
-import { loadingState } from '../../utils/loadingState';
-import './TaskCreate.css';
 
 const TaskCreate = () => {
   const [projects, setProjects] = useState([]);
@@ -147,29 +148,35 @@ const TaskCreate = () => {
   }
 
   return (
-    <div className="task-create-page">
-      <div className="task-create-header">
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
         <Button asChild variant="outline">
           <Link to="/solutions/tasks">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Tasks
           </Link>
         </Button>
-        <h1>Create New Task</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Create New Task</h1>
       </div>
 
       {error && (
-        <Card className="mb-6 border-destructive">
-          <CardContent className="p-4">
-            <p className="text-destructive">{error}</p>
+        <Card className="border-destructive bg-destructive/10">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <p className="text-destructive font-medium">{error}</p>
+            </div>
           </CardContent>
         </Card>
       )}
 
       {success && (
-        <Card className="mb-6 border-success">
-          <CardContent className="p-4">
-            <p className="text-success">{success}</p>
+        <Card className="border-green-500 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <p className="text-green-700 font-medium">{success}</p>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -179,28 +186,29 @@ const TaskCreate = () => {
           <CardTitle>Task Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="task-create-form">
-            <div className="form-group">
-              <label htmlFor="project_id">Project *</label>
-              <select
-                id="project_id"
-                name="project_id"
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="project_id">Project *</Label>
+              <Select
                 value={formData.project_id}
-                onChange={handleInputChange}
+                onValueChange={(value) => setFormData({...formData, project_id: value})}
                 required
-                className="form-select"
               >
-                <option value="">Select a project</option>
-                {projects.map(project => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map(project => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="title">Task Title *</label>
+            <div className="space-y-2">
+              <Label htmlFor="title">Task Title *</Label>
               <Input
                 type="text"
                 id="title"
@@ -212,21 +220,20 @@ const TaskCreate = () => {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="description">Description</label>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
                 id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
                 placeholder="Enter task description"
                 rows={4}
-                className="form-textarea"
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="due_date">Due Date & Time *</label>
+            <div className="space-y-2">
+              <Label htmlFor="due_date">Due Date & Time *</Label>
               <Input
                 type="datetime-local"
                 id="due_date"
@@ -238,24 +245,25 @@ const TaskCreate = () => {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="status">Status</label>
-              <select
-                id="status"
-                name="status"
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
                 value={formData.status}
-                onChange={handleInputChange}
-                className="form-select"
+                onValueChange={(value) => setFormData({...formData, status: value})}
               >
-                <option value="Not Started">Not Started</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Not Started">Not Started</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Add Assignee Selection */}
-            <div className="form-group">
-              <label htmlFor="assigned_to">Assign To (Optional)</label>
+            <div className="space-y-2">
+              <Label htmlFor="assigned_to">Assign To (Optional)</Label>
               <div className="relative">
                 <Input
                   type="text"
@@ -266,66 +274,81 @@ const TaskCreate = () => {
                 
                 {isSearchingAssignee && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <Clock className="h-4 w-4 animate-spin" />
                   </div>
                 )}
                 
                 {showAssigneeDropdown && assigneeResults.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
-                    {assigneeResults.map(user => (
-                      <div
-                        key={user.id}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center space-x-3"
-                        onClick={() => selectAssignee(user)}
-                      >
-                        <div className="flex-shrink-0">
-                          {user.profile_picture ? (
-                            <img 
-                              src={user.profile_picture} 
-                              alt={user.full_name}
-                              className="w-6 h-6 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium">
+                  <Card className="absolute z-10 w-full mt-1 shadow-lg max-h-40 overflow-y-auto">
+                    <CardContent className="p-0">
+                      {assigneeResults.map(user => (
+                        <div
+                          key={user.id}
+                          className="px-4 py-3 hover:bg-muted cursor-pointer flex items-center space-x-3 border-b last:border-b-0"
+                          onClick={() => selectAssignee(user)}
+                        >
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-sm">
                               {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
-                            </div>
-                          )}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="text-sm font-medium">{user.full_name}</div>
+                            <div className="text-xs text-muted-foreground">{user.email}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{user.full_name}</div>
-                          <div className="text-xs text-gray-500">{user.email}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </CardContent>
+                  </Card>
                 )}
                 
                 {selectedAssignee && (
-                  <div className="mt-2 flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium">
-                        {selectedAssignee.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                  <Card className="mt-3">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-sm">
+                              {selectedAssignee.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="text-sm font-medium">{selectedAssignee.full_name}</div>
+                            <div className="text-xs text-muted-foreground">{selectedAssignee.email}</div>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={clearAssignee}
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <span className="text-sm text-gray-900">{selectedAssignee.full_name}</span>
-                    </div>
-                    <Button
-                      type="button"
-                      onClick={clearAssignee}
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      ×
-                    </Button>
-                  </div>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             </div>
 
-            <div className="form-actions">
+            <div className="flex justify-end space-x-3 pt-6">
+              <Button type="button" variant="outline" asChild>
+                <Link to="/solutions/tasks">Cancel</Link>
+              </Button>
               <Button type="submit" disabled={loadingState.isLoading('tasks-create')}>
-                <Save className="h-4 w-4 mr-2" />
-                {loadingState.isLoading('tasks-create') ? 'Creating...' : 'Create Task'}
+                {loadingState.isLoading('tasks-create') ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Create Task
+                  </>
+                )}
               </Button>
             </div>
           </form>

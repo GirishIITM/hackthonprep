@@ -1,18 +1,16 @@
+import { loadingState } from '@/utils/apiCalls';
 import {
   ArrowLeft,
   Save
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-
 import LoadingIndicator from '../../components/LoadingIndicator';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { projectAPI } from '../../utils/apiCalls/projectAPI';
 import { taskAPI } from '../../utils/apiCalls/taskAPI';
-import { getCurrentUser } from '../../utils/auth';
-import { loadingState } from '../../utils/loadingState';
 
 const TaskEdit = () => {
   const { id } = useParams();
@@ -41,8 +39,6 @@ const TaskEdit = () => {
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [assigneeDebounceTimeout, setAssigneeDebounceTimeout] = useState(null);
   
-  const currentUser = getCurrentUser();
-
   useEffect(() => {
     fetchTask();
     fetchProjects();

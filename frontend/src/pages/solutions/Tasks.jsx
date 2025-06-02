@@ -1,7 +1,10 @@
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { loadingState } from '@/utils/apiCalls';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@radix-ui/react-select';
 import {
   AlertCircle,
   Badge,
@@ -17,10 +20,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Avatar, AvatarFallback } from '../../components/ui/avatar';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
-import { Input } from '../../components/ui/input';
+import { loadingState } from '../../utils/apiCalls';
 import { getCurrentUser } from '../../utils/apiCalls/auth';
 import { projectAPI } from '../../utils/apiCalls/projectAPI';
 import { taskAPI } from '../../utils/apiCalls/taskAPI';
@@ -61,9 +61,9 @@ const Tasks = () => {
         offset: pagination.offset
       };
       
-      // Remove empty filters
+      // Remove empty filters and "all" values
       Object.keys(params).forEach(key => {
-        if (!params[key]) delete params[key];
+        if (!params[key] || params[key] === 'all') delete params[key];
       });
 
       const allTasks = await taskAPI.getAllTasks(params);
@@ -236,7 +236,7 @@ const Tasks = () => {
                   <SelectValue placeholder="All Projects" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Projects</SelectItem>
+                  <SelectItem value="all">All Projects</SelectItem>
                   {projects.map(project => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
@@ -256,7 +256,7 @@ const Tasks = () => {
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="Not Started">Not Started</SelectItem>
                   <SelectItem value="In Progress">In Progress</SelectItem>
                   <SelectItem value="Completed">Completed</SelectItem>
@@ -267,7 +267,7 @@ const Tasks = () => {
             <div className="flex items-end">
               <Button 
                 variant="outline" 
-                onClick={() => setFilters({ search: '', project_id: '', status: '', owner: '' })}
+                onClick={() => setFilters({ search: '', project_id: 'all', status: 'all', owner: '' })}
                 className="w-full"
               >
                 Clear Filters
