@@ -15,7 +15,6 @@ def validate_password(password):
     if len(password) < 6:
         return False, "Password must be at least 6 characters long"
     
-    # Optional strength checks for frontend guidance
     strength_checks = {
         'min_length': len(password) >= 8,
         'has_uppercase': bool(re.search(r'[A-Z]', password)),
@@ -24,7 +23,6 @@ def validate_password(password):
         'has_special': bool(re.search(r'[!@#$%^&*(),.?":{}|<>]', password))
     }
     
-    # Only require minimum length for backend validation
     return True, "Password is valid"
 
 def validate_required_fields(data, required_fields):
@@ -34,12 +32,10 @@ def validate_required_fields(data, required_fields):
     
     for field in required_fields:
         if field not in data or not str(data[field]).strip():
-            # Special validation for full_name field
             if field == 'full_name':
                 return validate_full_name(data.get(field, ''))
             return False, f"{field.replace('_', ' ').title()} is required"
     
-    # Additional validation for specific fields
     if 'full_name' in required_fields and 'full_name' in data:
         is_valid, msg = validate_full_name(data['full_name'])
         if not is_valid:
@@ -90,7 +86,6 @@ def validate_full_name(full_name):
     if len(full_name) > 100:
         return False, "Full name cannot be longer than 100 characters"
     
-    # Allow letters, spaces, hyphens, and apostrophes
     if not re.match(r"^[a-zA-Z\s\-']+$", full_name):
         return False, "Full name can only contain letters, spaces, hyphens, and apostrophes"
     

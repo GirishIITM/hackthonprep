@@ -6,7 +6,8 @@ class Membership(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
-    isEditor = db.Column(db.Boolean, default=False, nullable=False)
+    is_editor = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -16,6 +17,7 @@ class Project(db.Model):
     deadline = db.Column(db.DateTime, nullable=True)
     project_image = db.Column(db.String(255),default="https://cdn-icons-png.flaticon.com/512/1087/1087927.png", nullable=True) 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     owner = db.relationship('User', backref='owned_projects', foreign_keys=[owner_id])

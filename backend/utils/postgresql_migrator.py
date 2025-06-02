@@ -4,8 +4,29 @@ from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 
+def migrate_schema_before_data():
+    """Ensure PostgreSQL schema exists without altering tables"""
+    postgresql_url = os.getenv('DATABASE_URL')
+    
+    if not postgresql_url or 'postgresql' not in postgresql_url:
+        return True
+    
+    try:
+        from extensions import db
+        # Use SQLAlchemy to create tables - no ALTER statements
+        db.create_all()
+        print("PostgreSQL schema ensured via SQLAlchemy")
+        return True
+        
+    except Exception as e:
+        print(f"Schema creation failed: {e}")
+        return False
+
 def migrate_sqlite_to_postgresql():
-    """Migrate data from SQLite to PostgreSQL - non-blocking"""
+    """Migrate data from SQLite to PostgreSQL - non-blocking, no schema changes"""
+    # First ensure schema exists
+    migrate_schema_before_data()
+    
     sqlite_path = 'instance/app.db'
     postgresql_url = os.getenv('DATABASE_URL')
     
@@ -134,3 +155,62 @@ def ensure_postgresql_tables_exist(app):
     except Exception as e:
         print(f"Warning: Could not create tables: {e}")
         return False
+
+def update_existing_schema():
+    """Add missing columns to existing tables"""
+    postgresql_url = os.getenv('DATABASE_URL')
+    
+    if not postgresql_url:
+        return True
+    
+    try:
+        engine = create_engine(postgresql_url)
+        inspector = inspect(engine)
+        
+        with engine.connect() as conn:
+            # Check if project table exists and has updated_at column
+            if 'project' in inspector.get_table_names():
+                columns = [col['name'] for col in inspector.get_columns('project')]
+                
+                if 'updated_at' not in columns:
+                    print("Adding updated_at column to project table...")
+                    conn.execute(text("""
+                        ALTER TABLE project 
+                        ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE 
+                        DEFAULT CURRENT_TIMESTAMP
+                    """))
+                    conn.commit()
+                    print("Added updated_at column to project table")
+                
+                # Set updated_at = created_at for existing records where updated_at is NULL
+                conn.execute(text("""
+                    UPDATE project 
+                    SET updated_at = created_at 
+                    WHERE updated_at IS NULL
+                """))
+                conn.commit()
+            
+            # Check user table for missing columns
+            if 'user' in inspector.get_table_names():
+                columns = [col['name'] for col in inspector.get_columns('user')]
+                
+                missing_columns = []
+                if 'full_name' not in columns:
+                    missing_columns.append("ADD COLUMN full_name VARCHAR(100)")
+                if 'about' not in columns:
+                    missing_columns.append("ADD COLUMN about TEXT")
+                if 'google_id' not in columns:
+                    missing_columns.append("ADD COLUMN google_id VARCHAR(100) UNIQUE")
+                
+                if missing_columns:
+                    print(f"Adding missing columns to user table: {missing_columns}")
+                    for column_def in missing_columns:
+                        conn.execute(text(f"ALTER TABLE \"user\" {column_def}"))
+                    conn.commit()
+                    print("Added missing columns to user table")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Schema update error (non-blocking): {e}")
+        return True

@@ -10,12 +10,10 @@ class GoogleOAuthService:
     def authenticate_with_google(token, is_registration=False):
         """Authenticate user with Google OAuth token"""
         try:
-            # Verify Google token
             google_info = verify_google_token(token)
             if not google_info:
                 return None, "Invalid Google token"
             
-            # Check if email is verified
             if not google_info.get('email_verified', False):
                 return None, "Google email not verified"
             
@@ -37,15 +35,12 @@ class GoogleOAuthService:
         """Handle Google OAuth registration"""
         email = google_info['email']
         
-        # Check if user already exists
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
             return None, "An account with this email already exists. Please log in instead."
             
-        # Create new user with Google info
         user = User.find_or_create_google_user(google_info)
         
-        # Send welcome email
         GoogleOAuthService._send_welcome_email(user)
         
         return create_auth_response(user), None
@@ -55,12 +50,10 @@ class GoogleOAuthService:
         """Handle Google OAuth login"""
         email = google_info['email']
         
-        # Find existing user
         user = User.query.filter_by(email=email).first()
         if not user:
             return None, "No account found with this email. Please register first."
             
-        # Update Google info if user exists but doesn't have Google ID
         if not user.google_id:
             user.google_id = google_info.get('google_id')
             if google_info.get('picture'):
@@ -126,4 +119,3 @@ class GoogleOAuthService:
             send_email(subject, [user.email], text_body, html_body)
         except Exception as e:
             print(f"Welcome email error: {e}")
-            # Don't fail registration if welcome email fails

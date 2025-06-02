@@ -55,50 +55,51 @@ function Navbar({ showWhenAuthenticated = false }) {
     <nav className="navbar">
       <div className="navbar-brand">
         <Link to="/">
-          <FontAwesomeIcon icon={faProjectDiagram} className="brand-icon" />
           <span>SynergySphere</span>
         </Link>
       </div>
 
-      <Button 
-        className="navbar-toggle" 
-        onClick={toggleMenu} 
-        aria-label="Toggle menu"
-        variant="ghost"
-        size="icon"
-      >
-        <FontAwesomeIcon icon={menuOpen ? faClose : faBars} />
-      </Button>
+      <div className="navbar-right">
+        <div className={`navbar-links ${menuOpen ? 'open' : ''}`}>
+          <Button asChild variant="ghost" className={isActive("/about") ? "bg-accent" : ""}>
+            <Link
+              to="/about"
+              onClick={closeMenu}
+            >
+              <i className="fas fa-info-circle"></i>
+              <span>About</span>
+            </Link>
+          </Button>
 
-      <div className={`navbar-links ${menuOpen ? 'open' : ''}`}>
-        <Button asChild variant="ghost" className={isActive("/about") ? "bg-accent" : ""}>
-          <Link
-            to="/about"
-            onClick={closeMenu}
-          >
-            <i className="fas fa-info-circle"></i>
-            <span>About</span>
-          </Link>
-        </Button>
+          <Button asChild variant="outline" className={isActive("/register") ? "bg-accent" : ""}>
+            <Link
+              to="/register"
+              onClick={closeMenu}
+            >
+              <i className="fas fa-user-plus"></i>
+              <span>Register</span>
+            </Link>
+          </Button>
+          
+          <Button asChild variant="default" className={isActive("/login") ? "bg-primary/90" : ""}>
+            <Link
+              to="/login"
+              onClick={closeMenu}
+            >
+              <i className="fas fa-sign-in-alt"></i>
+              <span>Login</span>
+            </Link>
+          </Button>
+        </div>
 
-        <Button asChild variant="outline" className={isActive("/register") ? "bg-accent" : ""}>
-          <Link
-            to="/register"
-            onClick={closeMenu}
-          >
-            <i className="fas fa-user-plus"></i>
-            <span>Register</span>
-          </Link>
-        </Button>
-        
-        <Button asChild variant="default" className={isActive("/login") ? "bg-primary/90" : ""}>
-          <Link
-            to="/login"
-            onClick={closeMenu}
-          >
-            <i className="fas fa-sign-in-alt"></i>
-            <span>Login</span>
-          </Link>
+        <Button 
+          className="navbar-toggle" 
+          onClick={toggleMenu} 
+          aria-label="Toggle menu"
+          variant="ghost"
+          size="icon"
+        >
+          <FontAwesomeIcon icon={menuOpen ? faClose : faBars} />
         </Button>
       </div>
     </nav>

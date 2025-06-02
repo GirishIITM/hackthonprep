@@ -1,7 +1,7 @@
-from datetime import datetime, timezone
 from extensions import db
 import enum
 from sqlalchemy import Enum as SqlEnum
+from utils.datetime_utils import get_utc_now, ensure_utc
 
 
 class TaskStatus(enum.Enum):
@@ -18,7 +18,7 @@ class Task(db.Model):
     status = db.Column(SqlEnum(TaskStatus), default=TaskStatus.pending, nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey("project.id"), nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=get_utc_now)
     # Relationships
     project = db.relationship("Project", back_populates="tasks")
     assignee = db.relationship("User", back_populates="tasks")
@@ -28,14 +28,8 @@ class Task(db.Model):
         """Check if task is overdue"""
         if not self.due_date:
             return False
-
-        current_time = datetime.now(timezone.utc)
-        due_date = self.due_date
-
-        # Handle timezone-naive due_date
-        if due_date.tzinfo is None:
-            due_date = due_date.replace(tzinfo=timezone.utc)
-
+        current_time = get_utc_now()
+        due_date = ensure_utc(self.due_date)
         return current_time > due_date
 
 
@@ -43,7 +37,7 @@ class TaskAttachment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     task_id = db.Column(db.Integer, db.ForeignKey("task.id"), nullable=False)
     file_url = db.Column(db.String(200), nullable=False)
-    uploaded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    uploaded_at = db.Column(db.DateTime, default=get_utc_now)
 
     # Relationships
     task = db.relationship("Task", back_populates="attachments")

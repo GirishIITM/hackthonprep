@@ -1,10 +1,9 @@
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { loadingState, projectAPI } from '@/utils/apiCalls';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import './ProjectCreate.css';
 
 const ProjectCreate = () => {
   const navigate = useNavigate();
@@ -12,7 +11,9 @@ const ProjectCreate = () => {
     name: '',
     description: '',
     deadline: '',
-    project_image: null
+    project_image: null,
+    member_emails: [],
+    member_permissions: {}
   });
   const [isCreating, setIsCreating] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -85,13 +86,40 @@ const ProjectCreate = () => {
 
   const addMember = (user) => {
     setSelectedMembers(prev => [...prev, user]);
+    setFormData(prev => ({
+      ...prev,
+      member_emails: [...prev.member_emails, user.email],
+      member_permissions: { ...prev.member_permissions, [user.email]: false }
+    }));
     setMemberQuery('');
     setSearchResults([]);
     setShowDropdown(false);
   };
 
   const removeMember = (userId) => {
-    setSelectedMembers(prev => prev.filter(member => member.id !== userId));
+    const member = selectedMembers.find(m => m.id === userId);
+    if (member) {
+      setSelectedMembers(prev => prev.filter(m => m.id !== userId));
+      setFormData(prev => {
+        const newPermissions = { ...prev.member_permissions };
+        delete newPermissions[member.email];
+        return {
+          ...prev,
+          member_emails: prev.member_emails.filter(email => email !== member.email),
+          member_permissions: newPermissions
+        };
+      });
+    }
+  };
+
+  const toggleMemberPermission = (email) => {
+    setFormData(prev => ({
+      ...prev,
+      member_permissions: {
+        ...prev.member_permissions,
+        [email]: !prev.member_permissions[email]
+      }
+    }));
   };
 
   useEffect(() => {
@@ -193,12 +221,7 @@ const ProjectCreate = () => {
       setConnectionError(false);
       setIsRetrying(false);
       
-      const projectData = {
-        ...formData,
-        member_emails: selectedMembers.map(member => member.email)
-      };
-      
-      const response = await projectAPI.createProject(projectData);
+      const response = await projectAPI.createProject(formData);
       
       if (response && response.project_id) {
         setSuccess('Project created successfully! Redirecting...');
@@ -208,7 +231,9 @@ const ProjectCreate = () => {
           name: '',
           description: '',
           deadline: '',
-          project_image: null
+          project_image: null,
+          member_emails: [],
+          member_permissions: {}
         });
         setSelectedMembers([]);
         setImagePreview(null);
@@ -249,302 +274,311 @@ const ProjectCreate = () => {
   };
 
   return (
-    <div className="project-create-page">
-      <div className="project-create-container">
-        <LoadingIndicator loading={isCreating || loadingState.isLoading('project-create') || loadingState.isLoading('user-search')}>
-          {error && (
-            <div className="error-alert">
-              {error}
-              {connectionError && (
-                <Button 
-                  onClick={() => setConnectionError(false)}
-                  className="retry-button"
-                  disabled={isRetrying}
-                  variant="outline"
+    <div className="p-6 max-w-2xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Create New Project</h1>
+        <p className="text-gray-600">Set up a new project and invite team members to collaborate</p>
+      </div>
+
+      <LoadingIndicator loading={isCreating || loadingState.isLoading('project-create') || loadingState.isLoading('user-search')}>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+            {connectionError && (
+              <Button 
+                onClick={() => setConnectionError(false)}
+                className="ml-3"
+                disabled={isRetrying}
+                variant="outline"
+                size="sm"
+              >
+                {isRetrying ? 'Retrying...' : 'Retry'}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Project Information */}
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                Project Name <span className="text-red-500">*</span>
+              </label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Enter project name"
+                className={formErrors.name ? 'border-red-300' : ''}
+                disabled={isCreating}
+                maxLength={100}
+              />
+              {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Project description (optional)"
+                rows="3"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  formErrors.description ? 'border-red-300' : 'border-gray-300'
+                }`}
+                disabled={isCreating}
+                maxLength={500}
+              />
+              <div className="text-xs text-gray-500 mt-1">
+                {formData.description.length}/500 characters
+              </div>
+              {formErrors.description && <p className="text-red-500 text-sm mt-1">{formErrors.description}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1">
+                Deadline
+              </label>
+              <Input
+                id="deadline"
+                name="deadline"
+                type="datetime-local"
+                value={formData.deadline}
+                onChange={handleInputChange}
+                className={formErrors.deadline ? 'border-red-300' : ''}
+                disabled={isCreating}
+                min={new Date().toISOString().slice(0, 16)}
+              />
+              {formErrors.deadline && <p className="text-red-500 text-sm mt-1">{formErrors.deadline}</p>}
+            </div>
+          </div>
+
+          {/* Project Image */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Project Image
+            </label>
+            <div className="space-y-3">
+              <input
+                id="project-image-input"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={handleImageChange}
+                className="hidden"
+                disabled={isCreating}
+              />
+              
+              {!imagePreview ? (
+                <label 
+                  htmlFor="project-image-input" 
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
                 >
-                  {isRetrying ? 'Retrying...' : 'Retry'}
-                </Button>
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg className="w-8 h-8 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p className="mb-2 text-sm text-gray-500">
+                      <span className="font-semibold">Click to upload</span> project image
+                    </p>
+                    <p className="text-xs text-gray-500">JPG, PNG, GIF, WEBP (max 5MB)</p>
+                  </div>
+                </label>
+              ) : (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                  <div className="absolute top-2 right-2 flex space-x-2">
+                    <Button
+                      type="button"
+                      onClick={removeImage}
+                      disabled={isCreating}
+                      variant="destructive"
+                      size="sm"
+                    >
+                      Remove
+                    </Button>
+                    <label htmlFor="project-image-input">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        as="span"
+                      >
+                        Change
+                      </Button>
+                    </label>
+                  </div>
+                </div>
+              )}
+              
+              {formErrors.project_image && <p className="text-red-500 text-sm">{formErrors.project_image}</p>}
+            </div>
+          </div>
+
+          {/* Team Members */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Team Members
+            </label>
+            
+            <div className="member-search-container relative mb-3">
+              <Input
+                type="text"
+                value={memberQuery}
+                onChange={handleMemberSearch}
+                placeholder="Search users by name, username, or email..."
+                disabled={isCreating}
+              />
+              
+              {isSearching && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+              
+              {showDropdown && searchResults.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {searchResults.map(user => (
+                    <div
+                      key={user.id}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center space-x-3"
+                      onClick={() => addMember(user)}
+                    >
+                      <div className="flex-shrink-0">
+                        {user.profile_picture ? (
+                          <img 
+                            src={user.profile_picture} 
+                            alt={user.full_name}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-sm font-medium">
+                            {user.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">
+                          {user.full_name || 'Unknown User'}
+                        </div>
+                        <div className="text-sm text-gray-500 truncate">{user.email}</div>
+                        {user.username && (
+                          <div className="text-xs text-gray-400 truncate">@{user.username}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {showDropdown && memberQuery && searchResults.length === 0 && !isSearching && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                  <div className="px-4 py-2 text-gray-500 text-center">No users found</div>
+                </div>
               )}
             </div>
-          )}
-
-          {success && (
-            <div className="success-alert">
-              {success}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="project-create-form">
-            {/* Basic Project Information */}
-            <div className="form-section">
-              <h2 className="section-title">Project Details</h2>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="name" className="form-label">
-                    Project Name <span className="required">*</span>
-                  </label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Enter project name"
-                    className={formErrors.name ? 'error' : ''}
-                    disabled={isCreating}
-                    maxLength={100}
-                  />
-                  <span className="field-error">{formErrors.name || ''}</span>
+            
+            {selectedMembers.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-gray-700">
+                  Selected Members ({selectedMembers.length})
                 </div>
-
-                <div className="form-group">
-                  <label htmlFor="deadline" className="form-label">Deadline</label>
-                  <div className="deadline-input-wrapper">
-                    <Input
-                      id="deadline"
-                      name="deadline"
-                      type="datetime-local"
-                      value={formData.deadline}
-                      onChange={handleInputChange}
-                      className={`deadline-input ${formErrors.deadline ? 'error' : ''}`}
-                      disabled={isCreating}
-                      min={new Date().toISOString().slice(0, 16)}
-                    />
-                    <div className="deadline-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                    </div>
-                  </div>
-                  <span className="field-error">{formErrors.deadline || ''}</span>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="description" className="form-label">Description</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder="Project description (optional)"
-                  rows="4"
-                  className={`form-textarea ${formErrors.description ? 'error' : ''}`}
-                  disabled={isCreating}
-                  maxLength={500}
-                />
-                <div className="character-count">
-                  {formData.description.length}/500 characters
-                </div>
-                <span className="field-error">{formErrors.description || ''}</span>
-              </div>
-            </div>
-
-            <div className="form-section side-by-side">
-              <div className="form-section-content">
-                <h2 className="section-title">Team Members</h2>
-                <p className="section-description">Add team members to collaborate on this project</p>
-                
-                <div className="form-group">
-                  <div className="member-selection-container">
-                    <div className="member-search-container">
-                      <Input
-                        type="text"
-                        value={memberQuery}
-                        onChange={handleMemberSearch}
-                        placeholder="Search users by name, username, or email..."
-                        className="member-search-input"
-                        disabled={isCreating}
-                      />
-                      
-                      {isSearching && (
-                        <div className="search-loading">
-                          <span className="loading-spinner"></span>
-                        </div>
-                      )}
-                      
-                      {showDropdown && searchResults.length > 0 && (
-                        <div className="search-dropdown">
-                          {searchResults.map(user => (
-                            <div
-                              key={user.id}
-                              className="search-result-item"
-                              onClick={() => addMember(user)}
-                            >
-                              <div className="user-avatar">
-                                {user.profile_picture ? (
-                                  <img 
-                                    src={user.profile_picture} 
-                                    alt={user.full_name}
-                                    className="avatar-image"
-                                  />
-                                ) : (
-                                  <div className="avatar-placeholder">
-                                    {user.full_name.charAt(0).toUpperCase()}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="user-info">
-                                <div className="user-name">{user.full_name}</div>
-                                <div className="user-email">{user.email}</div>
-                              </div>
+                <div className="space-y-2">
+                  {selectedMembers.map(member => (
+                    <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          {member.profile_picture ? (
+                            <img 
+                              src={member.profile_picture} 
+                              alt={member.full_name}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-sm font-medium">
+                              {member.full_name?.charAt(0)?.toUpperCase() || member.email?.charAt(0)?.toUpperCase() || 'U'}
                             </div>
-                          ))}
+                          )}
                         </div>
-                      )}
-                      
-                      {showDropdown && memberQuery && searchResults.length === 0 && !isSearching && (
-                        <div className="search-dropdown">
-                          <div className="no-results">No users found</div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {selectedMembers.length > 0 && (
-                      <div className="selected-members">
-                        <div className="selected-members-header">
-                          Selected Members ({selectedMembers.length})
-                        </div>
-                        <div className="selected-members-grid">
-                          {selectedMembers.map(member => (
-                            <div key={member.id} className="selected-member">
-                              <div className="member-avatar">
-                                {member.profile_picture ? (
-                                  <img 
-                                    src={member.profile_picture} 
-                                    alt={member.full_name}
-                                    className="avatar-image"
-                                  />
-                                ) : (
-                                  <div className="avatar-placeholder">
-                                    {member.full_name.charAt(0).toUpperCase()}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="member-info">
-                                <div className="member-name">{member.full_name}</div>
-                                <div className="member-email">{member.email}</div>
-                              </div>
-                              <Button
-                                type="button"
-                                onClick={() => removeMember(member.id)}
-                                className="remove-member-btn"
-                                disabled={isCreating}
-                                title="Remove member"
-                                variant="ghost"
-                                size="sm"
-                              >
-                                ×
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <span className="field-error"></span>
-                </div>
-              </div>
-
-              <div className="form-section-content">
-                <h2 className="section-title">Project Image</h2>
-                <p className="section-description">Add a visual representation for your project</p>
-                
-                <div className="form-group">
-                  <div className="file-upload-container">
-                    <input
-                      id="project-image-input"
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                      onChange={handleImageChange}
-                      className="file-input-hidden"
-                      disabled={isCreating}
-                    />
-                    
-                    {!imagePreview ? (
-                      <label htmlFor="project-image-input" className="file-upload-area">
-                        <div className="upload-icon">
-                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21,15 16,10 5,21"></polyline>
-                          </svg>
-                        </div>
-                        <div className="upload-text">
-                          <p className="upload-primary">Click to upload project image</p>
-                          <p className="upload-secondary">JPG, PNG, GIF, WEBP (max 5MB)</p>
-                        </div>
-                      </label>
-                    ) : (
-                      <div className="image-preview-container">
-                        <div className="image-preview">
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            className="preview-image"
-                          />
-                          <div className="image-overlay">
-                            <Button
-                              type="button"
-                              onClick={removeImage}
-                              className="remove-image-btn"
-                              disabled={isCreating}
-                              title="Remove image"
-                              variant="destructive"
-                              size="sm"
-                            >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                              </svg>
-                            </Button>
-                            <label htmlFor="project-image-input" className="change-image-btn" title="Change image">
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                              </svg>
-                            </label>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {member.full_name || 'Unknown User'}
+                          </div>
+                          <div className="text-sm text-gray-500 truncate">{member.email}</div>
+                          <div className="text-xs text-gray-500">
+                            {formData.member_permissions[member.email] ? 'Can edit project' : 'View only access'}
                           </div>
                         </div>
                       </div>
-                    )}
-                    
-                    <span className="field-error">{formErrors.project_image || ''}</span>
-                  </div>
+                      <div className="flex items-center space-x-2">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.member_permissions[member.email] || false}
+                            onChange={() => toggleMemberPermission(member.email)}
+                            disabled={isCreating}
+                            className="rounded"
+                          />
+                          <span className="text-sm text-gray-700">Editor</span>
+                        </label>
+                        <Button
+                          type="button"
+                          onClick={() => removeMember(member.id)}
+                          disabled={isCreating}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
+          </div>
 
-            <div className="form-actions">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleCancel}
-                disabled={isCreating}
-                className="cancel-button"
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isCreating || connectionError}
-                className="create-button"
-              >
-                {isCreating ? (
-                  <>
-                    <span className="loading-spinner small"></span>
-                    Creating Project...
-                  </>
-                ) : (
-                  'Create Project'
-                )}
-              </Button>
-            </div>
-          </form>
-        </LoadingIndicator>
-      </div>
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleCancel}
+              disabled={isCreating}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isCreating || connectionError}
+            >
+              {isCreating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating...
+                </>
+              ) : (
+                'Create Project'
+              )}
+            </Button>
+          </div>
+        </form>
+      </LoadingIndicator>
     </div>
   );
 };

@@ -108,6 +108,21 @@ class RedisCache:
             current_app.logger.error(f"Redis expire error for key {key}: {e}")
             return False
 
+    @staticmethod
+    def delete_pattern(pattern: str) -> int:
+        """Delete keys matching a pattern."""
+        if not redis_client:
+            return 0
+            
+        try:
+            keys = redis_client.keys(pattern)
+            if keys:
+                return redis_client.delete(*keys)
+            return 0
+        except Exception as e:
+            current_app.logger.error(f"Redis delete pattern error for pattern {pattern}: {e}")
+            return 0
+
 class SessionCache:
     """Redis-based session management."""
     

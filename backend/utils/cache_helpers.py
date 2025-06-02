@@ -90,6 +90,11 @@ class UserSearchCache:
         """Invalidate user search cache when user data changes"""
         try:
             RedisCache.delete(f"{UserSearchCache.CACHE_PREFIX}{UserSearchCache.ALL_USERS_KEY}")
+            
+            # Also invalidate route-level cache for user-related endpoints
+            from utils.route_cache import RouteCacheManager
+            RouteCacheManager.invalidate_related_cache(['users', 'profile'])
+            
             print("User search cache invalidated")
         except Exception as e:
             print(f"Error invalidating user cache: {e}")
@@ -142,6 +147,10 @@ def warm_up_user_cache():
         if result:
             stats = UserSearchCache.get_cache_stats()
             print(f"User search cache warmed up: {stats}")
+            
+            # Also warm up route cache
+            from utils.route_cache import CacheWarmer
+            CacheWarmer.warm_common_routes()
         else:
             print("Failed to warm up user cache")
     except Exception as e:

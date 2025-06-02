@@ -1,10 +1,19 @@
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@radix-ui/react-dropdown-menu';
+import {
+  ArrowLeft,
+  Save
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import LoadingIndicator from '../../components/LoadingIndicator';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { getCurrentUser, loadingState, projectAPI, taskAPI } from '../../utils/apiCalls';
-import './TaskCreate.css';
+import { Link, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { loadingState } from '../../utils/apiCalls';
+import { getCurrentUser } from '../../utils/apiCalls/auth';
+import { projectAPI } from '../../utils/apiCalls/projectAPI';
+import { taskAPI } from '../../utils/apiCalls/taskAPI';
 
 const TaskCreate = () => {
   const [projects, setProjects] = useState([]);
@@ -13,10 +22,21 @@ const TaskCreate = () => {
     title: '',
     description: '',
     due_date: '',
-    status: 'Not Started'
+    status: 'Not Started',
+    assigned_to: '' // Add assigned user field
   });
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  // Add member search state for task assignment
+  const [assigneeQuery, setAssigneeQuery] = useState('');
+  const [assigneeResults, setAssigneeResults] = useState([]);
+  const [selectedAssignee, setSelectedAssignee] = useState(null);
+  const [isSearchingAssignee, setIsSearchingAssignee] = useState(false);
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const [assigneeDebounceTimeout, setAssigneeDebounceTimeout] = useState(null);
+  
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
 
@@ -26,8 +46,10 @@ const TaskCreate = () => {
 
   const fetchProjects = async () => {
     try {
-      const allProjects = await projectAPI.getAllProjects();
-      setProjects(allProjects);
+      const response = await projectAPI.getAllProjects();
+      // Handle new API response structure
+      const projectsData = response.projects || response || [];
+      setProjects(Array.isArray(projectsData) ? projectsData : []);
     } catch (err) {
       setError('Failed to load projects: ' + (err.message || 'Unknown error'));
       console.error('Error fetching projects:', err);
@@ -44,6 +66,55 @@ const TaskCreate = () => {
     });
   };
 
+  const searchAssignees = async (query) => {
+    if (!query.trim()) {
+      setAssigneeResults([]);
+      setShowAssigneeDropdown(false);
+      return;
+    }
+
+    try {
+      setIsSearchingAssignee(true);
+      const response = await projectAPI.searchUsers({ q: query, limit: 10 });
+      setAssigneeResults(response.users || []);
+      setShowAssigneeDropdown(true);
+    } catch (err) {
+      console.error('User search error:', err);
+      setAssigneeResults([]);
+    } finally {
+      setIsSearchingAssignee(false);
+    }
+  };
+
+  const handleAssigneeSearch = (e) => {
+    const query = e.target.value;
+    setAssigneeQuery(query);
+
+    if (assigneeDebounceTimeout) {
+      clearTimeout(assigneeDebounceTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      searchAssignees(query);
+    }, 300);
+
+    setAssigneeDebounceTimeout(timeout);
+  };
+
+  const selectAssignee = (user) => {
+    setSelectedAssignee(user);
+    setFormData(prev => ({ ...prev, assigned_to: user.email }));
+    setAssigneeQuery(user.full_name || user.email);
+    setAssigneeResults([]);
+    setShowAssigneeDropdown(false);
+  };
+
+  const clearAssignee = () => {
+    setSelectedAssignee(null);
+    setFormData(prev => ({ ...prev, assigned_to: '' }));
+    setAssigneeQuery('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -58,133 +129,231 @@ const TaskCreate = () => {
         formData.title,
         formData.description,
         formData.due_date,
-        formData.status
+        formData.status,
+        formData.assigned_to // Include assigned user
       );
-      navigate('/solutions/tasks');
+      
+      setSuccess('Task created successfully! Redirecting...');
+      setTimeout(() => {
+        navigate('/solutions/tasks');
+      }, 1500);
+      setError('');
     } catch (err) {
-      setError(`Failed to create task: ${err.message || 'Unknown error'}`);
+      setError('Failed to create task: ' + (err.message || 'Unknown error'));
     }
   };
 
-  const handleCancel = () => {
-    navigate('/solutions/tasks');
-  };
+  if (loadingProjects) {
+    return <div className="task-create-loading">Loading projects...</div>;
+  }
 
   return (
-    <div className="task-create-container">
-      <LoadingIndicator loading={loadingState.isLoading('task-create') || loadingState.isLoading('projects-fetch') || loadingProjects}>
-        <div className="task-create-header">
-          <h1 className="task-create-title">Create New Task</h1>
-          <p className="task-create-subtitle">Add a new task to your project</p>
-        </div>
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <Button asChild variant="outline">
+          <Link to="/solutions/tasks">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Tasks
+          </Link>
+        </Button>
+        <h1 className="text-3xl font-bold tracking-tight">Create New Task</h1>
+      </div>
 
-        {error && (
-          <div className="error-alert">
-            {error}
-          </div>
-        )}
+      {error && (
+        <Card className="border-destructive bg-destructive/10">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <p className="text-destructive font-medium">{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-        {projects.length === 0 ? (
-          <div className="no-projects-alert">
-            <p>No projects available. You need to create a project first before adding tasks.</p>
-            <Button
-              onClick={() => navigate('/solutions/projects/create')}
-            >
-              Create Project
-            </Button>
-          </div>
-        ) : (
-          <div className="task-create-form-container">
-            <form onSubmit={handleSubmit} className="task-create-form">
-              <div className="form-group">
-                <label className="form-label">Project *</label>
-                <select
-                  name="project_id"
-                  value={formData.project_id}
-                  onChange={handleInputChange}
-                  className="form-select"
-                  required
-                >
-                  <option value="">Select a Project</option>
+      {success && (
+        <Card className="border-green-500 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <p className="text-green-700 font-medium">{success}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Task Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="project_id">Project *</Label>
+              <Select
+                value={formData.project_id}
+                onValueChange={(value) => setFormData({...formData, project_id: value})}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
                   {projects.map(project => (
-                    <option key={project.id} value={project.id}>{project.name}</option>
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
                   ))}
-                </select>
-              </div>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="form-group">
-                <label className="form-label">Task Title *</label>
+            <div className="space-y-2">
+              <Label htmlFor="title">Task Title *</Label>
+              <Input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="Enter task title"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Enter task description"
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="due_date">Due Date & Time *</Label>
+              <Input
+                type="datetime-local"
+                id="due_date"
+                name="due_date"
+                value={formData.due_date}
+                onChange={handleInputChange}
+                required
+                min={new Date().toISOString().slice(0, 16)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({...formData, status: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Not Started">Not Started</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="assigned_to">Assign To (Optional)</Label>
+              <div className="relative">
                 <Input
                   type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  placeholder="Enter task title"
-                  required
+                  value={assigneeQuery}
+                  onChange={handleAssigneeSearch}
+                  placeholder="Search users to assign task..."
                 />
+                
+                {isSearchingAssignee && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <Clock className="h-4 w-4 animate-spin" />
+                  </div>
+                )}
+                
+                {showAssigneeDropdown && assigneeResults.length > 0 && (
+                  <Card className="absolute z-10 w-full mt-1 shadow-lg max-h-40 overflow-y-auto">
+                    <CardContent className="p-0">
+                      {assigneeResults.map(user => (
+                        <div
+                          key={user.id}
+                          className="px-4 py-3 hover:bg-muted cursor-pointer flex items-center space-x-3 border-b last:border-b-0"
+                          onClick={() => selectAssignee(user)}
+                        >
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-sm">
+                              {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="text-sm font-medium">{user.full_name}</div>
+                            <div className="text-xs text-muted-foreground">{user.email}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {selectedAssignee && (
+                  <Card className="mt-3">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-sm">
+                              {selectedAssignee.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="text-sm font-medium">{selectedAssignee.full_name}</div>
+                            <div className="text-xs text-muted-foreground">{selectedAssignee.email}</div>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={clearAssignee}
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
+            </div>
 
-              <div className="form-group">
-                <label className="form-label">Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className="form-textarea"
-                  placeholder="Enter task description"
-                  rows="4"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Due Date *</label>
-                <Input
-                  type="date"
-                  name="due_date"
-                  value={formData.due_date}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Status</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="form-select"
-                  required
-                >
-                  <option value="Not Started">Not Started</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Blocked">Blocked</option>
-                </select>
-              </div>
-
-              <div className="flex gap-4 pt-6">
-                <Button
-                  type="submit"
-                  className="flex-1"
-                >
-                  Create Task
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleCancel}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </div>
-        )}
-      </LoadingIndicator>
+            <div className="flex justify-end space-x-3 pt-6">
+              <Button type="button" variant="outline" asChild>
+                <Link to="/solutions/tasks">Cancel</Link>
+              </Button>
+              <Button type="submit" disabled={loadingState.isLoading('tasks-create')}>
+                {loadingState.isLoading('tasks-create') ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Create Task
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -17,8 +17,10 @@ import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
 import ProjectCreate from './pages/solutions/ProjectCreate';
+import ProjectEdit from './pages/solutions/ProjectEdit';
 import Projects from './pages/solutions/Projects';
 import TaskCreate from './pages/solutions/TaskCreate';
+import TaskEdit from './pages/solutions/TaskEdit.jsx';
 import Tasks from './pages/solutions/Tasks';
 import VerifyOTP from './pages/VerifyOTP';
 import { authState, isAuthenticated } from './utils/apiCalls/auth';
@@ -146,11 +148,31 @@ function App() {
                 </PrivateRoute>
               } />
 
+              <Route path='/solutions/projects/edit/:id' element={
+                <PrivateRoute>
+                  <AdminPanelLayout>
+                    <ContentLayout title="Edit Project">
+                      <ProjectEdit />
+                    </ContentLayout>
+                  </AdminPanelLayout>
+                </PrivateRoute>
+              } />
+
               <Route path='/solutions/tasks/create' element={
                 <PrivateRoute>
                   <AdminPanelLayout>
                     <ContentLayout title="Create Task">
                       <TaskCreate />
+                    </ContentLayout>
+                  </AdminPanelLayout>
+                </PrivateRoute>
+              } />
+
+              <Route path='/solutions/tasks/edit/:id' element={
+                <PrivateRoute>
+                  <AdminPanelLayout>
+                    <ContentLayout title="Edit Task">
+                      <TaskEdit />
                     </ContentLayout>
                   </AdminPanelLayout>
                 </PrivateRoute>

@@ -20,10 +20,8 @@ def get_version_info():
     """Get version information from various sources."""
     version_info = DEFAULT_VERSION.copy()
     
-    # Generate version
     auto_version = generate_version()
     
-    # Try to read from version.json file (created during Docker build)
     try:
         version_file_path = os.path.join(os.path.dirname(__file__), 'version.json')
         if os.path.exists(version_file_path):
@@ -33,7 +31,6 @@ def get_version_info():
     except Exception as e:
         print(f"Warning: Could not read version.json: {e}")
     
-    # Override with environment variables if present
     if os.getenv('APP_VERSION'):
         version_info['version'] = os.getenv('APP_VERSION')
     else:
@@ -48,7 +45,6 @@ def get_version_info():
     if os.getenv('FLASK_ENV'):
         version_info['environment'] = os.getenv('FLASK_ENV')
     
-    # Set build_date to current time if not set
     if not version_info['build_date']:
         version_info['build_date'] = datetime.utcnow().isoformat() + 'Z'
     
